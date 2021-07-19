@@ -6,36 +6,40 @@
 #include "model.h"
 #include "geometry.h"
 
-const TGAColor white    = TGAColor(255, 255, 255, 255);
-const TGAColor red      = TGAColor(255, 0, 0, 255);
-const TGAColor green    = TGAColor(0, 255, 0, 255);
-Model *model = NULL;
 const int width = 800;
 const int height = 800;
+const int depth  = 255;
 
-void line(Vec2i v0, Vec2i v1, TGAImage &image, TGAColor color)
+Model *model = NULL;
+Vec3f lightDir(0, 0, -1);
+Vec3f camera(0,0,3);
+
+Matrix v2m(Vec3f v)
 {
-    bool steep = false;
-    if (std::abs(v1.y - v0.y) > std::abs(v1.x - v0.x)) // from bottom to top
-    {
-        std::swap(v0.x, v0.y);
-        std::swap(v1.x, v1.y);
-        steep = true;
-    }
-    if (v1.x < v0.x) // from left to right
-    {
-        std::swap(v1.x, v0.x);
-        std::swap(v1.y, v0.y);
-    }
-    for (int x = v0.x; x <= v1.x; x++)
-    {
-        float t = (x - v0.x) / (v1.x - v0.x);
-        float y = v0.y + (v1.y - v0.y) * t;
-        if (steep)
-            image.set(y, x, color);
-        else
-            image.set(x, y, color);
-    }
+    Matrix m = Matrix(4, 1);
+    m[0][0] = v.x;
+    m[1][0] = v.y;
+    m[2][0] = v.z;
+    m[3][0] = 1;
+    return m;
+}
+
+Vec3f m2v(Matrix m)
+{
+    return Vec3f(m[0][0]/m[3][0], m[1][0]/m[3][0], m[2][0]/m[3][0]);
+}
+
+Matrix viewport(int x, int y, int w, int h)
+{
+    Matrix m = Matrix::identity(4);
+    m[0][3] = x + w / 2.0f;
+    m[1][3] = y + h / 2.0f;
+    m[2][3] = depth / 2.0f;
+
+    m[0][0] = w / 2.0f;
+    m[1][1] = h / 2.0f;
+    m[2][2] = depth / 2.0f;
+    return m;
 }
 
 Vec3f barycentric(Vec3f *pts, Vec3f P)
@@ -49,7 +53,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P)
     // (u,v,1) = (AB.x, AC.x, PA.x) × (AB.y, AC.y, PA.y)
     Vec3f a = Vec3f(pts[1][0] - pts[0][0], pts[2][0] - pts[0][0], pts[0][0] - P[0]);
     Vec3f b = Vec3f(pts[1][1] - pts[0][1], pts[2][1] - pts[0][1], pts[0][1] - P[1]);
-    Vec3f u = cross(a, b);
+    Vec3f u = a ^ b;
 
     // if u[2] is 0 means triangle is degenerate
     if (std::abs(u[2]) < 1)
@@ -124,13 +128,15 @@ int main(int argc, char** argv)
     TGAImage diffuse = TGAImage();
     diffuse.read_tga_file("obj/african_head/african_head_diffuse.tga");
 
-    Vec3f lightDir(0, 0, -1);
-
     float *zbuffer = new float[width*height];
     for (int i = 0; i < width * height; i++)
     {
         zbuffer[i] = -std::numeric_limits<float>::max();
     }
+
+    Matrix Projection = Matrix::identity(4);
+    Matrix ViewPort = viewport(width / 8, height / 8, width * 3 / 4, height * 3 / 4);
+    Projection[3][2] = -1.0f / camera.z;
     
     for (int i = 0; i < model->nfaces(); i++)
     {
@@ -142,9 +148,11 @@ int main(int argc, char** argv)
         {
             world_coords[j] = model->vert(face[j * 2]);
             uv_coords[j] = model->uv(face[j * 2 + 1]);
-            screen_coords[j] = Vec3f(int((world_coords[j].x + 1) * width / 2), int((world_coords[j].y + 1) * height / 2), world_coords[j].z);
+            screen_coords[j] = m2v(ViewPort * Projection * v2m(world_coords[j]));
+            screen_coords[j][0] = (int)(screen_coords[j][0]);
+            screen_coords[j][1] = (int)(screen_coords[j][1]);
         }
-        Vec3f n = cross((world_coords[2] - world_coords[0]), (world_coords[1] - world_coords[0]));
+        Vec3f n = (world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0]);
         n.normalize();
         float nl = n * lightDir;
         if (nl > 0)
@@ -158,5 +166,6 @@ int main(int argc, char** argv)
     image.flip_vertically();
     image.write_tga_file("output.tga");
     delete model;
+    delete [] zbuffer;
     return 0;
 }
