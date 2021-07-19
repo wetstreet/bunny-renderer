@@ -1,5 +1,6 @@
 #include <vector>
 #include <cmath>
+#include <limits>
 #include <iostream>
 #include "tgaimage.h"
 #include "model.h"
@@ -26,64 +27,70 @@ void line(Vec2i v0, Vec2i v1, TGAImage &image, TGAColor color)
         std::swap(v1.x, v0.x);
         std::swap(v1.y, v0.y);
     }
-
-    int dx = v1.x - v0.x;
-    int dy = v1.y - v0.y;
-    int derror = std::abs(dy);
-    int error = 0;
-    int y = v0.y;
     for (int x = v0.x; x <= v1.x; x++)
     {
+        float t = (x - v0.x) / (v1.x - v0.x);
+        float y = v0.y + (v1.y - v0.y) * t;
         if (steep)
             image.set(y, x, color);
         else
             image.set(x, y, color);
-        error += derror;
-        if (error > dx / 2)
-        {
-            y += v1.y > v0.y ? 1 : -1;
-            error -= dx;
-        }
     }
 }
 
-void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color)
+Vec3f barycentric(Vec3f *pts, Vec3f P)
 {
-    if (t0.y > t1.y) std::swap(t0, t1);
-    if (t0.y > t2.y) std::swap(t0, t2);
-    if (t1.y > t2.y) std::swap(t1, t2);
-    
-    int total_height = t2.y - t0.y;
-    for (int y = t0.y; y < t1.y; y++)
+    // P = (1 - u - v)A + uB + vC
+    // P = A + u(AB) + v(AC)
+    // PA = A - P = -(u(AB) + v(AC))
+    // u(AB) + v(AC) + PA = 0
+    // (u,v,1) ⊥ (AB.x, AC.x, PA.x)
+    // (u,v,1) ⊥ (AB.y, AC.y, PA.y)
+    // (u,v,1) = (AB.x, AC.x, PA.x) × (AB.y, AC.y, PA.y)
+    Vec3f a = Vec3f(pts[1][0] - pts[0][0], pts[2][0] - pts[0][0], pts[0][0] - P[0]);
+    Vec3f b = Vec3f(pts[1][1] - pts[0][1], pts[2][1] - pts[0][1], pts[0][1] - P[1]);
+    Vec3f u = cross(a, b);
+
+    // if u[2] is 0 means triangle is degenerate
+    if (std::abs(u[2]) < 1)
+        return Vec3f(-1, 1, 1);
+
+    return Vec3f(1.0f - (u.x + u.y)/u.z, u.x/u.z, u.y/u.z);
+}
+
+void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color)
+{
+    Vec2f bboxmin = Vec2f(image.get_width() - 1, image.get_height() - 1);
+    Vec2f bboxmax = Vec2f(0,0);
+    Vec2f clamp = Vec2f(image.get_width() - 1, image.get_height() - 1);
+    for (int i = 0; i < 3; i++)
     {
-        int segment_height = t1.y - t0.y + 1; // avoid division by zero
-        float alpha = (y - t0.y) / (float)total_height;
-        float beta = (y - t0.y) / (float)segment_height;
-        Vec2i A = t0 + (t2 - t0) * alpha;
-        Vec2i B = t0 + (t1 - t0) * beta;
-        if (A.x > B.x)
+        for (int j = 0; j < 2; j++)
         {
-            std::swap(A, B);
-        }
-        for (int x = A.x; x <= B.x; x++)
-        {
-            image.set(x, y, color);
+            bboxmin[j] = std::max(std::min(pts[i][j], bboxmin[j]), 0.0f);
+            bboxmax[j] = std::min(std::max(pts[i][j], bboxmax[j]), clamp[j]);
         }
     }
-    for (int y = t1.y; y < t2.y; y++)
+    Vec3f P;
+    for (P.x = bboxmin.x; P.x < bboxmax.x; P.x++)
     {
-        int segment_height = t2.y - t1.y + 1; // avoid division by zero
-        float alpha = (y - t0.y) / (float)total_height;
-        float beta = (y - t1.y) / (float)segment_height;
-        Vec2i A = t0 + (t2 - t0) * alpha;
-        Vec2i B = t1 + (t2 - t1) * beta;
-        if (A.x > B.x)
+        for (P.y = bboxmin.y; P.y < bboxmax.y; P.y++)
         {
-            std::swap(A, B);
-        }
-        for (int x = A.x; x <= B.x; x++)
-        {
-            image.set(x, y, color);
+            Vec3f bc_screen = barycentric(pts, P);
+            if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)
+                continue;
+
+            P.z = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                P.z += bc_screen[i] * pts[i][2];
+            }
+            int zindex = P.x + P.y * width;
+            if (zbuffer[zindex] < P.z)
+            {
+                zbuffer[zindex] = P.z;
+                image.set(P.x, P.y, color);
+            }
         }
     }
 }
@@ -96,28 +103,35 @@ int main(int argc, char** argv)
     }
     else
     {
-        model = new Model("obj/african_head.obj");
+        model = new Model("obj/african_head/african_head.obj");
     }
 
     TGAImage image(width, height, TGAImage::RGB);
+
     Vec3f lightDir(0, 0, -1);
+
+    float *zbuffer = new float[width*height];
+    for (int i = 0; i < width * height; i++)
+    {
+        zbuffer[i] = -std::numeric_limits<float>::max();
+    }
 
     for (int i = 0; i < model->nfaces(); i++)
     {
         std::vector<int> face = model->face(i);
-        Vec2i screen_coords[3];
+        Vec3f screen_coords[3];
         Vec3f world_coords[3];
         for (int j = 0; j < 3; j++)
         {
             world_coords[j] = model->vert(face[j]);
-            screen_coords[j] = Vec2i((world_coords[j].x + 1) * width / 2, (world_coords[j].y + 1) * height / 2);
+            screen_coords[j] = Vec3f(int((world_coords[j].x + 1) * width / 2), int((world_coords[j].y + 1) * height / 2), world_coords[j].z);
         }
-        Vec3f n = (world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0]);
+        Vec3f n = cross((world_coords[2] - world_coords[0]), (world_coords[1] - world_coords[0]));
         n.normalize();
         float intensity = n * lightDir;
         if (intensity > 0)
         {
-            triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity * 255, intensity * 255, intensity * 255, 255));
+            triangle(screen_coords, zbuffer, image, TGAColor(intensity * 255, intensity * 255, intensity * 255, 255));
         }
     }
 
