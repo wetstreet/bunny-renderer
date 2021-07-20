@@ -5,7 +5,7 @@
 #include <vector>
 #include "model.h"
 
-Model::Model(const char *filename) : verts_(), uvs_(), faces_() {
+Model::Model(const char *filename) : verts_(), uvs_(), normals_(), faces_() {
     std::ifstream in;
     in.open (filename, std::ifstream::in);
     if (in.fail()) return;
@@ -24,15 +24,22 @@ Model::Model(const char *filename) : verts_(), uvs_(), faces_() {
             Vec3f v;
             for (int i=0;i<3;i++) iss >> v[i];
             uvs_.push_back(v);
+        } else if (!line.compare(0, 4, "vn  ")) {
+            iss >> trash >> trash;
+            Vec3f v;
+            for (int i=0;i<3;i++) iss >> v[i];
+            normals_.push_back(v);
         } else if (!line.compare(0, 2, "f ")) {
             std::vector<int> f;
-            int itrash, idx, uv_idx;
+            int idx, uv_idx, normal_idx;
             iss >> trash;
-            while (iss >> idx >> trash >> uv_idx >> trash >> itrash) {
+            while (iss >> idx >> trash >> uv_idx >> trash >> normal_idx) {
                 idx--; // in wavefront obj all indices start at 1, not zero
                 uv_idx--;
+                normal_idx--;
                 f.push_back(idx);
                 f.push_back(uv_idx);
+                f.push_back(normal_idx);
             }
             faces_.push_back(f);
         }
@@ -51,6 +58,10 @@ int Model::nuvs() {
     return (int)uvs_.size();
 }
 
+int Model::nnormals() {
+    return (int)normals_.size();
+}
+
 int Model::nfaces() {
     return (int)faces_.size();
 }
@@ -65,5 +76,9 @@ Vec3f Model::vert(int i) {
 
 Vec3f Model::uv(int i) {
     return uvs_[i];
+}
+
+Vec3f Model::normal(int i) {
+    return normals_[i];
 }
 

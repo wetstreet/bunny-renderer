@@ -62,7 +62,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P)
     return Vec3f(1.0f - (u.x + u.y)/u.z, u.x/u.z, u.y/u.z);
 }
 
-void triangle(Vec3f *pts, Vec3f *uvs, float *zbuffer, TGAImage &diffuse, TGAImage &image, float nl)
+void triangle(Vec3f *pts, Vec3f *uvs, float *intensities, float *zbuffer, TGAImage &diffuse, TGAImage &image)
 {
     Vec2f bboxmin = Vec2f(image.get_width() - 1, image.get_height() - 1);
     Vec2f bboxmax = Vec2f(0,0);
@@ -77,6 +77,7 @@ void triangle(Vec3f *pts, Vec3f *uvs, float *zbuffer, TGAImage &diffuse, TGAImag
     }
     Vec3f P;
     Vec3f uv;
+    float intensity;
     for (P.x = bboxmin.x; P.x < bboxmax.x; P.x++)
     {
         for (P.y = bboxmin.y; P.y < bboxmax.y; P.y++)
@@ -90,6 +91,8 @@ void triangle(Vec3f *pts, Vec3f *uvs, float *zbuffer, TGAImage &diffuse, TGAImag
             {
                 uv[i] = 0;
             }
+            intensity = 0;
+            // lerp
             for (int i = 0; i < 3; i++)
             {
                 P.z += bc_screen[i] * pts[i][2];
@@ -97,6 +100,7 @@ void triangle(Vec3f *pts, Vec3f *uvs, float *zbuffer, TGAImage &diffuse, TGAImag
                 {
                     uv[j] += bc_screen[i] * uvs[i][j];
                 }
+                intensity += bc_screen[i] * intensities[i];
             }
             int zindex = P.x + P.y * width;
             if (zbuffer[zindex] < P.z)
@@ -106,7 +110,7 @@ void triangle(Vec3f *pts, Vec3f *uvs, float *zbuffer, TGAImage &diffuse, TGAImag
                 uv.y = 1 - uv.y;
                 TGAColor diffcolor = diffuse.get(uv.x * diffuse.get_width(), uv.y * diffuse.get_height());
 
-                image.set(P.x, P.y, diffcolor * nl);
+                image.set(P.x, P.y, diffcolor * intensity);
             }
         }
     }
@@ -135,7 +139,7 @@ int main(int argc, char** argv)
     }
 
     Matrix Projection = Matrix::identity(4);
-    Matrix ViewPort = viewport(width / 8, height / 8, width * 3 / 4, height * 3 / 4);
+    Matrix ViewPort = viewport(0, 0, width, height);
     Projection[3][2] = -1.0f / camera.z;
     
     for (int i = 0; i < model->nfaces(); i++)
@@ -144,21 +148,25 @@ int main(int argc, char** argv)
         Vec3f screen_coords[3];
         Vec3f world_coords[3];
         Vec3f uv_coords[3];
+        Vec3f normal_coords[3];
+        float intensities[3];
+        bool shouldRender = false;
         for (int j = 0; j < 3; j++)
         {
-            world_coords[j] = model->vert(face[j * 2]);
-            uv_coords[j] = model->uv(face[j * 2 + 1]);
+            world_coords[j] = model->vert(face[j * 3]);
+            uv_coords[j] = model->uv(face[j * 3 + 1]);
+            normal_coords[j] = model->normal(face[j * 3 + 2]);
+            intensities[j] = normal_coords[j].normalize() * lightDir;
+            intensities[j] = -intensities[j];
+            if (intensities[j] > 0)
+                shouldRender = true;
+            
             screen_coords[j] = m2v(ViewPort * Projection * v2m(world_coords[j]));
             screen_coords[j][0] = (int)(screen_coords[j][0]);
             screen_coords[j][1] = (int)(screen_coords[j][1]);
         }
-        Vec3f n = (world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0]);
-        n.normalize();
-        float nl = n * lightDir;
-        if (nl > 0)
-        {
-            triangle(screen_coords, uv_coords, zbuffer, diffuse, image, nl);
-        }
+        if (shouldRender)
+            triangle(screen_coords, uv_coords, intensities, zbuffer, diffuse, image);
     }
 
     std::cout << "finish";
