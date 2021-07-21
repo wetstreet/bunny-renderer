@@ -12,7 +12,8 @@ const int depth  = 255;
 
 Model *model = NULL;
 Vec3f lightDir(0, 0, -1);
-Vec3f camera(0,0,3);
+Vec3f eye(1,1,3);
+Vec3f center(0,0,0);
 
 Matrix v2m(Vec3f v)
 {
@@ -27,6 +28,20 @@ Matrix v2m(Vec3f v)
 Vec3f m2v(Matrix m)
 {
     return Vec3f(m[0][0]/m[3][0], m[1][0]/m[3][0], m[2][0]/m[3][0]);
+}
+
+Matrix lookat(Vec3f eye, Vec3f center, Vec3f up) {
+    Vec3f z = (eye-center).normalize();
+    Vec3f x = (up^z).normalize();
+    Vec3f y = (z^x).normalize();
+    Matrix res = Matrix::identity(4);
+    for (int i=0; i<3; i++) {
+        res[0][i] = x[i];
+        res[1][i] = y[i];
+        res[2][i] = z[i];
+        res[i][3] = -center[i];
+    }
+    return res;
 }
 
 Matrix viewport(int x, int y, int w, int h)
@@ -62,7 +77,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P)
     return Vec3f(1.0f - (u.x + u.y)/u.z, u.x/u.z, u.y/u.z);
 }
 
-void triangle(Vec3f *pts, Vec3f *uvs, float *intensities, float *zbuffer, TGAImage &diffuse, TGAImage &image)
+void triangle(Vec3f *pts, Vec3f *uvs, float *intensities, int *zbuffer, TGAImage &diffuse, TGAImage &image)
 {
     Vec2f bboxmin = Vec2f(image.get_width() - 1, image.get_height() - 1);
     Vec2f bboxmax = Vec2f(0,0);
@@ -111,6 +126,7 @@ void triangle(Vec3f *pts, Vec3f *uvs, float *intensities, float *zbuffer, TGAIma
                 TGAColor diffcolor = diffuse.get(uv.x * diffuse.get_width(), uv.y * diffuse.get_height());
 
                 image.set(P.x, P.y, diffcolor * intensity);
+                // image.set(P.x, P.y, TGAColor(intensity * 255, intensity * 255, intensity * 255, 255));
             }
         }
     }
@@ -125,6 +141,8 @@ int main(int argc, char** argv)
     else
     {
         model = new Model("obj/african_head/african_head.obj");
+        // model = new Model("obj/cube.obj");
+        // model = new Model("obj/icosphere.obj");
     }
 
     TGAImage image(width, height, TGAImage::RGB);
@@ -132,15 +150,16 @@ int main(int argc, char** argv)
     TGAImage diffuse = TGAImage();
     diffuse.read_tga_file("obj/african_head/african_head_diffuse.tga");
 
-    float *zbuffer = new float[width*height];
+    int *zbuffer = new int[width*height];
     for (int i = 0; i < width * height; i++)
     {
-        zbuffer[i] = -std::numeric_limits<float>::max();
+        zbuffer[i] = std::numeric_limits<int>::min();
     }
 
+    Matrix ModelView = lookat(eye, center, Vec3f(0, 1, 0));
     Matrix Projection = Matrix::identity(4);
     Matrix ViewPort = viewport(0, 0, width, height);
-    Projection[3][2] = -1.0f / camera.z;
+    Projection[3][2] = -1.0f / (eye - center).norm();
     
     for (int i = 0; i < model->nfaces(); i++)
     {
@@ -161,12 +180,22 @@ int main(int argc, char** argv)
             if (intensities[j] > 0)
                 shouldRender = true;
             
-            screen_coords[j] = m2v(ViewPort * Projection * v2m(world_coords[j]));
+            screen_coords[j] = m2v(ViewPort * Projection * ModelView * v2m(world_coords[j]));
             screen_coords[j][0] = (int)(screen_coords[j][0]);
             screen_coords[j][1] = (int)(screen_coords[j][1]);
         }
-        if (shouldRender)
-            triangle(screen_coords, uv_coords, intensities, zbuffer, diffuse, image);
+        triangle(screen_coords, uv_coords, intensities, zbuffer, diffuse, image);
+    }
+    
+    { // dump z-buffer (debugging purposes only)
+        TGAImage zbimage(width, height, TGAImage::GRAYSCALE);
+        for (int i=0; i<width; i++) {
+            for (int j=0; j<height; j++) {
+                zbimage.set(i, j, TGAColor(zbuffer[i+j*width]));
+            }
+        }
+        zbimage.flip_vertically(); // i want to have the origin at the left bottom corner of the image
+        zbimage.write_tga_file("zbuffer.tga");
     }
 
     std::cout << "finish";

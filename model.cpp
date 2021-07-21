@@ -19,12 +19,12 @@ Model::Model(const char *filename) : verts_(), uvs_(), normals_(), faces_() {
             Vec3f v;
             for (int i=0;i<3;i++) iss >> v[i];
             verts_.push_back(v);
-        } else if (!line.compare(0, 4, "vt  ")) {
+        } else if (!line.compare(0, 3, "vt ")) {
             iss >> trash >> trash;
             Vec3f v;
             for (int i=0;i<3;i++) iss >> v[i];
             uvs_.push_back(v);
-        } else if (!line.compare(0, 4, "vn  ")) {
+        } else if (!line.compare(0, 3, "vn ")) {
             iss >> trash >> trash;
             Vec3f v;
             for (int i=0;i<3;i++) iss >> v[i];
