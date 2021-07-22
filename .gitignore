@@ -29,3 +29,7 @@
 *.exe
 *.out
 *.app
+
+#
+.vscode
+*.tga
