@@ -21,8 +21,10 @@ Model::Model(const char *filename) : verts_(), uvs_(), normals_(), faces_() {
             verts_.push_back(v);
         } else if (!line.compare(0, 3, "vt ")) {
             iss >> trash >> trash;
-            Vec3f v;
-            for (int i=0;i<3;i++) iss >> v[i];
+            Vec2f v;
+            for (int i=0;i<2;i++) iss >> v[i];
+            int itrash;
+            iss >> itrash;
             uvs_.push_back(v);
         } else if (!line.compare(0, 3, "vn ")) {
             iss >> trash >> trash;
@@ -56,9 +58,33 @@ void Model::load_texture(std::string filename, const char *suffix, TGAImage &img
     if (dot != std::string::npos)
     {
         texfile = texfile.substr(0, dot) + std::string(suffix);
-        std::cerr << "texture file " << texfile << "loading" << (img.read_tga_file(texfile.c_str()) ? "ok" : "failed") << std::endl;
+        std::cerr << "texture file " << texfile << " loading " << (img.read_tga_file(texfile.c_str()) ? "ok" : "failed") << std::endl;
         img.flip_vertically();
     }
+}
+
+TGAColor Model::diffuse(Vec2f uvf)
+{
+    Vec2i uv(uvf[0] * diffusemap_.get_width(), uvf[1] * diffusemap_.get_height());
+    return diffusemap_.get(uv[0], uv[1]);
+}
+
+Vec3f Model::normalmap(Vec2f uvf)
+{
+    Vec2i uv(uvf[0] * normalmap_.get_width(), uvf[1] * normalmap_.get_height());
+    TGAColor n = normalmap_.get(uv[0], uv[1]);
+    Vec3f res;
+    for (int i = 0; i < 3; i++)
+    {
+        res[2 - i] = (float)n[i] / 255.0 * 2.0 - 1.0;
+    }
+    return res;
+}
+
+float Model::specular(Vec2f uvf)
+{
+    Vec2i uv(uvf[0] * specularmap_.get_width(), uvf[1] * specularmap_.get_height());
+    return specularmap_.get(uv[0], uv[1])[0] / 1.0f;
 }
 
 Model::~Model() {
@@ -88,11 +114,11 @@ Vec3f Model::vert(int iface, int nthvert) {
     return verts_[faces_[iface][nthvert][0]];
 }
 
-Vec3f Model::uv(int i) {
+Vec2f Model::uv(int i) {
     return uvs_[i];
 }
 
-Vec3f Model::uv(int iface, int nthvert) {
+Vec2f Model::uv(int iface, int nthvert) {
     return uvs_[faces_[iface][nthvert][1]];
 }
 

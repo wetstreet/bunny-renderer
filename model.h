@@ -3,11 +3,12 @@
 
 #include <vector>
 #include "geometry.h"
+#include "tgaimage.h"
 
 class Model {
 private:
 	std::vector<Vec3f> verts_;
-	std::vector<Vec3f> uvs_;
+	std::vector<Vec2f> uvs_;
 	std::vector<Vec3f> normals_;
 	std::vector<std::vector<Vec3i> > faces_;
     TGAImage diffusemap_;
@@ -21,10 +22,13 @@ public:
 	int nuvs();
 	int nnormals();
 	int nfaces();
+	TGAColor diffuse(Vec2f uv);
+	Vec3f normalmap(Vec2f uv);
+	float specular(Vec2f uv);
 	Vec3f vert(int i);
 	Vec3f vert(int iface, int nthvert);
-	Vec3f uv(int i);
-	Vec3f uv(int iface, int nthvert);
+	Vec2f uv(int i);
+	Vec2f uv(int iface, int nthvert);
 	Vec3f normal(int i);
 	Vec3f normal(int iface, int nthvert);
 	std::vector<Vec3i> face(int idx);
