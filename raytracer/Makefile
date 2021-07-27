@@ -18,6 +18,6 @@ $(OBJECTS): %.o: %.cpp
 
 clean:
 	-del $(OBJECTS)
-	-del $(TARGET)
+	-del $(TARGET).exe
 	-del *.tga
 
