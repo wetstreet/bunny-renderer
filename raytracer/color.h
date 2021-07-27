@@ -22,9 +22,9 @@ void write_color(TGAImage &image, int x, int y, color pixel_color, int samples_p
     auto b = pixel_color.z();
 
     auto scale = 1.0 / samples_per_pixel;
-    r *= scale;
-    g *= scale;
-    b *= scale;
+    r = sqrt(scale * r);
+    g = sqrt(scale * g);
+    b = sqrt(scale * b);
 
     image.set(x, y, TGAColor(static_cast<int>(256 * clamp(r, 0.0, 0.999)),
                             static_cast<int>(256 * clamp(g, 0.0, 0.999)),
