@@ -51,7 +51,7 @@ int main() {
     world.add(make_shared<sphere>(point3( 1.0,      0,  -1),    0.5, material_right));
 
     // Camera
-    camera cam;
+    camera cam(point3(-2,2,1), point3(0,0,-1), vec3(0,1,0), 20, aspect_ratio);
     
     // Render
     TGAImage image(image_width, image_height, TGAImage::RGB);
