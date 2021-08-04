@@ -12,12 +12,12 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 GLfloat vertices[] = {
-	-0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,
-	0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,
-	0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f,
-	-0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f,
-	0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f,
-	0.0f, -0.5f * float(sqrt(3)) / 3, 0.0f,
+	-0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,	0.8f, 0.3f, 0.02f,
+	0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,		0.8f, 0.3f, 0.02f,
+	0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f,	1.0f, 0.6f, 0.32f,
+	-0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f,	0.9f, 0.45f, 0.17f,
+	0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f,	0.9f, 0.45f, 0.17f,
+	0.0f, -0.5f * float(sqrt(3)) / 3, 0.0f,		0.8f, 0.3f, 0.02f
 };
 
 GLuint indices[] = {
@@ -61,10 +61,13 @@ int main() {
 	VBO vbo(vertices, sizeof(vertices));
 	EBO ebo(indices, sizeof(indices));
 
-	vao.LinkVBO(vbo, 0);
+	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, 6 * sizeof(float), 0);
+	vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	vao.Unbind();
 	vbo.Unbind();
 	ebo.Unbind();
+
+	GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
 
 	while (!glfwWindowShouldClose(window))
@@ -72,6 +75,7 @@ int main() {
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT);
 		shaderProgram.Activate();
+		glUniform1f(uniID, 0.5f);
 		vao.Bind();
 		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
