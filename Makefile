@@ -12,6 +12,7 @@ opengl:
 	@g++ -c include/imgui/imgui_impl_opengl3.cpp -Iinclude
 	@g++ -c include/imgui/imgui_tables.cpp -Iinclude
 	@g++ -c include/imgui/imgui_widgets.cpp -Iinclude
+	@g++ -c src/opengl/Camera.cpp -Iinclude
 	@g++ -c src/opengl/Texture.cpp -Iinclude
 	@g++ -c src/opengl/VAO.cpp -Iinclude
 	@g++ -c src/opengl/VBO.cpp -Iinclude
@@ -20,7 +21,7 @@ opengl:
 	@g++ -c src/opengl/main.cpp -Iinclude -o opengl.o
 	@g++ -o opengl.exe opengl.o glad.o stb_image.o \
 			imgui.o imgui_demo.o imgui_draw.o imgui_impl_glfw.o imgui_impl_opengl3.o imgui_tables.o imgui_widgets.o \
-			Texture.o VAO.o VBO.o EBO.o Shader.o -Iinclude -Llib -lmingw32 -lglfw3 -lopengl32 -lgdi32 -luser32 -limm32
+			Camera.o Texture.o VAO.o VBO.o EBO.o Shader.o -Iinclude -Llib -lmingw32 -lglfw3 -lopengl32 -lgdi32 -luser32 -limm32
 	@del *.o
 
 rasterizer:
