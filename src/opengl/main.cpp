@@ -2,7 +2,9 @@
 #include <math.h>
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include "stb/stb_image.h"
 
+#include "Texture.h"
 #include "Shader.h"
 #include "VAO.h"
 #include "EBO.h"
@@ -12,18 +14,15 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 GLfloat vertices[] = {
-	-0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,	0.8f, 0.3f, 0.02f,
-	0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,		0.8f, 0.3f, 0.02f,
-	0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f,	1.0f, 0.6f, 0.32f,
-	-0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f,	0.9f, 0.45f, 0.17f,
-	0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f,	0.9f, 0.45f, 0.17f,
-	0.0f, -0.5f * float(sqrt(3)) / 3, 0.0f,		0.8f, 0.3f, 0.02f
+	-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	0.0f, 0.0f,
+	-0.5f,  0.5f, 0.0f,		0.0f, 1.0f, 0.0f,	0.0f, 1.0f,
+	 0.5f,  0.5f, 0.0f,		0.0f, 0.0f, 1.0f,	1.0f, 1.0f,
+	 0.5f, -0.5f, 0.0f,		1.0f, 1.0f, 1.0f,	1.0f, 0.0f,
 };
 
 GLuint indices[] = {
-	0, 3, 5,
-	3, 2, 4,
-	5, 4, 1
+	0, 2, 1,
+	0, 3, 2
 };
 
 int main() {
@@ -61,14 +60,17 @@ int main() {
 	VBO vbo(vertices, sizeof(vertices));
 	EBO ebo(indices, sizeof(indices));
 
-	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, 6 * sizeof(float), 0);
-	vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, 8 * sizeof(float), 0);
+	vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	vao.LinkAttrib(vbo, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	vao.Unbind();
 	vbo.Unbind();
 	ebo.Unbind();
 
 	GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
+	Texture popCat("pop_cat.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+	popCat.texUnit(shaderProgram, "tex0", 0);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -76,8 +78,9 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 		shaderProgram.Activate();
 		glUniform1f(uniID, 0.5f);
+		popCat.Bind();
 		vao.Bind();
-		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -130,6 +133,7 @@ int main() {
 	vao.Delete();
 	vbo.Delete();
 	ebo.Delete();
+	popCat.Delete();
 	shaderProgram.Delete();
 
     ImGui_ImplOpenGL3_Shutdown();
