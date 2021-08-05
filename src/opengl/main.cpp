@@ -88,18 +88,52 @@ int main() {
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 
+	GLuint framebuffer;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+	// generate texture
+	GLuint texColorBuffer;
+	glGenTextures(1, &texColorBuffer);
+	glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// attach it to currently bound framebuffer object
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0); 
+
+	GLuint rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 800);  
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
 	while (!glfwWindowShouldClose(window))
 	{
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		shaderProgram.Activate();
 
 		camera.Inputs(window);
-		camera.Matrix(45.0f, 0.1f, 100.0f, shaderProgram, "camMatrix");
+		camera.updateMatrix(45.0f, 0.1f, 100.0f);
+
+		camera.Matrix(shaderProgram, "camMatrix");
 
 		popCat.Bind();
 		vao.Bind();
 		glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(int), GL_UNSIGNED_INT, 0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glClearColor(0.22f, 0.22f, 0.22f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -141,6 +175,21 @@ int main() {
                 show_another_window = false;
             ImGui::End();
         }
+
+		ImGui::Begin("GameWindow");
+		{
+			// Using a Child allow to fill all the space of the window.
+			// It also alows customization
+			ImGui::BeginChild("GameRender");
+			
+			// Get the size of the child (i.e. the whole draw size of the windows).
+			ImVec2 size = ImGui::GetWindowSize();
+
+			// Because I use the texture from OpenGL, I need to invert the V from the UV.
+			ImGui::Image((ImTextureID)(intptr_t)texColorBuffer, size, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::EndChild();
+		}
+		ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
