@@ -55,7 +55,6 @@ int main() {
 	glfwMakeContextCurrent(window);
 
 	gladLoadGL();
-	glViewport(0, 0, width, height);
 
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -112,8 +111,20 @@ int main() {
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
+	ImVec2 viewport(800, 800);
+
 	while (!glfwWindowShouldClose(window))
 	{
+		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, viewport.x, viewport.y);  
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+		glViewport(0, 0, viewport.x, viewport.y);
+
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -122,7 +133,7 @@ int main() {
 		shaderProgram.Activate();
 
 		camera.Inputs(window);
-		camera.updateMatrix(45.0f, 0.1f, 100.0f);
+		camera.updateMatrix(45.0f, 0.1f, 100.0f, viewport.x, viewport.y);
 
 		camera.Matrix(shaderProgram, "camMatrix");
 
@@ -158,7 +169,10 @@ int main() {
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
             if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			{
                 counter++;
+				ImGui::SetNextWindowSize(ImVec2(800, 800));
+			}
             ImGui::SameLine();
             ImGui::Text("counter = %d", counter);
 
@@ -183,10 +197,10 @@ int main() {
 			ImGui::BeginChild("GameRender");
 			
 			// Get the size of the child (i.e. the whole draw size of the windows).
-			ImVec2 size = ImGui::GetWindowSize();
+			viewport = ImGui::GetWindowSize();
 
 			// Because I use the texture from OpenGL, I need to invert the V from the UV.
-			ImGui::Image((ImTextureID)(intptr_t)texColorBuffer, size, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)(intptr_t)texColorBuffer, viewport, ImVec2(0, 1), ImVec2(1, 0));
 			ImGui::EndChild();
 		}
 		ImGui::End();
