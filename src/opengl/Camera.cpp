@@ -23,6 +23,10 @@ void Camera::Matrix(Shader& shader, const char* uniform)
     glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
+
+double lastMouseX;
+double lastMouseY;
+double firstClick = false;
 void Camera::Inputs(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -58,37 +62,36 @@ void Camera::Inputs(GLFWwindow* window)
         speed = 0.1f;
     }
 
-    // if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-    // {
-    //     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+    {
+        double mouseX;
+        double mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
 
-    //     if (firstClick)
-    //     {
-    //         glfwSetCursorPos(window, width / 2, height / 2);
-    //         firstClick = false;
-    //     }
+        if (firstClick)
+        {
+            lastMouseX = mouseX;
+            lastMouseY = mouseY;
+            firstClick = false;
+        }
 
-    //     double mouseX;
-    //     double mouseY;
-    //     glfwGetCursorPos(window, &mouseX, &mouseY);
+        float rotx = sensitivity * (float)(mouseY - lastMouseY) / height;
+        float roty = sensitivity * (float)(mouseX - lastMouseX) / height;
 
-    //     float rotx = sensitivity * (float)(mouseY - (height / 2)) / height;
-    //     float roty = sensitivity * (float)(mouseX - (height / 2)) / height;
+        glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotx), glm::normalize(glm::cross(Orientation, Up)));
 
-    //     glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotx), glm::normalize(glm::cross(Orientation, Up)));
+        if (!((glm::angle(newOrientation, Up) <= glm::radians(5.0f)) || (glm::angle(newOrientation, -Up) <= glm::radians(5.0f))))
+        {
+            Orientation = newOrientation;
+        }
 
-    //     if (!((glm::angle(newOrientation, Up) <= glm::radians(5.0f)) || (glm::angle(newOrientation, -Up) <= glm::radians(5.0f))))
-    //     {
-    //         Orientation = newOrientation;
-    //     }
-
-    //     Orientation = glm::rotate(Orientation, glm::radians(-roty), Up);
-
-    //     glfwSetCursorPos(window, width / 2, height / 2);
-    // }
-    // else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-    // {
-    //     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    //     firstClick = true;
-    // }
+        Orientation = glm::rotate(Orientation, glm::radians(-roty), Up);
+        
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+    }
+    else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE)
+    {
+        firstClick = true;
+    }
 }
