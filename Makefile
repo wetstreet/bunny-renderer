@@ -18,10 +18,11 @@ opengl:
 	@g++ -c src/opengl/VBO.cpp -Iinclude
 	@g++ -c src/opengl/EBO.cpp -Iinclude
 	@g++ -c src/opengl/Shader.cpp -Iinclude
+	@g++ -c src/opengl/Mesh.cpp -Iinclude
 	@g++ -c src/opengl/main.cpp -Iinclude -o opengl.o
 	@g++ -o opengl.exe opengl.o glad.o stb_image.o \
 			imgui.o imgui_demo.o imgui_draw.o imgui_impl_glfw.o imgui_impl_opengl3.o imgui_tables.o imgui_widgets.o \
-			Camera.o Texture.o VAO.o VBO.o EBO.o Shader.o -Iinclude -Llib -lmingw32 -lglfw3 -lopengl32 -lgdi32 -luser32 -limm32
+			Camera.o Texture.o VAO.o VBO.o EBO.o Shader.o Mesh.o -Iinclude -Llib -lmingw32 -lglfw3 -lopengl32 -lgdi32 -luser32 -limm32
 	@del *.o
 
 rasterizer:

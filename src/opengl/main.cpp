@@ -1,17 +1,7 @@
 #include <iostream>
-#include <math.h>
-#include "glad/glad.h"
-#include "GLFW/glfw3.h"
-#include "stb/stb_image.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
 
+#include "Mesh.h"
 #include "Texture.h"
-#include "Shader.h"
-#include "VAO.h"
-#include "EBO.h"
-#include "Camera.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -20,23 +10,20 @@
 const unsigned int width = 800;
 const unsigned int height = 800;
 
-GLfloat vertices[] =
-{ //     COORDINATES     /        COLORS      /   TexCoord  //
-	-0.5f, 0.0f,  0.5f,     0.83f, 0.70f, 0.44f,	0.0f, 0.0f,
-	-0.5f, 0.0f, -0.5f,     0.83f, 0.70f, 0.44f,	5.0f, 0.0f,
-	 0.5f, 0.0f, -0.5f,     0.83f, 0.70f, 0.44f,	0.0f, 0.0f,
-	 0.5f, 0.0f,  0.5f,     0.83f, 0.70f, 0.44f,	5.0f, 0.0f,
-	 0.0f, 0.8f,  0.0f,     0.92f, 0.86f, 0.76f,	2.5f, 5.0f
+// Vertices coordinates
+Vertex vertices[] =
+{ //               COORDINATES           /            NORMALS          /           TexCoord         //
+	Vertex{glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
+	Vertex{glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
+	Vertex{glm::vec3( 1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
+	Vertex{glm::vec3( 1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)}
 };
 
+// Indices for vertices order
 GLuint indices[] =
 {
 	0, 1, 2,
-	0, 2, 3,
-	0, 1, 4,
-	1, 2, 4,
-	2, 3, 4,
-	3, 0, 4
+	0, 2, 3
 };
 
 int main() {
@@ -82,25 +69,16 @@ int main() {
 	
 	Shader shaderProgram("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
 
-	VAO vao;
-	vao.Bind();
+	std::vector<Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
+	std::vector<GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
 
-	VBO vbo(vertices, sizeof(vertices));
-	EBO ebo(indices, sizeof(indices));
-
-	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, 8 * sizeof(float), 0);
-	vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	vao.LinkAttrib(vbo, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	vao.Unbind();
-	vbo.Unbind();
-	ebo.Unbind();
+	Mesh floor(verts, ind);
 
 	Texture popCat("brick.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-	popCat.texUnit(shaderProgram, "tex0", 0);
 
 	glEnable(GL_DEPTH_TEST);
 
-	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
+	Camera camera(width, height, glm::vec3(0.0f, 1.0f, 2.0f));
 
 	GLuint framebuffer;
 	glGenFramebuffers(1, &framebuffer);
@@ -128,6 +106,8 @@ int main() {
 
 	ImVec2 viewport(800, 800);
 
+	bool showGameWindow = true;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
@@ -145,16 +125,10 @@ int main() {
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shaderProgram.Activate();
-
 		camera.Inputs(window);
 		camera.updateMatrix(45.0f, 0.1f, 100.0f, viewport.x, viewport.y);
 
-		camera.Matrix(shaderProgram, "camMatrix");
-
-		popCat.Bind();
-		vao.Bind();
-		glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(int), GL_UNSIGNED_INT, 0);
+		floor.Draw(shaderProgram, camera, popCat);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -205,8 +179,11 @@ int main() {
             ImGui::End();
         }
 
-		ImGui::Begin("GameWindow");
+    	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
+		if (showGameWindow)
 		{
+			ImGui::Begin("GameWindow", &showGameWindow);
+
 			// Using a Child allow to fill all the space of the window.
 			// It also alows customization
 			ImGui::BeginChild("GameRender");
@@ -217,8 +194,8 @@ int main() {
 			// Because I use the texture from OpenGL, I need to invert the V from the UV.
 			ImGui::Image((ImTextureID)(intptr_t)texColorBuffer, viewport, ImVec2(0, 1), ImVec2(1, 0));
 			ImGui::EndChild();
+			ImGui::End();
 		}
-		ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -238,9 +215,6 @@ int main() {
 		glfwPollEvents();
 	}
 
-	vao.Delete();
-	vbo.Delete();
-	ebo.Delete();
 	popCat.Delete();
 	shaderProgram.Delete();
 
