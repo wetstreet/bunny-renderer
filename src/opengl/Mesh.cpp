@@ -120,10 +120,16 @@ void Mesh::Draw(Shader &shader, Camera &camera, Texture &texture)
 
     vao.Bind();
 
-	texture.texUnit(shader, "tex0", 0);
+    texture.texUnit(shader, "tex0", 0);
     texture.Bind();
 
-    camera.Matrix(shader, "camMatrix");
+	glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
+	glm::mat4 rotationMatrix = glm::toMat4(glm::quat(rotation));
+	glm::mat4 scaleMatrix = glm::scale(scale);
+    glm::mat4 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+
+    // camera.Matrix(shader, "camMatrix");
+    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * modelMatrix));
 
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }

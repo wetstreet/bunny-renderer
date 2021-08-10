@@ -54,8 +54,13 @@ int main() {
 	Shader shaderProgram("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
 
 	Mesh mesh("obj/african_head/african_head.obj");
+	Mesh cube("obj/cube.obj");
+	cube.position.x = 1.0f;
+	cube.rotation.x = 90;
+	cube.scale.y = 2;
 
 	Texture popCat("obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+	Texture white_tex("obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -110,6 +115,7 @@ int main() {
 		camera.updateMatrix(45.0f, 0.1f, 100.0f, viewport.x, viewport.y);
 
 		mesh.Draw(shaderProgram, camera, popCat);
+		cube.Draw(shaderProgram, camera, white_tex);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
