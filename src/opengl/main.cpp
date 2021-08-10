@@ -10,22 +10,6 @@
 const unsigned int width = 800;
 const unsigned int height = 800;
 
-// Vertices coordinates
-Vertex vertices[] =
-{ //               COORDINATES           /            NORMALS          /           TexCoord         //
-	Vertex{glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
-	Vertex{glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
-	Vertex{glm::vec3( 1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
-	Vertex{glm::vec3( 1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)}
-};
-
-// Indices for vertices order
-GLuint indices[] =
-{
-	0, 1, 2,
-	0, 2, 3
-};
-
 int main() {
 	glfwInit();
 
@@ -69,12 +53,9 @@ int main() {
 	
 	Shader shaderProgram("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
 
-	std::vector<Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
-	std::vector<GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
+	Mesh mesh("obj/african_head/african_head.obj");
 
-	Mesh floor(verts, ind);
-
-	Texture popCat("brick.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+	Texture popCat("obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -128,7 +109,7 @@ int main() {
 		camera.Inputs(window);
 		camera.updateMatrix(45.0f, 0.1f, 100.0f, viewport.x, viewport.y);
 
-		floor.Draw(shaderProgram, camera, popCat);
+		mesh.Draw(shaderProgram, camera, popCat);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
