@@ -23,43 +23,34 @@ void Camera::Matrix(Shader& shader, const char* uniform)
     glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
-
 double lastMouseX;
 double lastMouseY;
 double firstClick = false;
-void Camera::Inputs(GLFWwindow* window)
+void Camera::Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm::vec2 windowPos)
 {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        Position += speed * Orientation;
+        Position += deltaTime * speed * Orientation;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
-        Position += speed * -glm::normalize(glm::cross(Orientation, Up));
+        Position += deltaTime * speed * -glm::normalize(glm::cross(Orientation, Up));
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        Position += speed * -Orientation;
+        Position += deltaTime * speed * -Orientation;
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
-        Position += speed * glm::normalize(glm::cross(Orientation, Up));
+        Position += deltaTime * speed * glm::normalize(glm::cross(Orientation, Up));
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
     {
-        Position += speed * Up;
+        Position += deltaTime * speed * Up;
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
     {
-        Position += speed * -Up;
-    }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-    {
-        speed = 0.4f;
-    }
-    else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
-    {
-        speed = 0.1f;
+        Position += deltaTime * speed * -Up;
     }
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
@@ -70,6 +61,14 @@ void Camera::Inputs(GLFWwindow* window)
 
         if (firstClick)
         {
+            int xpos, ypos;
+            glfwGetWindowPos(window, &xpos, &ypos);
+            int startX = windowPos.x - xpos;
+            int startY = windowPos.y - ypos;
+            int endX = windowPos.x - xpos + viewport.x;
+            int endY = windowPos.y - ypos + viewport.y;
+            if (mouseX > endX || mouseX < startX || mouseY > endY || mouseY < startY)
+                return;
             lastMouseX = mouseX;
             lastMouseY = mouseY;
             firstClick = false;

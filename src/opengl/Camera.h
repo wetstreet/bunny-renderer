@@ -24,14 +24,15 @@ class Camera
         int width;
         int height;
 
-        float speed = 0.1f;
+        // 6 m/s
+        float speed = 6.0f;
         float sensitivity = 100.0f;
 
         Camera(int width, int height, glm::vec3 position);
 
         void updateMatrix(float FOVdeg, float nearPlane, float farPlane, float width, float height);
         void Matrix(Shader& shader, const char* uniform);
-        void Inputs(GLFWwindow* window);
+        void Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm::vec2 windowPos);
 };
 
 #endif //__CAMERA_H__

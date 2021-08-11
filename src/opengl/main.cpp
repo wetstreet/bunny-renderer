@@ -10,6 +10,14 @@
 const unsigned int width = 800;
 const unsigned int height = 800;
 
+Camera *camera;
+
+void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	if (camera != NULL)
+		camera->Position += camera->Orientation * (float)yoffset;
+}
+
 int main() {
 	glfwInit();
 
@@ -26,6 +34,8 @@ int main() {
 	glfwMakeContextCurrent(window);
 
 	gladLoadGL();
+
+	glfwSetScrollCallback(window, ScrollCallback);
 
 	ImGui::CreateContext();
 
@@ -64,7 +74,7 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 
-	Camera camera(width, height, glm::vec3(0.0f, 1.0f, 2.0f));
+	camera = new Camera(width, height, glm::vec3(0.0f, 1.0f, 2.0f));
 
 	GLuint framebuffer;
 	glGenFramebuffers(1, &framebuffer);
@@ -91,11 +101,16 @@ int main() {
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
 	ImVec2 viewport(800, 800);
+	ImVec2 windowPos;
 
-	bool showGameWindow = true;
+	double lastTime = glfwGetTime();
 
 	while (!glfwWindowShouldClose(window))
 	{
+    	double nowTime = glfwGetTime();
+		double deltaTime = nowTime - lastTime;
+		lastTime = nowTime;
+
 		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -111,11 +126,11 @@ int main() {
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		camera.Inputs(window);
-		camera.updateMatrix(45.0f, 0.1f, 100.0f, viewport.x, viewport.y);
+		camera->Inputs(window, deltaTime, glm::vec2(viewport.x, viewport.y), glm::vec2(windowPos.x, windowPos.y));
+		camera->updateMatrix(45.0f, 0.1f, 100.0f, viewport.x, viewport.y);
 
-		mesh.Draw(shaderProgram, camera, popCat);
-		cube.Draw(shaderProgram, camera, white_tex);
+		mesh.Draw(shaderProgram, *camera, popCat);
+		cube.Draw(shaderProgram, *camera, white_tex);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -126,10 +141,6 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 		
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
         {
             ImGui::Begin("Inspector");
 			
@@ -141,20 +152,9 @@ int main() {
             ImGui::End();
         }
 
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
-
     	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
-		if (showGameWindow)
 		{
-			ImGui::Begin("GameWindow", &showGameWindow);
+			ImGui::Begin("GameWindow");
 
 			// Using a Child allow to fill all the space of the window.
 			// It also alows customization
@@ -162,6 +162,7 @@ int main() {
 			
 			// Get the size of the child (i.e. the whole draw size of the windows).
 			viewport = ImGui::GetWindowSize();
+			windowPos = ImGui::GetWindowPos();
 
 			// Because I use the texture from OpenGL, I need to invert the V from the UV.
 			ImGui::Image((ImTextureID)(intptr_t)texColorBuffer, viewport, ImVec2(0, 1), ImVec2(1, 0));
@@ -193,6 +194,8 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+	delete camera;
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
