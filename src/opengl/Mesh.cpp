@@ -114,6 +114,39 @@ Mesh::Mesh(const char *filename)
     new (this)Mesh(vertices, indices);
 }
 
+static const float ZPI = 3.14159265358979323846f;
+static const float RAD2DEG = (180.f / ZPI);
+static const float DEG2RAD = (ZPI / 180.f);
+
+static const glm::vec3 directionUnary[3] = { glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) };
+
+void Mesh::UpdateMatrix()
+{
+	objectToWorld = glm::mat4(1);
+
+	for (int i = 0; i < 3; i++)
+	{
+		objectToWorld = glm::rotate(objectToWorld, rotation[i] * DEG2RAD, directionUnary[i]);
+	}
+
+	float validScale[3];
+	for (int i = 0; i < 3; i++)
+	{
+		if (fabsf(scale[i]) < FLT_EPSILON)
+		{
+		    validScale[i] = 0.001f;
+		}
+		else
+		{
+		    validScale[i] = scale[i];
+		}
+	}
+	objectToWorld[0] *= validScale[0];
+	objectToWorld[1] *= validScale[1];
+	objectToWorld[2] *= validScale[2];
+	objectToWorld[3] = glm::vec4(position[0], position[1], position[2], 1.f);
+}
+
 void Mesh::Draw(Shader &shader, Camera &camera, Texture &texture)
 {
     shader.Activate();
@@ -123,13 +156,9 @@ void Mesh::Draw(Shader &shader, Camera &camera, Texture &texture)
     texture.texUnit(shader, "tex0", 0);
     texture.Bind();
 
-	glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
-	glm::mat4 rotationMatrix = glm::toMat4(glm::quat(rotation));
-	glm::mat4 scaleMatrix = glm::scale(scale);
-    glm::mat4 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+    UpdateMatrix();
 
-    // camera.Matrix(shader, "camMatrix");
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * modelMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * objectToWorld));
 
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }

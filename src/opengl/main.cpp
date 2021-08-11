@@ -56,7 +56,7 @@ int main() {
 	Mesh mesh("obj/african_head/african_head.obj");
 	Mesh cube("obj/cube.obj");
 	cube.position.x = 1.0f;
-	cube.rotation.x = 90;
+	cube.rotation.y = 45;
 	cube.scale.y = 2;
 
 	Texture popCat("obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
@@ -130,27 +130,12 @@ int main() {
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-			{
-                counter++;
-				ImGui::SetNextWindowSize(ImVec2(800, 800));
-			}
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
+            ImGui::Begin("Inspector");
+			
+			ImGui::InputFloat3("Tr", (float*)&cube.position);
+			ImGui::InputFloat3("Rt", (float*)&cube.rotation);
+			ImGui::InputFloat3("Sc", (float*)&cube.scale);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
