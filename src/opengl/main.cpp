@@ -127,7 +127,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		camera->Inputs(window, deltaTime, glm::vec2(viewport.x, viewport.y), glm::vec2(windowPos.x, windowPos.y));
-		camera->updateMatrix(45.0f, 0.1f, 100.0f, viewport.x, viewport.y);
+		camera->updateMatrix(45.0f, 0.1f, 1000.0f, viewport.x, viewport.y);
 
 		mesh.Draw(shaderProgram, *camera, popCat);
 		cube.Draw(shaderProgram, *camera, white_tex);

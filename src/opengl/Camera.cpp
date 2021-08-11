@@ -26,6 +26,9 @@ void Camera::Matrix(Shader& shader, const char* uniform)
 double lastMouseX;
 double lastMouseY;
 double firstClick = false;
+bool firstClickInScene = false;
+double middleFirstClick = false;
+bool middleFirstClickInScene = false;
 void Camera::Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm::vec2 windowPos)
 {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -53,6 +56,47 @@ void Camera::Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm
         Position += deltaTime * speed * -Up;
     }
 
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
+    {
+        double mouseX;
+        double mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+        
+        if (middleFirstClick)
+        {
+            middleFirstClick = false;
+
+            int xpos, ypos;
+            glfwGetWindowPos(window, &xpos, &ypos);
+            int startX = windowPos.x - xpos;
+            int startY = windowPos.y - ypos;
+            int endX = windowPos.x - xpos + viewport.x;
+            int endY = windowPos.y - ypos + viewport.y;
+            if (mouseX <= endX && mouseX >= startX && mouseY <= endY && mouseY >= startY)
+            {
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+                middleFirstClickInScene = true;
+            }
+        }
+        else if (middleFirstClickInScene)
+        {
+            float offsetX = mouseX - lastMouseX;
+            Position -= offsetX * 0.01f * glm::normalize(glm::cross(Orientation, Up));
+            
+            float offsetY = mouseY - lastMouseY;
+            Position += offsetY * 0.01f * Up;
+
+            lastMouseX = mouseX;
+            lastMouseY = mouseY;
+        }
+    }
+    else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_RELEASE)
+    {
+        middleFirstClick = true;
+        middleFirstClickInScene = false;
+    }
+
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
     {
         double mouseX;
@@ -61,36 +105,42 @@ void Camera::Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm
 
         if (firstClick)
         {
+            firstClick = false;
+
             int xpos, ypos;
             glfwGetWindowPos(window, &xpos, &ypos);
             int startX = windowPos.x - xpos;
             int startY = windowPos.y - ypos;
             int endX = windowPos.x - xpos + viewport.x;
             int endY = windowPos.y - ypos + viewport.y;
-            if (mouseX > endX || mouseX < startX || mouseY > endY || mouseY < startY)
-                return;
+            if (mouseX <= endX && mouseX >= startX && mouseY <= endY && mouseY >= startY)
+            {
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+                firstClickInScene = true;
+            }
+        }
+        else if (firstClickInScene)
+        {
+            float rotx = sensitivity * (float)(mouseY - lastMouseY) / height;
+            float roty = sensitivity * (float)(mouseX - lastMouseX) / height;
+
+            glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotx), glm::normalize(glm::cross(Orientation, Up)));
+
+            if (!((glm::angle(newOrientation, Up) <= glm::radians(5.0f)) || (glm::angle(newOrientation, -Up) <= glm::radians(5.0f))))
+            {
+                Orientation = newOrientation;
+            }
+
+            Orientation = glm::rotate(Orientation, glm::radians(-roty), Up);
+            
             lastMouseX = mouseX;
             lastMouseY = mouseY;
-            firstClick = false;
         }
-
-        float rotx = sensitivity * (float)(mouseY - lastMouseY) / height;
-        float roty = sensitivity * (float)(mouseX - lastMouseX) / height;
-
-        glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotx), glm::normalize(glm::cross(Orientation, Up)));
-
-        if (!((glm::angle(newOrientation, Up) <= glm::radians(5.0f)) || (glm::angle(newOrientation, -Up) <= glm::radians(5.0f))))
-        {
-            Orientation = newOrientation;
-        }
-
-        Orientation = glm::rotate(Orientation, glm::radians(-roty), Up);
-        
-        lastMouseX = mouseX;
-        lastMouseY = mouseY;
     }
     else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE)
     {
         firstClick = true;
+        firstClickInScene = false;
     }
 }
