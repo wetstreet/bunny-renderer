@@ -1,16 +1,18 @@
 #include <iostream>
 
-#include "Mesh.h"
+#include "Scene.h"
 #include "Texture.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
-const unsigned int width = 800;
+const unsigned int width = 1200;
 const unsigned int height = 800;
 
 Camera *camera;
+		
+int node_clicked = -1;
 
 int main() {
 	glfwInit();
@@ -50,26 +52,37 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 330");
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-	
-	Shader shaderProgram("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
 
-	Mesh mesh("obj/african_head/african_head.obj");
-	Mesh cube("obj/cube.obj");
-	cube.position.x = 1.0f;
-	cube.rotation.y = 45;
-	cube.scale.y = 2;
-
-	Texture popCat("obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
-	Texture white_tex("obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
-
-	glEnable(GL_DEPTH_TEST);
-
-	camera = new Camera(width, height, glm::vec3(0.0f, 1.0f, 2.0f));
+	camera = new Camera(width, height, glm::vec3(0.0f, 0.0f, 5.0f));
 
 	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset)
 	{
 		camera->ScrollCallback(window, xoffset, yoffset);
 	});
+	
+	Shader shaderProgram("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
+
+	Scene scene(camera);
+
+	Texture head_diffuse("obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+	Texture white_tex("obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+
+	Mesh head("obj/african_head/african_head.obj");
+	head.texture = &head_diffuse;
+	head.shader = &shaderProgram;
+	head.name = "head";
+	Mesh cube("obj/cube.obj");
+	cube.texture = &white_tex;
+	cube.shader = &shaderProgram;
+	cube.name = "cube";
+	cube.position.x = 1.0f;
+	cube.rotation.y = 45;
+	cube.scale.y = 2;
+
+	scene.AddMesh(head);
+	scene.AddMesh(cube);
+
+	glEnable(GL_DEPTH_TEST);
 
 	GLuint framebuffer;
 	glGenFramebuffers(1, &framebuffer);
@@ -126,8 +139,7 @@ int main() {
 		camera->SceneInputs(window, deltaTime);
 		camera->updateMatrix(45.0f, 0.1f, 1000.0f, viewport.x, viewport.y);
 
-		mesh.Draw(shaderProgram, *camera, popCat);
-		cube.Draw(shaderProgram, *camera, white_tex);
+		scene.Draw();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -140,10 +152,14 @@ int main() {
 		
         {
             ImGui::Begin("Inspector");
-			
-			ImGui::InputFloat3("Tr", (float*)&cube.position);
-			ImGui::InputFloat3("Rt", (float*)&cube.rotation);
-			ImGui::InputFloat3("Sc", (float*)&cube.scale);
+
+			if (node_clicked != -1)
+			{
+				Mesh *mesh = scene.meshes[node_clicked];
+				ImGui::InputFloat3("Tr", (float*)&mesh->position);
+				ImGui::InputFloat3("Rt", (float*)&mesh->rotation);
+				ImGui::InputFloat3("Sc", (float*)&mesh->scale);
+			}
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
@@ -158,6 +174,44 @@ int main() {
 			ImGui::InputFloat("Pan Speed", (float*)&camera->scenePanSpeed);
 			ImGui::InputFloat("Scroll Speed", (float*)&camera->sceneScrollSpeed);
 			
+			ImGui::End();
+		}
+
+		{
+			ImGui::Begin("Hierarchy");
+
+            static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+			static int selection_mask = (1 << 2);
+			for (int i = 0; i < scene.meshes.size(); i++)
+			{
+				ImGuiTreeNodeFlags node_flags = base_flags;
+                const bool is_selected = (selection_mask & (1 << i)) != 0;
+                if (is_selected)
+                    node_flags |= ImGuiTreeNodeFlags_Selected;
+				// bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, "Selectable Node %d", i);
+				// if (ImGui::IsItemClicked())
+				// 	node_clicked = i;
+				// if (node_open)
+				// {
+				// 	ImGui::TreePop();
+				// }
+				
+				node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
+				ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, scene.meshes[i]->name.c_str());
+				if (ImGui::IsItemClicked())
+					node_clicked = i;
+			}
+			if (node_clicked != -1)
+			{
+				// Update selection state
+				// (process outside of tree loop to avoid visual inconsistencies during the clicking frame)
+				if (ImGui::GetIO().KeyCtrl)
+					selection_mask ^= (1 << node_clicked);          // CTRL+click to toggle
+				else //if (!(selection_mask & (1 << node_clicked))) // Depending on selection behavior you want, may want to preserve selection when clicking on item that is part of the selection
+					selection_mask = (1 << node_clicked);           // Click to single-select
+			}
+
 			ImGui::End();
 		}
 
@@ -197,7 +251,8 @@ int main() {
 		glfwPollEvents();
 	}
 
-	popCat.Delete();
+	head_diffuse.Delete();
+	white_tex.Delete();
 	shaderProgram.Delete();
 
     ImGui_ImplOpenGL3_Shutdown();

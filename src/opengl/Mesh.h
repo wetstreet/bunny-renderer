@@ -15,6 +15,7 @@ class Mesh
         std::vector<Vertex> vertices;
         std::vector<GLuint> indices;
         
+        std::string name;
         VAO vao;
 
         glm::vec3 position = glm::vec3(0);
@@ -22,11 +23,14 @@ class Mesh
         glm::vec3 scale = glm::vec3(1);
         glm::mat4 objectToWorld = glm::mat4(1);
 
+        Texture *texture;
+        Shader *shader;
+
         Mesh(const char *filename);
         Mesh(std::vector<Vertex> &vertices, std::vector<GLuint> &indices);
 
         void UpdateMatrix();
-        void Draw(Shader &shader, Camera &camera, Texture &texture);
+        void Draw(Camera &camera);
 };
 
 #endif
