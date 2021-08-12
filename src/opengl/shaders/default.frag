@@ -4,9 +4,11 @@ out vec4 FragColor;
 in vec3 normal;
 in vec2 texCoord;
 
+uniform vec3 lightDir;
 uniform sampler2D tex0;
 
 void main()
 {
-	FragColor = texture(tex0, texCoord);
+	float diff = max(dot(normal, lightDir), 0);
+	FragColor = texture(tex0, texCoord) * diff;
 }

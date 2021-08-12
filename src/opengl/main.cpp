@@ -12,12 +12,6 @@ const unsigned int height = 800;
 
 Camera *camera;
 
-void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-{
-	if (camera != NULL)
-		camera->Position += camera->Orientation * (float)yoffset;
-}
-
 int main() {
 	glfwInit();
 
@@ -34,8 +28,6 @@ int main() {
 	glfwMakeContextCurrent(window);
 
 	gladLoadGL();
-
-	glfwSetScrollCallback(window, ScrollCallback);
 
 	ImGui::CreateContext();
 
@@ -57,8 +49,6 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    bool show_demo_window = false;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	
 	Shader shaderProgram("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
@@ -75,6 +65,11 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 
 	camera = new Camera(width, height, glm::vec3(0.0f, 1.0f, 2.0f));
+
+	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset)
+	{
+		camera->ScrollCallback(window, xoffset, yoffset);
+	});
 
 	GLuint framebuffer;
 	glGenFramebuffers(1, &framebuffer);
@@ -126,7 +121,9 @@ int main() {
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		camera->Inputs(window, deltaTime, glm::vec2(viewport.x, viewport.y), glm::vec2(windowPos.x, windowPos.y));
+		camera->windowPos = glm::vec2(windowPos.x, windowPos.y);
+		camera->viewport = glm::vec2(viewport.x, viewport.y);
+		camera->SceneInputs(window, deltaTime);
 		camera->updateMatrix(45.0f, 0.1f, 1000.0f, viewport.x, viewport.y);
 
 		mesh.Draw(shaderProgram, *camera, popCat);
@@ -152,9 +149,21 @@ int main() {
             ImGui::End();
         }
 
+		{
+			ImGui::Begin("Scene Camera");
+
+			ImGui::InputFloat3("Position", (float*)&camera->Position);
+			ImGui::InputFloat("Move Speed", (float*)&camera->speed);
+			ImGui::InputFloat("Sensitivity", (float*)&camera->sensitivity);
+			ImGui::InputFloat("Pan Speed", (float*)&camera->scenePanSpeed);
+			ImGui::InputFloat("Scroll Speed", (float*)&camera->sceneScrollSpeed);
+			
+			ImGui::End();
+		}
+
     	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
 		{
-			ImGui::Begin("GameWindow");
+			ImGui::Begin("Scene");
 
 			// Using a Child allow to fill all the space of the window.
 			// It also alows customization

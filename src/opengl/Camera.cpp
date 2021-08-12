@@ -23,56 +23,52 @@ void Camera::Matrix(Shader& shader, const char* uniform)
     glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
+bool Camera::MouseInScene(GLFWwindow* window, double mouseX, double mouseY)
+{
+    int xpos, ypos;
+    glfwGetWindowPos(window, &xpos, &ypos);
+    int startX = windowPos.x - xpos;
+    int startY = windowPos.y - ypos;
+    int endX = windowPos.x - xpos + viewport.x;
+    int endY = windowPos.y - ypos + viewport.y;
+    
+    if (mouseX <= endX && mouseX >= startX && mouseY <= endY && mouseY >= startY)
+        return true;
+    else
+        return false;
+}
+
+void Camera::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    double mouseX;
+    double mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+    bool mouseInScene = MouseInScene(window, mouseX, mouseY);
+    if (mouseInScene)
+    {
+        Position += Orientation * sceneScrollSpeed * (float)yoffset;
+    }
+}
+
 double lastMouseX;
 double lastMouseY;
 double firstClick = false;
 bool firstClickInScene = false;
 double middleFirstClick = false;
 bool middleFirstClickInScene = false;
-void Camera::Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm::vec2 windowPos)
+void Camera::SceneInputs(GLFWwindow* window, float deltaTime)
 {
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    {
-        Position += deltaTime * speed * Orientation;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    {
-        Position += deltaTime * speed * -glm::normalize(glm::cross(Orientation, Up));
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    {
-        Position += deltaTime * speed * -Orientation;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    {
-        Position += deltaTime * speed * glm::normalize(glm::cross(Orientation, Up));
-    }
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-    {
-        Position += deltaTime * speed * Up;
-    }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-    {
-        Position += deltaTime * speed * -Up;
-    }
+    double mouseX;
+    double mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+    bool mouseInScene = MouseInScene(window, mouseX, mouseY);
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
     {
-        double mouseX;
-        double mouseY;
-        glfwGetCursorPos(window, &mouseX, &mouseY);
-        
         if (middleFirstClick)
         {
             middleFirstClick = false;
-
-            int xpos, ypos;
-            glfwGetWindowPos(window, &xpos, &ypos);
-            int startX = windowPos.x - xpos;
-            int startY = windowPos.y - ypos;
-            int endX = windowPos.x - xpos + viewport.x;
-            int endY = windowPos.y - ypos + viewport.y;
-            if (mouseX <= endX && mouseX >= startX && mouseY <= endY && mouseY >= startY)
+            if (mouseInScene)
             {
                 lastMouseX = mouseX;
                 lastMouseY = mouseY;
@@ -82,10 +78,10 @@ void Camera::Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm
         else if (middleFirstClickInScene)
         {
             float offsetX = mouseX - lastMouseX;
-            Position -= offsetX * 0.01f * glm::normalize(glm::cross(Orientation, Up));
+            Position -= offsetX * scenePanSpeed * glm::normalize(glm::cross(Orientation, Up));
             
             float offsetY = mouseY - lastMouseY;
-            Position += offsetY * 0.01f * Up;
+            Position += offsetY * scenePanSpeed * Up;
 
             lastMouseX = mouseX;
             lastMouseY = mouseY;
@@ -99,21 +95,10 @@ void Camera::Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
     {
-        double mouseX;
-        double mouseY;
-        glfwGetCursorPos(window, &mouseX, &mouseY);
-
         if (firstClick)
         {
             firstClick = false;
-
-            int xpos, ypos;
-            glfwGetWindowPos(window, &xpos, &ypos);
-            int startX = windowPos.x - xpos;
-            int startY = windowPos.y - ypos;
-            int endX = windowPos.x - xpos + viewport.x;
-            int endY = windowPos.y - ypos + viewport.y;
-            if (mouseX <= endX && mouseX >= startX && mouseY <= endY && mouseY >= startY)
+            if (mouseInScene)
             {
                 lastMouseX = mouseX;
                 lastMouseY = mouseY;
@@ -122,6 +107,22 @@ void Camera::Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm
         }
         else if (firstClickInScene)
         {
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            {
+                Position += deltaTime * speed * Orientation;
+            }
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            {
+                Position += deltaTime * speed * -glm::normalize(glm::cross(Orientation, Up));
+            }
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            {
+                Position += deltaTime * speed * -Orientation;
+            }
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            {
+                Position += deltaTime * speed * glm::normalize(glm::cross(Orientation, Up));
+            }
             float rotx = sensitivity * (float)(mouseY - lastMouseY) / height;
             float roty = sensitivity * (float)(mouseX - lastMouseX) / height;
 

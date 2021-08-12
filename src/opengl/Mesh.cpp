@@ -159,6 +159,8 @@ void Mesh::Draw(Shader &shader, Camera &camera, Texture &texture)
     UpdateMatrix();
 
     glUniformMatrix4fv(glGetUniformLocation(shader.ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * objectToWorld));
+    glm::vec3 lightDir = -camera.Orientation;
+    glUniform3fv(glGetUniformLocation(shader.ID, "lightDir"), 1, (float*)&lightDir);
 
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }

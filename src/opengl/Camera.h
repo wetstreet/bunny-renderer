@@ -19,20 +19,28 @@ class Camera
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
         glm::mat4 cameraMatrix = glm::mat4(1.0f);
 
+        glm::vec2 windowPos;
+        glm::vec2 viewport;
+
         bool firstClick = true;
 
         int width;
         int height;
 
-        // 6 m/s
         float speed = 6.0f;
         float sensitivity = 100.0f;
+        float sceneScrollSpeed = 0.3f;
+        float scenePanSpeed = 0.01f;
 
         Camera(int width, int height, glm::vec3 position);
 
         void updateMatrix(float FOVdeg, float nearPlane, float farPlane, float width, float height);
         void Matrix(Shader& shader, const char* uniform);
-        void Inputs(GLFWwindow* window, float deltaTime, glm::vec2 viewport, glm::vec2 windowPos);
+
+        // input handling
+        void SceneInputs(GLFWwindow* window, float deltaTime);
+        bool MouseInScene(GLFWwindow* window, double mouseX, double mouseY);
+        void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 };
 
 #endif //__CAMERA_H__
