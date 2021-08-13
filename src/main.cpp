@@ -1,7 +1,8 @@
 #include <iostream>
 
-#include "Scene.h"
-#include "Texture.h"
+#include "opengl/Scene.h"
+#include "opengl/Texture.h"
+#include "rasterizer/rasterizer.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -162,6 +163,12 @@ int main() {
 			}
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+			if (ImGui::Button("rasterizer render"))
+			{
+				Rasterizer ras;
+				ras.Render();
+			}
             ImGui::End();
         }
 

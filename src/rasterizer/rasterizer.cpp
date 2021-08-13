@@ -1,18 +1,9 @@
-#include <vector>
-#include <iostream>
-
-#include "tgaimage.h"
-#include "model.h"
-#include "geometry.h"
-#include "our_gl.h"
-
-const int width = 800;
-const int height = 800;
+#include "rasterizer.h"
 
 Model *model = NULL;
-Vec3f lightDir(1, 1, 1);
-Vec3f eye(1,1,3);
-Vec3f center(0,0,0);
+Vec3f lightDir(1.0f, 1.0f, 1.0f);
+Vec3f eye(1.0f, 1.0f, 3.0f);
+Vec3f center(0.0f, 0.0f, 0.0f);
 
 struct GouraudShader : public IShader
 {
@@ -65,18 +56,9 @@ struct GouraudShader : public IShader
     }
 };
 
-int main(int argc, char** argv)
+void Rasterizer::Render()
 {
-    if (argc == 2)
-    {
-        model = new Model(argv[1]);
-    }
-    else
-    {
-        model = new Model("obj/african_head/african_head.obj");
-        // model = new Model("obj/cube.obj");
-        // model = new Model("obj/icosphere.obj");
-    }
+    model = new Model("obj/african_head/african_head.obj");
 
     TGAImage image(width, height, TGAImage::RGB);
     TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
@@ -109,5 +91,4 @@ int main(int argc, char** argv)
     zbuffer.write_tga_file("zbuffer.tga");
 
     delete model;
-    return 0;
 }
