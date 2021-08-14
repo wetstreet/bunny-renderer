@@ -56,6 +56,20 @@ struct GouraudShader : public IShader
     }
 };
 
+void Rasterizer::flip_vertically(uint8_t* pixels) {
+    unsigned long bytes_per_line = width * 3;
+    unsigned char *line = new unsigned char[bytes_per_line];
+    int half = height>>1;
+    for (int j=0; j<half; j++) {
+        unsigned long l1 = j*bytes_per_line;
+        unsigned long l2 = (height-1-j)*bytes_per_line;
+        memmove((void *)line,      (void *)(pixels+l1), bytes_per_line);
+        memmove((void *)(pixels+l1), (void *)(pixels+l2), bytes_per_line);
+        memmove((void *)(pixels+l2), (void *)line,      bytes_per_line);
+    }
+    delete [] line;
+}
+
 void Rasterizer::Render(uint8_t* pixels)
 {
     model = new Model("obj/african_head/african_head.obj");
@@ -82,13 +96,14 @@ void Rasterizer::Render(uint8_t* pixels)
         triangle(screen_coords, shader, image, zbuffer);
     }
     
+    flip_vertically(image.pixels);
 
     std::cout << "finish";
 
-    image.flip_vertically();
-    zbuffer.flip_vertically();
-    image.write_tga_file("output.tga");
-    zbuffer.write_tga_file("zbuffer.tga");
+    // image.flip_vertically();
+    // zbuffer.flip_vertically();
+    // image.write_tga_file("output.tga");
+    // zbuffer.write_tga_file("zbuffer.tga");
 
     delete model;
 }

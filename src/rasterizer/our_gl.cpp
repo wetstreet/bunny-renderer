@@ -95,13 +95,12 @@ void triangle(Vec4f *pts, IShader &shader, TGAImage &image, TGAImage &zbuffer)
                 if (image.pixels && P.x >= 0 && P.y >= 0 && P.x < image.width && P.y < image.height)
                 {
                     int index = (P.y * image.width + P.x) * 3;
-                    // std::cout << "index=" << index << ",x=" << P.x << ",y=" << P.y << ",color=" << color.bgra[0] << "," << color.bgra[1] << "," << color.bgra[2] << std::endl;
-                    image.pixels[index] = frag_depth;
-                    image.pixels[index + 1] = frag_depth;
-                    image.pixels[index + 2] = frag_depth;
+                    image.pixels[index] = color.bgra[2];
+                    image.pixels[index + 1] = color.bgra[1];
+                    image.pixels[index + 2] = color.bgra[0];
                 }
-
-                image.set(P.x, P.y, color);
+ 
+                // image.set(P.x, P.y, color);
                 zbuffer.set(P.x, P.y, TGAColor(frag_depth));
             }
         }
