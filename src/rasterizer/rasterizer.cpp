@@ -56,16 +56,16 @@ struct GouraudShader : public IShader
     }
 };
 
-void Rasterizer::Render()
+void Rasterizer::Render(uint8_t* pixels)
 {
     model = new Model("obj/african_head/african_head.obj");
 
     TGAImage image(width, height, TGAImage::RGB);
+    image.pixels = pixels;
     TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
 
     TGAImage diffuse = TGAImage();
     diffuse.read_tga_file("obj/african_head/african_head_diffuse.tga");
-
 
     lookat(eye, center, Vec3f(0, 1, 0));
     projection(-1.0f / (eye - center).norm());

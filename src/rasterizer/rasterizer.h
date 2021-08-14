@@ -12,7 +12,7 @@
 class Rasterizer
 {
     public:
-        void Render();
+        void Render(uint8_t* pixels);
         
         const int width = 800;
         const int height = 800;

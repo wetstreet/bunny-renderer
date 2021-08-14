@@ -114,6 +114,12 @@ int main() {
 
 	double lastTime = glfwGetTime();
 
+	bool showImage = false;
+	GLuint image_texture;
+
+	int image_width = 800;
+	int image_height = 800;
+
 	while (!glfwWindowShouldClose(window))
 	{
     	double nowTime = glfwGetTime();
@@ -166,11 +172,39 @@ int main() {
 
 			if (ImGui::Button("rasterizer render"))
 			{
+				uint8_t* pixels = new uint8_t[image_width * image_height * 3];
 				Rasterizer ras;
-				ras.Render();
+				ras.Render(pixels);
+
+				// Create a OpenGL texture identifier
+				glGenTextures(1, &image_texture);
+				glBindTexture(GL_TEXTURE_2D, image_texture);
+
+				// Setup filtering parameters for display
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+
+				// Upload pixels into texture
+			#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
+				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+			#endif
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_width, image_height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+				showImage = true;
+				delete pixels;
 			}
+			
             ImGui::End();
         }
+
+		if (showImage)
+		{
+			ImGui::Begin("Render Result", &showImage);
+			ImGui::Image((void*)(intptr_t)image_texture, ImVec2(image_width, image_height));
+			ImGui::End();
+		}
 
 		{
 			ImGui::Begin("Scene Camera");
