@@ -116,9 +116,10 @@ int main() {
 
 	bool showImage = false;
 	GLuint image_texture;
-
-	int image_width = 800;
-	int image_height = 800;
+	
+	Rasterizer ras;
+	ImVec2 window_size;
+	ImVec2 content_size(ras.size.x, ras.size.y);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -170,11 +171,17 @@ int main() {
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+			ImGui::InputInt2("Size", (int*)&ras.size);
 			if (ImGui::Button("rasterizer render"))
 			{
-				uint8_t* pixels = new uint8_t[image_width * image_height * 3];
-				Rasterizer ras;
-				ras.Render(pixels, camera);
+				window_size = ImVec2(ras.size.x + 20, ras.size.y + 35);
+				content_size = ImVec2(ras.size.x, ras.size.y);
+
+				uint8_t* pixels = new uint8_t[ras.size.x * ras.size.y * 3];
+				ras.camera = camera;
+				ras.width = ras.size.x;
+				ras.height = ras.size.y;
+				ras.Render(pixels);
 
 				// Create a OpenGL texture identifier
 				glGenTextures(1, &image_texture);
@@ -190,7 +197,7 @@ int main() {
 			#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
 				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 			#endif
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_width, image_height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ras.size.x, ras.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 				showImage = true;
 				delete pixels;
@@ -201,8 +208,9 @@ int main() {
 
 		if (showImage)
 		{
+			ImGui::SetNextWindowSize(window_size);
 			ImGui::Begin("Render Result", &showImage);
-			ImGui::Image((void*)(intptr_t)image_texture, ImVec2(image_width, image_height));
+			ImGui::Image((void*)(intptr_t)image_texture, content_size);
 			ImGui::End();
 		}
 

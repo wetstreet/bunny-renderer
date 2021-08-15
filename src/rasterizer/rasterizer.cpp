@@ -2,8 +2,6 @@
 
 Model *model = NULL;
 Vec3f lightDir(1.0f, 1.0f, 1.0f);
-Vec3f eye(1.0f, 1.0f, 3.0f);
-Vec3f center(0.0f, 0.0f, 0.0f);
 
 struct GouraudShader : public IShader
 {
@@ -70,33 +68,47 @@ void Rasterizer::flip_vertically(uint8_t* pixels) {
     delete [] line;
 }
 
-void Rasterizer::Render(uint8_t* pixels, Camera *camera)
+void Rasterizer::Render(uint8_t* pixels)
 {
     model = new Model("obj/african_head/african_head.obj");
 
-    TGAImage image(width, height, TGAImage::RGB);
-    image.pixels = pixels;
-    TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
+    int *zbuffer = new int[width*height];
 
     TGAImage diffuse = TGAImage();
     diffuse.read_tga_file("obj/african_head/african_head_diffuse.tga");
 
     lookat(camera->Position, camera->Position + camera->Orientation, camera->Up);
-    projection(-1.0f / (eye - center).norm());
+    // projection(-1.0f / (eye - center).norm());
+    projection(-1.0f / glm::length(-camera->Orientation));
     viewport(0, 0, width, height);
+
+    for (int i = 0; i < width; i++)
+    {
+        for (int j = 0; j < height; j++)
+        {
+            int index = i + j * width;
+            pixels[index * 3] = 0;
+            pixels[index * 3 + 1] = 0;
+            pixels[index * 3 + 2] = 0;
+        }
+    }
     
     GouraudShader shader;
     for (int i = 0; i < model->nfaces(); i++)
     {
+        float progress = (float)i / model->nfaces(); 
+        std::cout << "progress -- " << progress * 100 << "\r";
         Vec4f screen_coords[3];
         for (int j = 0; j < 3; j++)
         {
             screen_coords[j] = shader.vertex(i, j);
         }
-        triangle(screen_coords, shader, image, zbuffer);
+        triangle(screen_coords, shader, pixels, zbuffer, width, height);
     }
+
+    std::cout << std::endl;
     
-    flip_vertically(image.pixels);
+    flip_vertically(pixels);
 
     delete model;
 }

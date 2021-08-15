@@ -13,12 +13,15 @@
 class Rasterizer
 {
     public:
-        void Render(uint8_t* pixels, Camera *camera);
+        void Render(uint8_t* pixels);
         
         void flip_vertically(uint8_t* pixels);
         
-        const int width = 800;
-        const int height = 800;
+        glm::ivec2 size = glm::ivec2(800, 800);
+        int width;
+        int height;
+
+        Camera *camera = NULL;
 };
 
 #endif //__RASTERIZER_H__

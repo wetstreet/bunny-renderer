@@ -64,7 +64,7 @@ Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P)
     return Vec3f(1.0f - (u.x + u.y)/u.z, u.x/u.z, u.y/u.z);
 }
 
-void triangle(Vec4f *pts, IShader &shader, TGAImage &image, TGAImage &zbuffer)
+void triangle(Vec4f *pts, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height)
 {
     Vec2f bboxmin = Vec2f(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     Vec2f bboxmax = Vec2f(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -82,26 +82,23 @@ void triangle(Vec4f *pts, IShader &shader, TGAImage &image, TGAImage &zbuffer)
     {
         for (P.y = bboxmin.y; P.y < bboxmax.y; P.y++)
         {
+            if (P.x < 0 || P.y < 0 || P.x >= width || P.y >= height) continue;
+            
             Vec3f c = barycentric(proj<2>(pts[0]/pts[0][3]), proj<2>(pts[1]/pts[1][3]), proj<2>(pts[2]/pts[2][3]), P);
             float z = pts[0][2] * c.x + pts[1][2] * c.y+ pts[2][2] * c.z;
             float w = pts[0][3] * c.x + pts[1][3] * c.y+ pts[2][3] * c.z;
             float frag_depth = std::max(0, std::min(255, int(z/w + 0.5)));
-            if (c.x < 0 || c.y < 0 || c.z < 0 || zbuffer.get(P.x, P.y)[0] > frag_depth)
-                continue;
+            int index = P.x + P.y * width;
+
+            if (c.x < 0 || c.y < 0 || c.z < 0 || zbuffer[index] > frag_depth) continue;
 
             bool discard = shader.fragment(c, color);
             if (!discard)
             {
-                if (image.pixels && P.x >= 0 && P.y >= 0 && P.x < image.width && P.y < image.height)
-                {
-                    int index = (P.y * image.width + P.x) * 3;
-                    image.pixels[index] = color.bgra[2];
-                    image.pixels[index + 1] = color.bgra[1];
-                    image.pixels[index + 2] = color.bgra[0];
-                }
- 
-                // image.set(P.x, P.y, color);
-                zbuffer.set(P.x, P.y, TGAColor(frag_depth));
+                pixels[index * 3] = color.bgra[2];
+                pixels[index * 3 + 1] = color.bgra[1];
+                pixels[index * 3 + 2] = color.bgra[0];
+                zbuffer[index] = frag_depth;
             }
         }
     }
