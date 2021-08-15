@@ -70,7 +70,7 @@ void Rasterizer::flip_vertically(uint8_t* pixels) {
     delete [] line;
 }
 
-void Rasterizer::Render(uint8_t* pixels)
+void Rasterizer::Render(uint8_t* pixels, Camera *camera)
 {
     model = new Model("obj/african_head/african_head.obj");
 
@@ -81,7 +81,7 @@ void Rasterizer::Render(uint8_t* pixels)
     TGAImage diffuse = TGAImage();
     diffuse.read_tga_file("obj/african_head/african_head_diffuse.tga");
 
-    lookat(eye, center, Vec3f(0, 1, 0));
+    lookat(camera->Position, camera->Position + camera->Orientation, camera->Up);
     projection(-1.0f / (eye - center).norm());
     viewport(0, 0, width, height);
     
@@ -97,13 +97,6 @@ void Rasterizer::Render(uint8_t* pixels)
     }
     
     flip_vertically(image.pixels);
-
-    std::cout << "finish";
-
-    // image.flip_vertically();
-    // zbuffer.flip_vertically();
-    // image.write_tga_file("output.tga");
-    // zbuffer.write_tga_file("zbuffer.tga");
 
     delete model;
 }

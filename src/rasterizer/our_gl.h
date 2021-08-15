@@ -3,6 +3,7 @@
 
 #include "tgaimage.h"
 #include "geometry.h"
+#include "glm/glm.hpp"
 
 extern Matrix ModelView;
 extern Matrix Projection;
@@ -10,7 +11,7 @@ extern Matrix Viewport;
 
 void viewport(int x, int y, int w, int h);
 void projection(float coeff = 0.0f); // coeff = -1/c
-void lookat(Vec3f eye, Vec3f center, Vec3f up);
+void lookat(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
 
 struct IShader
 {

@@ -8,11 +8,12 @@
 #include "model.h"
 #include "geometry.h"
 #include "our_gl.h"
+#include "../opengl/Camera.h"
 
 class Rasterizer
 {
     public:
-        void Render(uint8_t* pixels);
+        void Render(uint8_t* pixels, Camera *camera);
         
         void flip_vertically(uint8_t* pixels);
         

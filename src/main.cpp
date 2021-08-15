@@ -174,7 +174,7 @@ int main() {
 			{
 				uint8_t* pixels = new uint8_t[image_width * image_height * 3];
 				Rasterizer ras;
-				ras.Render(pixels);
+				ras.Render(pixels, camera);
 
 				// Create a OpenGL texture identifier
 				glGenTextures(1, &image_texture);

@@ -10,11 +10,11 @@ Matrix Viewport;
 IShader::~IShader() {}
 
 
-void lookat(Vec3f eye, Vec3f center, Vec3f up)
+void lookat(glm::vec3 eye, glm::vec3 center, glm::vec3 up)
 {
-    Vec3f z = (eye - center).normalize();
-    Vec3f x = cross(up, z).normalize();
-    Vec3f y = cross(z, x).normalize();
+    glm::vec3 z = glm::normalize(eye - center);
+    glm::vec3 x = glm::normalize(cross(up, z));
+    glm::vec3 y = glm::normalize(cross(z, x));
     ModelView = Matrix::identity();
     for (int i=0; i<3; i++)
     {
