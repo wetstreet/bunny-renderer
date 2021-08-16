@@ -4,6 +4,8 @@
 #include "tgaimage.h"
 #include "geometry.h"
 #include "glm/glm.hpp"
+#include "../opengl/VBO.h"
+#include "../opengl/Texture.h"
 
 extern Matrix ModelView;
 extern Matrix Projection;
@@ -17,13 +19,6 @@ glm::mat4 viewport_ext(int x, int y, int w, int h);
 glm::mat4 projection_ext(float coeff = 0.0f); // coeff = -1/c
 glm::mat4 lookat_ext(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
 
-struct IShader
-{
-    virtual ~IShader();
-    virtual Vec4f vertex(int iface, int nthvert) = 0;
-    virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
-};
-
 struct Varying
 {
     glm::vec4 position;
@@ -31,7 +26,16 @@ struct Varying
     glm::vec3 normal;
 };
 
+struct IShader
+{
+    virtual ~IShader();
+    virtual Vec4f vertex(int iface, int nthvert) = 0;
+    virtual Varying vertex_ext(Vertex i, glm::mat4 MVP) = 0;
+    virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
+    virtual glm::vec4 fragment_ext(glm::vec2 uv, Texture *tex) = 0;
+};
+
 void triangle(Vec4f *pts, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height);
-void triangle_ext(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height);
+void triangle_ext(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height, Texture *texture);
 
 #endif //__OUR_GL_H__

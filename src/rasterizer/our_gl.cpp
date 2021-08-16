@@ -157,7 +157,7 @@ void triangle(Vec4f *pts, IShader &shader, uint8_t* pixels, int *zbuffer, int wi
     }
 }
 
-void triangle_ext(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height)
+void triangle_ext(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height, Texture *texture)
 {
     glm::vec2 bboxmin = glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     glm::vec2 bboxmax = glm::vec2(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -188,9 +188,18 @@ void triangle_ext(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer
 
             // std::cout << "pass, index = " << index << std::endl;
 
-            pixels[index * 3] = 255;
-            pixels[index * 3 + 1] = 255;
-            pixels[index * 3 + 2] = 255;
+            glm::vec2 uv(0, 0);
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    uv[i] += c[j] * varys[j].uv[i];
+                }
+            }
+            glm::vec4 color = shader.fragment_ext(uv, texture);
+            pixels[index * 3] = color.r * 255;
+            pixels[index * 3 + 1] = color.g * 255;
+            pixels[index * 3 + 2] = color.b * 255;
             zbuffer[index] = frag_depth;
         }
     }

@@ -56,13 +56,20 @@ struct GouraudShader : public IShader
         float diff = std::max(n * l, 0.0f);
         TGAColor c = model->diffuse(uv);
 
-        // color = c * diff;
-        color = 255;
+        color = c * diff;
         // for (int i = 0; i < 3; i++)
         // {
         //     color[i] = std::min<float>(255, 5 + c[i] * (diff + 0.6 * spec));
         // }
         return false;
+    }
+
+    virtual glm::vec4 fragment_ext(glm::vec2 uv, Texture *tex)
+    {
+        int index = uv.x + uv.y * tex->width;
+        glm::vec3 color = glm::vec3(tex->bytes[index*3]/255.0f, tex->bytes[index*3+1]/255.0f, tex->bytes[index*3+2]/255.0f);
+
+        return glm::vec4(color, 1);
     }
 };
 
@@ -100,7 +107,7 @@ void Rasterizer::Render(uint8_t* pixels)
     Clear(pixels);
 
     // model = new Model("obj/african_head/african_head.obj");
-    model = new Model("obj/cube.obj");
+    // model = new Model("obj/cube.obj");
 
     int *zbuffer = new int[width*height];
 
@@ -111,9 +118,9 @@ void Rasterizer::Render(uint8_t* pixels)
 
     Camera *camera = scene->camera;
 
-    lookat(camera->Position, camera->Position + camera->Orientation, camera->Up);
-    projection(-1.0f / glm::length(-camera->Orientation));
-    viewport(0, 0, width, height);
+    // lookat(camera->Position, camera->Position + camera->Orientation, camera->Up);
+    // projection(-1.0f / glm::length(-camera->Orientation));
+    // viewport(0, 0, width, height);
 
     // Matrix MVP = Viewport * (Projection * ModelView);
     // std:: cout << "ModelView=" << ModelView << std::endl;
@@ -138,17 +145,9 @@ void Rasterizer::Render(uint8_t* pixels)
     glm::mat4 Viewport = viewport_ext(0, 0, width, height);
     glm::mat4 MVP = Projection * ModelView;
     
-    std:: cout << "ModelView=" << ModelView << std::endl;
-    std:: cout << "Projection=" << Projection << std::endl;
-    std:: cout << "Viewport=" << Viewport << std::endl;
-    std:: cout << "mvp=" << MVP << std::endl;
-    
-
-
     for (int i = 0; i < scene->meshes.size(); i++)
     {
         Mesh *mesh = scene->meshes[i];
-        std::cout << "vert length=" << mesh->vertices.size() << std::endl;
         
         for (int j = 0; j < mesh->indices.size() / 3; j++)
         {
@@ -157,22 +156,14 @@ void Rasterizer::Render(uint8_t* pixels)
             for (int k = 0; k < 3; k++)
             {
                 int index = j * 3 + k;
-                std::cout << "index=" << index << std::endl;
-                Vertex vert = mesh->vertices[index];
-                std::cout << "vert=" << vert.position << std::endl;
+                Vertex vert = mesh->vertices[mesh->indices[index]];
                 varys[k] = shader.vertex_ext(vert, MVP);
                 varys[k].position = Viewport * varys[k].position;
             }
 
-    
-            std::cout << "varys[0].position=" <<  varys[0].position << std::endl;
-            std::cout << "varys[1].position=" <<  varys[1].position << std::endl;
-            std::cout << "varys[2].position=" <<  varys[2].position << std::endl;
-            triangle_ext(varys, shader, pixels, zbuffer, width, height);
+            triangle_ext(varys, shader, pixels, zbuffer, width, height, mesh->texture);
         }
     }
-
-    std::cout << std::endl;
     
     flip_vertically(pixels);
 

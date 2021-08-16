@@ -76,11 +76,11 @@ int main() {
 	cube.texture = &white_tex;
 	cube.shader = &shaderProgram;
 	cube.name = "cube";
-	// cube.position.x = 1.0f;
-	// cube.rotation.y = 45;
-	// cube.scale.y = 2;
+	cube.position.x = 1.0f;
+	cube.rotation.y = 45;
+	cube.scale.y = 2;
 
-	// scene.AddMesh(head);
+	scene.AddMesh(head);
 	scene.AddMesh(cube);
 
 	glEnable(GL_DEPTH_TEST);
