@@ -8,20 +8,21 @@
 #include "model.h"
 #include "geometry.h"
 #include "our_gl.h"
-#include "../opengl/Camera.h"
+#include "../opengl/Scene.h"
 
 class Rasterizer
 {
     public:
         void Render(uint8_t* pixels);
         
+        void Clear(uint8_t* pixels);
         void flip_vertically(uint8_t* pixels);
         
         glm::ivec2 size = glm::ivec2(800, 800);
         int width;
         int height;
 
-        Camera *camera = NULL;
+        Scene *scene = NULL;
 };
 
 #endif //__RASTERIZER_H__

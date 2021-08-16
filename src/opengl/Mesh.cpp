@@ -1,5 +1,11 @@
 #include "Mesh.h"
 
+std::ostream &operator<<(std::ostream &out, glm::vec4 &v)
+{
+    out << "(" << v.x << "," << v.y << "," << v.z << "," << v.w << ")";
+    return out;
+}
+
 std::ostream &operator<<(std::ostream &out, glm::vec3 &v)
 {
     out << "(" << v.x << "," << v.y << "," << v.z << ")";
@@ -9,6 +15,19 @@ std::ostream &operator<<(std::ostream &out, glm::vec3 &v)
 std::ostream &operator<<(std::ostream &out, glm::vec2 &v)
 {
     out << "(" << v.x << "," << v.y << ")";
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, glm::mat4 &m)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            out << m[i][j] << " ";
+        }
+        out << std::endl;
+    }
     return out;
 }
 

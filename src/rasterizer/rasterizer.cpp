@@ -13,9 +13,20 @@ struct GouraudShader : public IShader
     {
         varying_uv.set_col(nthvert, model->uv(iface, nthvert));
         varying_nrm.set_col(nthvert, proj<3>((Projection * ModelView).invert_transpose() * embed<4>(model->normal(iface, nthvert), 0.0f)));
+        // std::cout << "iface=" << iface << ",nthvert=" << nthvert << std::endl;
         Vec4f gl_Vertex = embed<4>(model->vert(iface, nthvert));
+        // std::cout << "gl_Vertex=" << gl_Vertex << std::endl;
         ndc_tri.set_col(nthvert, proj<3>(gl_Vertex/gl_Vertex[3]));
         return Viewport * Projection * ModelView * gl_Vertex;
+    }
+
+    virtual Varying vertex_ext(Vertex i, glm::mat4 MVP)
+    {
+        Varying o;
+        o.uv = i.texcoord;
+        o.normal = i.normal; // mul(i.normal, object_2_world);
+        o.position = MVP * glm::vec4(i.position, 1);
+        return o;
     }
 
     virtual bool fragment(Vec3f bar, TGAColor &color)
@@ -45,7 +56,8 @@ struct GouraudShader : public IShader
         float diff = std::max(n * l, 0.0f);
         TGAColor c = model->diffuse(uv);
 
-        color = c * diff;
+        // color = c * diff;
+        color = 255;
         // for (int i = 0; i < 3; i++)
         // {
         //     color[i] = std::min<float>(255, 5 + c[i] * (diff + 0.6 * spec));
@@ -54,7 +66,22 @@ struct GouraudShader : public IShader
     }
 };
 
-void Rasterizer::flip_vertically(uint8_t* pixels) {
+void Rasterizer::Clear(uint8_t* pixels)
+{
+    for (int i = 0; i < width; i++)
+    {
+        for (int j = 0; j < height; j++)
+        {
+            int index = i + j * width;
+            pixels[index * 3] = 0;
+            pixels[index * 3 + 1] = 0;
+            pixels[index * 3 + 2] = 0;
+        }
+    }
+}
+
+void Rasterizer::flip_vertically(uint8_t* pixels)
+{
     unsigned long bytes_per_line = width * 3;
     unsigned char *line = new unsigned char[bytes_per_line];
     int half = height>>1;
@@ -70,40 +97,79 @@ void Rasterizer::flip_vertically(uint8_t* pixels) {
 
 void Rasterizer::Render(uint8_t* pixels)
 {
-    model = new Model("obj/african_head/african_head.obj");
+    Clear(pixels);
+
+    // model = new Model("obj/african_head/african_head.obj");
+    model = new Model("obj/cube.obj");
 
     int *zbuffer = new int[width*height];
 
     TGAImage diffuse = TGAImage();
     diffuse.read_tga_file("obj/african_head/african_head_diffuse.tga");
+    
+    GouraudShader shader;
+
+    Camera *camera = scene->camera;
 
     lookat(camera->Position, camera->Position + camera->Orientation, camera->Up);
-    // projection(-1.0f / (eye - center).norm());
     projection(-1.0f / glm::length(-camera->Orientation));
     viewport(0, 0, width, height);
 
-    for (int i = 0; i < width; i++)
-    {
-        for (int j = 0; j < height; j++)
-        {
-            int index = i + j * width;
-            pixels[index * 3] = 0;
-            pixels[index * 3 + 1] = 0;
-            pixels[index * 3 + 2] = 0;
-        }
-    }
+    // Matrix MVP = Viewport * (Projection * ModelView);
+    // std:: cout << "ModelView=" << ModelView << std::endl;
+    // std:: cout << "Projection=" << Projection << std::endl;
+    // std:: cout << "Viewport=" << Viewport << std::endl;
+    // std:: cout << "mvp=" << MVP << std::endl;
+
+    // for (int i = 0; i < model->nfaces(); i++)
+    // {
+    //     float progress = (float)i / model->nfaces(); 
+    //     std::cout << "progress -- " << progress * 100 << "\r";
+    //     Vec4f screen_coords[3];
+    //     for (int j = 0; j < 3; j++)
+    //     {
+    //         screen_coords[j] = shader.vertex(i, j);
+    //     }
+    //     triangle(screen_coords, shader, pixels, zbuffer, width, height);
+    // }
+
+    glm::mat4 ModelView = lookat_ext(camera->Position, camera->Position + camera->Orientation, camera->Up);
+    glm::mat4 Projection = projection_ext(-1.0f / glm::length(-camera->Orientation));
+    glm::mat4 Viewport = viewport_ext(0, 0, width, height);
+    glm::mat4 MVP = Projection * ModelView;
     
-    GouraudShader shader;
-    for (int i = 0; i < model->nfaces(); i++)
+    std:: cout << "ModelView=" << ModelView << std::endl;
+    std:: cout << "Projection=" << Projection << std::endl;
+    std:: cout << "Viewport=" << Viewport << std::endl;
+    std:: cout << "mvp=" << MVP << std::endl;
+    
+
+
+    for (int i = 0; i < scene->meshes.size(); i++)
     {
-        float progress = (float)i / model->nfaces(); 
-        std::cout << "progress -- " << progress * 100 << "\r";
-        Vec4f screen_coords[3];
-        for (int j = 0; j < 3; j++)
+        Mesh *mesh = scene->meshes[i];
+        std::cout << "vert length=" << mesh->vertices.size() << std::endl;
+        
+        for (int j = 0; j < mesh->indices.size() / 3; j++)
         {
-            screen_coords[j] = shader.vertex(i, j);
+            Varying varys[3];
+
+            for (int k = 0; k < 3; k++)
+            {
+                int index = j * 3 + k;
+                std::cout << "index=" << index << std::endl;
+                Vertex vert = mesh->vertices[index];
+                std::cout << "vert=" << vert.position << std::endl;
+                varys[k] = shader.vertex_ext(vert, MVP);
+                varys[k].position = Viewport * varys[k].position;
+            }
+
+    
+            std::cout << "varys[0].position=" <<  varys[0].position << std::endl;
+            std::cout << "varys[1].position=" <<  varys[1].position << std::endl;
+            std::cout << "varys[2].position=" <<  varys[2].position << std::endl;
+            triangle_ext(varys, shader, pixels, zbuffer, width, height);
         }
-        triangle(screen_coords, shader, pixels, zbuffer, width, height);
     }
 
     std::cout << std::endl;

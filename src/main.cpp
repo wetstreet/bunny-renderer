@@ -76,11 +76,11 @@ int main() {
 	cube.texture = &white_tex;
 	cube.shader = &shaderProgram;
 	cube.name = "cube";
-	cube.position.x = 1.0f;
-	cube.rotation.y = 45;
-	cube.scale.y = 2;
+	// cube.position.x = 1.0f;
+	// cube.rotation.y = 45;
+	// cube.scale.y = 2;
 
-	scene.AddMesh(head);
+	// scene.AddMesh(head);
 	scene.AddMesh(cube);
 
 	glEnable(GL_DEPTH_TEST);
@@ -178,7 +178,7 @@ int main() {
 				content_size = ImVec2(ras.size.x, ras.size.y);
 
 				uint8_t* pixels = new uint8_t[ras.size.x * ras.size.y * 3];
-				ras.camera = camera;
+				ras.scene = &scene;
 				ras.width = ras.size.x;
 				ras.height = ras.size.y;
 				ras.Render(pixels);
