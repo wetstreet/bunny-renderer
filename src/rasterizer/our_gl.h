@@ -2,22 +2,14 @@
 #define __OUR_GL_H__
 
 #include "tgaimage.h"
-#include "geometry.h"
 #include "glm/glm.hpp"
 #include "../opengl/VBO.h"
 #include "../opengl/Texture.h"
 
-extern Matrix ModelView;
-extern Matrix Projection;
-extern Matrix Viewport;
-
-void viewport(int x, int y, int w, int h);
-void projection(float coeff = 0.0f); // coeff = -1/c
-void lookat(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
-
-glm::mat4 viewport_ext(int x, int y, int w, int h);
-glm::mat4 projection_ext(float coeff = 0.0f); // coeff = -1/c
-glm::mat4 lookat_ext(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
+glm::mat4 model_matrix(glm::vec3 &position, glm::vec3 &scale);
+glm::mat4 viewport(int x, int y, int w, int h);
+glm::mat4 projection(float coeff = 0.0f); // coeff = -1/c
+glm::mat4 lookat(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
 
 struct Varying
 {
@@ -29,13 +21,10 @@ struct Varying
 struct IShader
 {
     virtual ~IShader();
-    virtual Vec4f vertex(int iface, int nthvert) = 0;
-    virtual Varying vertex_ext(Vertex i, glm::mat4 MVP) = 0;
-    virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
-    virtual glm::vec4 fragment_ext(glm::vec2 uv, Texture *tex) = 0;
+    virtual Varying vertex(Vertex i, glm::mat4 MVP) = 0;
+    virtual glm::vec4 fragment(glm::vec2 uv, Texture *tex) = 0;
 };
 
-void triangle(Vec4f *pts, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height);
-void triangle_ext(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height, Texture *texture);
+void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height, Texture *texture);
 
 #endif //__OUR_GL_H__
