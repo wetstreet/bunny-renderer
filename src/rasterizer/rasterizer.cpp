@@ -4,7 +4,11 @@
 
 struct GouraudShader : public IShader
 {
-    virtual Varying vertex(Vertex i, glm::mat4 MVP)
+    glm::vec3 lightDir;
+    glm::mat4 MVP;
+    Texture *texture;
+
+    virtual Varying vertex(Vertex i)
     {
         Varying o;
         o.uv = i.texcoord;
@@ -13,13 +17,13 @@ struct GouraudShader : public IShader
         return o;
     }
 
-    virtual glm::vec4 fragment(glm::vec2 uv, Texture *tex)
+    virtual glm::vec4 fragment(Varying &varying)
     {
-        glm::ivec2 intuv(uv.x * tex->width, uv.y * tex->height);
-        int index = intuv.x + intuv.y * tex->width;
-        glm::vec3 color = glm::vec3(tex->bytes[index*3]/255.0f, tex->bytes[index*3+1]/255.0f, tex->bytes[index*3+2]/255.0f);
+        glm::vec3 color = tex2D(*texture, varying.uv);
 
-        return glm::vec4(color, 1);
+        float nl = std::max(0.0f, glm::dot(varying.normal, lightDir));
+
+        return glm::vec4(color * nl, 1);
     }
 };
 
@@ -59,10 +63,12 @@ void Rasterizer::Render(uint8_t* pixels)
     int *zbuffer = new int[width*height];
     
     GouraudShader shader;
+    shader.lightDir = -scene->camera->Orientation;
 
     Camera *camera = scene->camera;
 
-    glm::mat4 View = lookat(camera->Position, camera->Position + camera->Orientation, camera->Up);
+    glm::vec3 center = camera->Position + camera->Orientation;
+    glm::mat4 View = lookat(camera->Position, center, camera->Up);
     glm::mat4 Projection = projection(-1.0f / glm::length(-camera->Orientation));
     glm::mat4 Viewport = viewport(0, 0, width, height);
     
@@ -71,6 +77,8 @@ void Rasterizer::Render(uint8_t* pixels)
         Mesh *mesh = scene->meshes[i];
         glm::mat4 Model = model_matrix(mesh->position, mesh->scale);
         glm::mat4 MVP = Projection * View * Model;
+        shader.MVP = MVP;
+        shader.texture = mesh->texture;
         
         for (int j = 0; j < mesh->indices.size() / 3; j++)
         {
@@ -80,11 +88,11 @@ void Rasterizer::Render(uint8_t* pixels)
             {
                 int index = j * 3 + k;
                 Vertex vert = mesh->vertices[mesh->indices[index]];
-                varys[k] = shader.vertex(vert, MVP);
+                varys[k] = shader.vertex(vert);
                 varys[k].position = Viewport * varys[k].position;
             }
 
-            triangle(varys, shader, pixels, zbuffer, width, height, mesh->texture);
+            triangle(varys, shader, pixels, zbuffer, width, height);
         }
     }
     

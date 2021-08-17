@@ -9,7 +9,7 @@
 glm::mat4 model_matrix(glm::vec3 &position, glm::vec3 &scale);
 glm::mat4 viewport(int x, int y, int w, int h);
 glm::mat4 projection(float coeff = 0.0f); // coeff = -1/c
-glm::mat4 lookat(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
+glm::mat4 lookat(glm::vec3 &eye, glm::vec3 &center, glm::vec3 &up);
 
 struct Varying
 {
@@ -21,10 +21,11 @@ struct Varying
 struct IShader
 {
     virtual ~IShader();
-    virtual Varying vertex(Vertex i, glm::mat4 MVP) = 0;
-    virtual glm::vec4 fragment(glm::vec2 uv, Texture *tex) = 0;
+    virtual Varying vertex(Vertex i) = 0;
+    virtual glm::vec4 fragment(Varying &varying) = 0;
 };
 
-void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height, Texture *texture);
+glm::vec3 tex2D(Texture &tex, glm::vec2 &uv);
+void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height);
 
 #endif //__OUR_GL_H__

@@ -34,7 +34,7 @@ glm::mat4 model_matrix(glm::vec3 &position, glm::vec3 &scale)
     return objectToWorld;
 }
 
-glm::mat4 lookat(glm::vec3 eye, glm::vec3 center, glm::vec3 up)
+glm::mat4 lookat(glm::vec3 &eye, glm::vec3 &center, glm::vec3 &up)
 {
     glm::vec3 z = glm::normalize(eye - center);
     glm::vec3 x = glm::normalize(cross(up, z));
@@ -72,7 +72,7 @@ glm::mat4 viewport(int x, int y, int w, int h)
     return glm::transpose(Viewport);
 }
 
-glm::vec3 barycentric(glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2 P)
+glm::vec3 barycentric(glm::vec2 &A, glm::vec2 &B, glm::vec2 &C, glm::ivec2 &P)
 {
     glm::vec3 a = glm::vec3(B.x - A.x, C.x - A.x, A.x - P.x);
     glm::vec3 b = glm::vec3(B.y - A.y, C.y - A.y, A.y - P.y);
@@ -84,7 +84,14 @@ glm::vec3 barycentric(glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2 P)
     return glm::vec3(1.0f - (u.x + u.y)/u.z, u.x/u.z, u.y/u.z);
 }
 
-void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height, Texture *texture)
+glm::vec3 tex2D(Texture &tex, glm::vec2 &uv)
+{
+    glm::ivec2 intuv(uv.x * tex.width, uv.y * tex.height);
+    int index = intuv.x + intuv.y * tex.width;
+    return glm::vec3(tex.bytes[index*3]/255.0f, tex.bytes[index*3+1]/255.0f, tex.bytes[index*3+2]/255.0f);
+}
+
+void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height)
 {
     glm::vec2 bboxmin = glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     glm::vec2 bboxmax = glm::vec2(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -103,7 +110,10 @@ void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, in
         {
             if (P.x < 0 || P.y < 0 || P.x >= width || P.y >= height) continue;
             
-            glm::vec3 c = barycentric(glm::vec2(varys[0].position / varys[0].position[3]), glm::vec2(varys[1].position / varys[1].position[3]), glm::vec2(varys[2].position / varys[2].position[3]), P);
+            glm::vec2 A(varys[0].position / varys[0].position[3]);
+            glm::vec2 B(varys[1].position / varys[1].position[3]);
+            glm::vec2 C(varys[2].position / varys[2].position[3]);
+            glm::vec3 c = barycentric(A, B, C, P);
 
             float z = varys[0].position[2] * c.x + varys[1].position[2] * c.y + varys[2].position[2] * c.z;
             float w = varys[0].position[3] * c.x + varys[1].position[3] * c.y + varys[2].position[3] * c.z;
@@ -112,15 +122,24 @@ void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, in
 
             if (c.x < 0 || c.y < 0 || c.z < 0 || zbuffer[index] > frag_depth) continue;
 
-            glm::vec2 uv(0, 0);
+            Varying o;
+            o.uv = glm::vec2(0, 0);
             for (int i = 0; i < 2; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    uv[i] += c[j] * varys[j].uv[i];
+                    o.uv[i] += c[j] * varys[j].uv[i];
                 }
             }
-            glm::vec4 color = shader.fragment(uv, texture);
+            o.normal = glm::vec3(0, 0, 0);
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    o.normal[i] += c[j] * varys[j].normal[i];
+                }
+            }
+            glm::vec4 color = shader.fragment(o);
             pixels[index * 3] = color.r * 255;
             pixels[index * 3 + 1] = color.g * 255;
             pixels[index * 3 + 2] = color.b * 255;
