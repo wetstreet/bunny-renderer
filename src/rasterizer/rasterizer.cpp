@@ -27,16 +27,16 @@ struct GouraudShader : public IShader
     }
 };
 
-void Rasterizer::Clear(uint8_t* pixels)
+void Rasterizer::Clear(uint8_t* pixels, glm::vec3 &clearColor)
 {
     for (int i = 0; i < width; i++)
     {
         for (int j = 0; j < height; j++)
         {
             int index = i + j * width;
-            pixels[index * 3] = 0;
-            pixels[index * 3 + 1] = 0;
-            pixels[index * 3 + 2] = 0;
+            pixels[index * 3] = clearColor[0] * 255;
+            pixels[index * 3 + 1] = clearColor[1] * 255;
+            pixels[index * 3 + 2] = clearColor[2] * 255;
         }
     }
 }
@@ -58,8 +58,6 @@ void Rasterizer::flip_vertically(uint8_t* pixels)
 
 void Rasterizer::Render(uint8_t* pixels)
 {
-    Clear(pixels);
-
     int *zbuffer = new int[width*height];
     
     GouraudShader shader;
@@ -75,7 +73,7 @@ void Rasterizer::Render(uint8_t* pixels)
     for (int i = 0; i < scene->meshes.size(); i++)
     {
         Mesh *mesh = scene->meshes[i];
-        glm::mat4 Model = model_matrix(mesh->position, mesh->scale);
+        glm::mat4 Model = model_matrix(mesh->position, mesh->rotation, mesh->scale);
         glm::mat4 MVP = Projection * View * Model;
         shader.MVP = MVP;
         shader.texture = mesh->texture;

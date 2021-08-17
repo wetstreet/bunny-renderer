@@ -6,7 +6,7 @@
 #include "../opengl/VBO.h"
 #include "../opengl/Texture.h"
 
-glm::mat4 model_matrix(glm::vec3 &position, glm::vec3 &scale);
+glm::mat4 model_matrix(glm::vec3 &position, glm::vec3 &rotation, glm::vec3 &scale);
 glm::mat4 viewport(int x, int y, int w, int h);
 glm::mat4 projection(float coeff = 0.0f); // coeff = -1/c
 glm::mat4 lookat(glm::vec3 &eye, glm::vec3 &center, glm::vec3 &up);

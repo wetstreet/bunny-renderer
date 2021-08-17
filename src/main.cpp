@@ -1,12 +1,13 @@
 #include <iostream>
 
-#include "opengl/Scene.h"
-#include "opengl/Texture.h"
-#include "rasterizer/rasterizer.h"
-
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+
+#include "opengl/Scene.h"
+#include "opengl/Texture.h"
+
+#include "Renderer.h"
 
 const unsigned int width = 1200;
 const unsigned int height = 800;
@@ -52,62 +53,17 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
 	camera = new Camera(width, height, glm::vec3(0.0f, 0.0f, 5.0f));
 
 	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset)
 	{
 		camera->ScrollCallback(window, xoffset, yoffset);
 	});
-	
-	Shader shaderProgram("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
 
-	Scene scene(camera);
+	Renderer renderer = Renderer::GetInstance();
 
-	Texture head_diffuse("obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
-	Texture white_tex("obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
-
-	Mesh head("obj/african_head/african_head.obj");
-	head.texture = &head_diffuse;
-	head.shader = &shaderProgram;
-	head.name = "head";
-	Mesh cube("obj/cube.obj");
-	cube.texture = &white_tex;
-	cube.shader = &shaderProgram;
-	cube.name = "cube";
-	cube.position.x = 1.0f;
-	cube.rotation.y = 45;
-	cube.scale.y = 2;
-
-	scene.AddMesh(head);
-	scene.AddMesh(cube);
-
-	glEnable(GL_DEPTH_TEST);
-
-	GLuint framebuffer;
-	glGenFramebuffers(1, &framebuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-	// generate texture
-	GLuint texColorBuffer;
-	glGenTextures(1, &texColorBuffer);
-	glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// attach it to currently bound framebuffer object
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0); 
-
-	GLuint rbo;
-	glGenRenderbuffers(1, &rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 800);  
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+	renderer.Init_Scene(camera);
+	renderer.Init_OpenGL();
 
 	ImVec2 viewport(800, 800);
 	ImVec2 windowPos;
@@ -115,11 +71,9 @@ int main() {
 	double lastTime = glfwGetTime();
 
 	bool showImage = false;
-	GLuint image_texture;
 	
-	Rasterizer ras;
 	ImVec2 window_size;
-	ImVec2 content_size(ras.size.x, ras.size.y);
+	ImVec2 content_size(renderer.ras.size.x, renderer.ras.size.y);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -127,32 +81,7 @@ int main() {
 		double deltaTime = nowTime - lastTime;
 		lastTime = nowTime;
 
-		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		
-		glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, viewport.x, viewport.y);  
-		glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-		glViewport(0, 0, viewport.x, viewport.y);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		camera->windowPos = glm::vec2(windowPos.x, windowPos.y);
-		camera->viewport = glm::vec2(viewport.x, viewport.y);
-		camera->SceneInputs(window, deltaTime);
-		camera->updateMatrix(45.0f, 0.1f, 1000.0f, viewport.x, viewport.y);
-
-		scene.Draw();
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		glClearColor(0.22f, 0.22f, 0.22f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		renderer.Render_OpenGL(window, deltaTime);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -163,7 +92,7 @@ int main() {
 
 			if (node_clicked != -1)
 			{
-				Mesh *mesh = scene.meshes[node_clicked];
+				Mesh *mesh = renderer.scene->meshes[node_clicked];
 				ImGui::InputFloat3("Tr", (float*)&mesh->position);
 				ImGui::InputFloat3("Rt", (float*)&mesh->rotation);
 				ImGui::InputFloat3("Sc", (float*)&mesh->scale);
@@ -171,36 +100,15 @@ int main() {
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-			ImGui::InputInt2("Size", (int*)&ras.size);
+			ImGui::InputInt2("Size", (int*)&renderer.ras.size);
 			if (ImGui::Button("rasterizer render"))
 			{
-				window_size = ImVec2(ras.size.x + 20, ras.size.y + 35);
-				content_size = ImVec2(ras.size.x, ras.size.y);
+				window_size = ImVec2(renderer.ras.size.x + 20, renderer.ras.size.y + 35);
+				content_size = ImVec2(renderer.ras.size.x, renderer.ras.size.y);
 
-				uint8_t* pixels = new uint8_t[ras.size.x * ras.size.y * 3];
-				ras.scene = &scene;
-				ras.width = ras.size.x;
-				ras.height = ras.size.y;
-				ras.Render(pixels);
+				renderer.Render_Rasterizer();
 
-				// Create a OpenGL texture identifier
-				glGenTextures(1, &image_texture);
-				glBindTexture(GL_TEXTURE_2D, image_texture);
-
-				// Setup filtering parameters for display
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-
-				// Upload pixels into texture
-			#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
-				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-			#endif
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ras.size.x, ras.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-
-				showImage = true;
-				delete pixels;
+    			showImage = true;
 			}
 			
             ImGui::End();
@@ -210,7 +118,7 @@ int main() {
 		{
 			ImGui::SetNextWindowSize(window_size);
 			ImGui::Begin("Render Result", &showImage);
-			ImGui::Image((void*)(intptr_t)image_texture, content_size);
+			ImGui::Image((void*)(intptr_t)renderer.image_texture, content_size);
 			ImGui::End();
 		}
 
@@ -232,7 +140,7 @@ int main() {
             static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
 			static int selection_mask = (1 << 2);
-			for (int i = 0; i < scene.meshes.size(); i++)
+			for (int i = 0; i < renderer.scene->meshes.size(); i++)
 			{
 				ImGuiTreeNodeFlags node_flags = base_flags;
                 const bool is_selected = (selection_mask & (1 << i)) != 0;
@@ -247,7 +155,7 @@ int main() {
 				// }
 				
 				node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
-				ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, scene.meshes[i]->name.c_str());
+				ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, renderer.scene->meshes[i]->name.c_str());
 				if (ImGui::IsItemClicked())
 					node_clicked = i;
 			}
@@ -276,8 +184,13 @@ int main() {
 			viewport = ImGui::GetWindowSize();
 			windowPos = ImGui::GetWindowPos();
 
+			renderer.scene->camera->windowPos = glm::vec2(windowPos.x, windowPos.y);
+			renderer.scene->camera->viewport = glm::vec2(viewport.x, viewport.y);
+			renderer.viewport = glm::vec2(viewport.x, viewport.y);
+
+
 			// Because I use the texture from OpenGL, I need to invert the V from the UV.
-			ImGui::Image((ImTextureID)(intptr_t)texColorBuffer, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)(intptr_t)renderer.texColorBuffer, viewport, ImVec2(0, 1), ImVec2(1, 0));
 			ImGui::EndChild();
 			ImGui::End();
 		}
@@ -300,9 +213,7 @@ int main() {
 		glfwPollEvents();
 	}
 
-	head_diffuse.Delete();
-	white_tex.Delete();
-	shaderProgram.Delete();
+	renderer.Delete();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

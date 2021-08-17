@@ -31,7 +31,15 @@ class Mesh
 
         void UpdateMatrix();
         void Draw(Camera &camera);
+
+        void Delete();
 };
+
+static const float ZPI = 3.14159265358979323846f;
+static const float RAD2DEG = (180.f / ZPI);
+static const float DEG2RAD = (ZPI / 180.f);
+
+static const glm::vec3 directionUnary[3] = { glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) };
 
 std::ostream &operator<<(std::ostream &out, glm::vec4 &v);
 std::ostream &operator<<(std::ostream &out, glm::vec3 &v);

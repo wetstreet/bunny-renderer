@@ -12,7 +12,8 @@ class Scene
         Scene(Camera *camera);
 
         void Draw() const;
-        void AddMesh(Mesh &mesh);
+        void AddMesh(Mesh *mesh);
+        void Delete();
 };
 
 #endif //__SCENE_H__

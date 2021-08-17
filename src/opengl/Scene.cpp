@@ -9,12 +9,19 @@ void Scene::Draw() const
 {
     for (int i = 0; i < meshes.size(); i++)
     {
-        Mesh mesh = *meshes[i];
-        mesh.Draw(*camera);
+        meshes[i]->Draw(*camera);
     }
 }
 
-void Scene::AddMesh(Mesh &mesh)
+void Scene::AddMesh(Mesh *mesh)
 {
-    meshes.push_back(&mesh);
+    meshes.push_back(mesh);
+}
+
+void Scene::Delete()
+{
+    for (int i = 0; i < meshes.size(); i++)
+    {
+        delete meshes[i];
+    }
 }

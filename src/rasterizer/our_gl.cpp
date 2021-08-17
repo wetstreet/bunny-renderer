@@ -6,14 +6,44 @@
 
 IShader::~IShader() {}
 
-glm::mat4 model_matrix(glm::vec3 &position, glm::vec3 &scale)
+glm::mat4 rotate(glm::mat4 &m, float angle, glm::vec3 const &v)
+{
+    float const a = angle;
+    float const c = cos(a);
+    float const s = sin(a);
+
+    glm::vec3 axis(glm::normalize(v));
+    glm::vec3 temp((1.0f - c) * axis);
+
+    glm::mat4 Rotate;
+    Rotate[0][0] = c + temp[0] * axis[0];
+    Rotate[0][1] = temp[0] * axis[1] + s * axis[2];
+    Rotate[0][2] = temp[0] * axis[2] - s * axis[1];
+
+    Rotate[1][0] = temp[1] * axis[0] - s * axis[2];
+    Rotate[1][1] = c + temp[1] * axis[1];
+    Rotate[1][2] = temp[1] * axis[2] + s * axis[0];
+
+    Rotate[2][0] = temp[2] * axis[0] + s * axis[1];
+    Rotate[2][1] = temp[2] * axis[1] - s * axis[0];
+    Rotate[2][2] = c + temp[2] * axis[2];
+
+    glm::mat4 Result;
+    Result[0] = m[0] * Rotate[0][0] + m[1] * Rotate[0][1] + m[2] * Rotate[0][2];
+    Result[1] = m[0] * Rotate[1][0] + m[1] * Rotate[1][1] + m[2] * Rotate[1][2];
+    Result[2] = m[0] * Rotate[2][0] + m[1] * Rotate[2][1] + m[2] * Rotate[2][2];
+    Result[3] = m[3];
+    return Result;
+}
+
+glm::mat4 model_matrix(glm::vec3 &position, glm::vec3 &rotation, glm::vec3 &scale)
 {
 	glm::mat4 objectToWorld = glm::mat4(1);
 
-	// for (int i = 0; i < 3; i++)
-	// {
-	// 	objectToWorld = glm::rotate(objectToWorld, rotation[i] * DEG2RAD, directionUnary[i]);
-	// }
+	for (int i = 0; i < 3; i++)
+	{
+		objectToWorld = rotate(objectToWorld, rotation[i] * DEG2RAD, directionUnary[i]);
+	}
 
 	float validScale[3];
 	for (int i = 0; i < 3; i++)

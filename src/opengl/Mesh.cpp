@@ -133,12 +133,6 @@ Mesh::Mesh(const char *filename)
     new (this)Mesh(vertices, indices);
 }
 
-static const float ZPI = 3.14159265358979323846f;
-static const float RAD2DEG = (180.f / ZPI);
-static const float DEG2RAD = (ZPI / 180.f);
-
-static const glm::vec3 directionUnary[3] = { glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) };
-
 void Mesh::UpdateMatrix()
 {
 	objectToWorld = glm::mat4(1);
@@ -185,4 +179,13 @@ void Mesh::Draw(Camera &camera)
     glUniform3fv(glGetUniformLocation(shader->ID, "lightDir"), 1, (float*)&lightDir);
 
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+}
+
+void Mesh::Delete()
+{
+    if (texture)
+    {
+        texture->Delete();
+        delete texture;
+    }
 }

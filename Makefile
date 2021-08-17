@@ -23,9 +23,10 @@ renderer:
 	@g++ -c src/rasterizer/rasterizer.cpp -Iinclude
 	@g++ -c src/rasterizer/our_gl.cpp -Iinclude
 	
-	@g++ -c src/main.cpp -Iinclude -o renderer.o
+	@g++ -c src/Renderer.cpp -Iinclude -o Renderer.o
+	@g++ -c src/main.cpp -Iinclude -o main.o
 
-	@g++ -o renderer.exe renderer.o glad.o stb_image.o \
+	@g++ -o renderer.exe main.o Renderer.o glad.o stb_image.o \
 			imgui.o imgui_demo.o imgui_draw.o imgui_impl_glfw.o imgui_impl_opengl3.o imgui_tables.o imgui_widgets.o \
 			Camera.o Texture.o VAO.o VBO.o EBO.o Shader.o Mesh.o Scene.o rasterizer.o our_gl.o tgaimage.o \
 			 -Iinclude -Llib -lmingw32 -lglfw3 -lopengl32 -lgdi32 -luser32 -limm32
