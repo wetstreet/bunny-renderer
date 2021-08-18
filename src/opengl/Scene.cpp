@@ -9,7 +9,11 @@ void Scene::Draw() const
 {
     for (int i = 0; i < meshes.size(); i++)
     {
-        meshes[i]->Draw(*camera);
+        Mesh *mesh = meshes[i];
+        if (mesh->isEnabled)
+        {
+            mesh->Draw(*camera);
+        }
     }
 }
 

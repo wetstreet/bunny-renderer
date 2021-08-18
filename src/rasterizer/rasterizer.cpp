@@ -73,6 +73,9 @@ void Rasterizer::Render(uint8_t* pixels)
     for (int i = 0; i < scene->meshes.size(); i++)
     {
         Mesh *mesh = scene->meshes[i];
+
+        if (!mesh->isEnabled) continue;
+        
         glm::mat4 Model = model_matrix(mesh->position, mesh->rotation, mesh->scale);
         glm::mat4 MVP = Projection * View * Model;
         shader.MVP = MVP;

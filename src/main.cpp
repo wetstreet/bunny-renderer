@@ -23,7 +23,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(width, height, "BunnyRenderer", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(width, height, "Bunny Renderer", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -93,14 +93,32 @@ int main() {
 			if (node_clicked != -1)
 			{
 				Mesh *mesh = renderer.scene->meshes[node_clicked];
+				
+				ImGui::Checkbox("##isEnabled", &mesh->isEnabled);
+				ImGui::SameLine();
+				ImGui::InputText("##name", mesh->name, IM_ARRAYSIZE(mesh->name));
+
 				ImGui::InputFloat3("Tr", (float*)&mesh->position);
 				ImGui::InputFloat3("Rt", (float*)&mesh->rotation);
 				ImGui::InputFloat3("Sc", (float*)&mesh->scale);
 			}
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			
+            ImGui::End();
+        }
+
+		{
+            ImGui::Begin("Rasterizer");
 
 			ImGui::InputInt2("Size", (int*)&renderer.ras.size);
+			ImGui::SameLine();
+			if (ImGui::Button("Sync"))
+			{
+				renderer.ras.size.x = viewport.x;
+				renderer.ras.size.y = viewport.y;
+			}
+
 			if (ImGui::Button("rasterizer render"))
 			{
 				window_size = ImVec2(renderer.ras.size.x + 20, renderer.ras.size.y + 35);
@@ -110,9 +128,9 @@ int main() {
 
     			showImage = true;
 			}
-			
+
             ImGui::End();
-        }
+		}
 
 		if (showImage)
 		{
@@ -142,6 +160,7 @@ int main() {
 			static int selection_mask = (1 << 2);
 			for (int i = 0; i < renderer.scene->meshes.size(); i++)
 			{
+				Mesh *mesh = renderer.scene->meshes[i];
 				ImGuiTreeNodeFlags node_flags = base_flags;
                 const bool is_selected = (selection_mask & (1 << i)) != 0;
                 if (is_selected)
@@ -155,9 +174,17 @@ int main() {
 				// }
 				
 				node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
-				ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, renderer.scene->meshes[i]->name.c_str());
+				
+				if (mesh->isEnabled)
+            		ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
+				else
+            		ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 100));
+
+				ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, mesh->name);
 				if (ImGui::IsItemClicked())
 					node_clicked = i;
+
+            	ImGui::PopStyleColor();
 			}
 			if (node_clicked != -1)
 			{

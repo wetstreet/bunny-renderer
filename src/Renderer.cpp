@@ -10,11 +10,11 @@ void Renderer::Init_Scene(Camera *camera)
 	Mesh *head = new Mesh("obj/african_head/african_head.obj");
 	head->texture = head_diffuse;
 	head->shader = shader;
-	head->name = "head";
+    strcpy(head->name, "head");
 	Mesh *cube = new Mesh("obj/cube.obj");
 	cube->texture = white_tex;
 	cube->shader = shader;
-	cube->name = "cube";
+    strcpy(cube->name, "cube");
 	cube->position.x = 1.0f;
 	cube->rotation.y = 45;
 	cube->scale.y = 2;

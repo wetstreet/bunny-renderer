@@ -15,7 +15,8 @@ class Mesh
         std::vector<Vertex> vertices;
         std::vector<GLuint> indices;
         
-        std::string name;
+        bool isEnabled = true;
+        char name[32];
         VAO vao;
 
         glm::vec3 position = glm::vec3(0);
