@@ -32,8 +32,6 @@ class Mesh
 
         void UpdateMatrix();
         void Draw(Camera &camera);
-
-        void Delete();
 };
 
 static const float ZPI = 3.14159265358979323846f;

@@ -95,6 +95,27 @@ int main() {
 
 		if (ImGui::BeginMainMenuBar())
 		{
+			if (ImGui::BeginMenu("Primitives"))
+			{
+            	if (ImGui::MenuItem("Plane"))
+				{
+					node_clicked = renderer.AddPrimitive("plane");
+				}
+            	if (ImGui::MenuItem("Cube"))
+				{
+					node_clicked = renderer.AddPrimitive("cube");
+				}
+            	if (ImGui::MenuItem("Sphere"))
+				{
+					node_clicked = renderer.AddPrimitive("sphere");
+				}
+            	if (ImGui::MenuItem("Cylinder"))
+				{
+					node_clicked = renderer.AddPrimitive("cylinder");
+				}
+				ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu("Window"))
 			{
             	if (ImGui::MenuItem("Inspector")) showInspector = true;
@@ -104,6 +125,7 @@ int main() {
             	if (ImGui::MenuItem("Hierarchy")) showHierarchy = true;
 				ImGui::EndMenu();
 			}
+
         	ImGui::EndMainMenuBar();
 		}
 
@@ -174,6 +196,8 @@ int main() {
 			ImGui::InputFloat("Pan Speed", (float*)&camera->scenePanSpeed);
 			ImGui::InputFloat("Scroll Speed", (float*)&camera->sceneScrollSpeed);
 			
+			ImGui::ColorEdit3("Background", (float*)&renderer.clear_color);
+			
 			ImGui::End();
 		}
 
@@ -220,6 +244,12 @@ int main() {
 					selection_mask ^= (1 << node_clicked);          // CTRL+click to toggle
 				else //if (!(selection_mask & (1 << node_clicked))) // Depending on selection behavior you want, may want to preserve selection when clicking on item that is part of the selection
 					selection_mask = (1 << node_clicked);           // Click to single-select
+
+				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
+				{
+					renderer.scene->RemoveMesh(node_clicked);
+					node_clicked = -1;
+				}
 			}
 
 			ImGui::End();

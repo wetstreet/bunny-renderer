@@ -11,16 +11,16 @@ void Renderer::Init_Scene(Camera *camera)
 	head->texture = head_diffuse;
 	head->shader = shader;
     strcpy(head->name, "head");
-	Mesh *cube = new Mesh("obj/cube.obj");
-	cube->texture = white_tex;
-	cube->shader = shader;
-    strcpy(cube->name, "cube");
-	cube->position.x = 1.0f;
-	cube->rotation.y = 45;
-	cube->scale.y = 2;
-
 	scene->AddMesh(head);
-	scene->AddMesh(cube);
+}
+
+int Renderer::AddPrimitive(std::string name)
+{
+	Mesh *mesh = new Mesh(("obj/" + name + ".obj").c_str());
+	mesh->texture = white_tex;
+	mesh->shader = shader;
+    strcpy(mesh->name, name.c_str());
+	return scene->AddMesh(mesh);
 }
 
 void Renderer::Init_OpenGL()

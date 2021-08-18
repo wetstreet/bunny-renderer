@@ -17,9 +17,17 @@ void Scene::Draw() const
     }
 }
 
-void Scene::AddMesh(Mesh *mesh)
+int Scene::AddMesh(Mesh *mesh)
 {
     meshes.push_back(mesh);
+    return meshes.size() - 1;
+}
+
+void Scene::RemoveMesh(int index)
+{
+    Mesh *mesh = meshes[index];
+    meshes.erase(meshes.begin() + index);
+    delete mesh;
 }
 
 void Scene::Delete()

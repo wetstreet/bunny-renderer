@@ -18,11 +18,11 @@ class Renderer
         void Render_OpenGL(GLFWwindow* window, float deltaTime);
         void Render_Rasterizer();
         void Delete();
+        
+        int AddPrimitive(std::string name);
 
     private:
         Renderer() {}
-        Texture *head_diffuse;
-        Texture *white_tex;
 
     public:
         glm::vec2 viewport = glm::vec2(800, 800);
@@ -34,6 +34,8 @@ class Renderer
         Shader *shader;
         Scene *scene;
 	    Rasterizer ras;
+        Texture *head_diffuse;
+        Texture *white_tex;
 };
 
 #endif //__RENDERER_H__

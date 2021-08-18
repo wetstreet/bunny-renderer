@@ -180,12 +180,3 @@ void Mesh::Draw(Camera &camera)
 
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
-
-void Mesh::Delete()
-{
-    if (texture)
-    {
-        texture->Delete();
-        delete texture;
-    }
-}
