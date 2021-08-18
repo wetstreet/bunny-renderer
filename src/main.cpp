@@ -69,11 +69,17 @@ int main() {
 	ImVec2 windowPos;
 
 	double lastTime = glfwGetTime();
-
-	bool showImage = false;
 	
 	ImVec2 window_size;
 	ImVec2 content_size(renderer.ras.size.x, renderer.ras.size.y);
+
+	bool showInspector = true;
+	bool showScene = true;
+	bool showSceneCamera = true;
+	bool showHierarchy = true;
+	bool showRasterizer = true;
+
+	bool showImage = false;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -86,9 +92,26 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("Window"))
+			{
+            	if (ImGui::MenuItem("Inspector")) showInspector = true;
+            	if (ImGui::MenuItem("Scene")) showScene = true;
+            	if (ImGui::MenuItem("SceneCamera")) showSceneCamera = true;
+            	if (ImGui::MenuItem("Rasterizer")) showRasterizer = true;
+            	if (ImGui::MenuItem("Hierarchy")) showHierarchy = true;
+				ImGui::EndMenu();
+			}
+        	ImGui::EndMainMenuBar();
+		}
+
+		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 		
+		if (showInspector)
         {
-            ImGui::Begin("Inspector");
+            ImGui::Begin("Inspector", &showInspector);
 
 			if (node_clicked != -1)
 			{
@@ -103,13 +126,14 @@ int main() {
 				ImGui::InputFloat3("Sc", (float*)&mesh->scale);
 			}
 
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			
             ImGui::End();
         }
 
+		if (showRasterizer)
 		{
-            ImGui::Begin("Rasterizer");
+            ImGui::Begin("Rasterizer", &showRasterizer);
 
 			ImGui::InputInt2("Size", (int*)&renderer.ras.size);
 			ImGui::SameLine();
@@ -140,8 +164,9 @@ int main() {
 			ImGui::End();
 		}
 
+		if (showSceneCamera)
 		{
-			ImGui::Begin("Scene Camera");
+			ImGui::Begin("Scene Camera", &showSceneCamera);
 
 			ImGui::InputFloat3("Position", (float*)&camera->Position);
 			ImGui::InputFloat("Move Speed", (float*)&camera->speed);
@@ -152,8 +177,9 @@ int main() {
 			ImGui::End();
 		}
 
+		if (showHierarchy)
 		{
-			ImGui::Begin("Hierarchy");
+			ImGui::Begin("Hierarchy", &showHierarchy);
 
             static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -199,9 +225,10 @@ int main() {
 			ImGui::End();
 		}
 
-    	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
+		if (showScene)
 		{
-			ImGui::Begin("Scene");
+    		ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
+			ImGui::Begin("Scene", & showScene);
 
 			// Using a Child allow to fill all the space of the window.
 			// It also alows customization
