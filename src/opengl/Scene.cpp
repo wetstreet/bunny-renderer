@@ -7,13 +7,16 @@ Scene::Scene(Camera *camera)
 
 Light *Scene::GetMainLight()
 {
-    if (lights.size() == 0) return NULL;
-
-    Light *mainLight = lights[0];
-    for (int i = 1; i < lights.size(); i++)
+    Light *mainLight = NULL;
+    for (int i = 0; i < objects.size(); i++)
     {
-        if (lights[i]->intensity > mainLight->intensity)
-            mainLight = lights[i];
+        Object *object = objects[i];
+        if (object->GetType() == Type_Light && object->isEnabled)
+        {
+            Light *light = (Light*)object;
+            if (mainLight == NULL || light->intensity > mainLight->intensity)
+                mainLight = light;
+        }
     }
     
     return mainLight;
@@ -22,37 +25,48 @@ Light *Scene::GetMainLight()
 void Scene::Draw()
 {
     Light *mainLight = GetMainLight();
-    for (int i = 0; i < meshes.size(); i++)
+
+    glm::vec3 lightPos;
+    glm::vec3 lightColor;
+    if (mainLight)
     {
-        Mesh *mesh = meshes[i];
-        if (mesh->isEnabled)
+        lightPos = mainLight->GetLightPosition();
+        lightColor = mainLight->color * mainLight->intensity;
+    }
+    else
+    {
+        lightPos = -camera->Orientation;
+        lightColor = glm::vec3(1);
+    }
+
+    for (int i = 0; i < objects.size(); i++)
+    {
+        Object *object = objects[i];
+        if (object->GetType() == Type_Mesh && object->isEnabled)
         {
-            mesh->Draw(*camera, mainLight);
+            Mesh *mesh = (Mesh*)object;
+            mesh->Draw(*camera, lightPos, lightColor);
         }
     }
 }
 
-int Scene::AddMesh(Mesh *mesh)
+int Scene::AddObject(Object *object)
 {
-    meshes.push_back(mesh);
-    return meshes.size() - 1;
+    objects.push_back(object);
+    return objects.size() - 1;
 }
 
-void Scene::RemoveMesh(int index)
+void Scene::RemoveObject(int index)
 {
-    Mesh *mesh = meshes[index];
-    meshes.erase(meshes.begin() + index);
-    delete mesh;
+    Object *object = objects[index];
+    objects.erase(objects.begin() + index);
+    delete object;
 }
 
-void Scene::Delete()
+Scene::~Scene()
 {
-    for (int i = 0; i < meshes.size(); i++)
+    for (int i = 0; i < objects.size(); i++)
     {
-        delete meshes[i];
-    }
-    for (int i = 0; i < lights.size(); i++)
-    {
-        delete lights[i];
+        delete objects[i];
     }
 }

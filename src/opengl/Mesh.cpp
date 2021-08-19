@@ -160,7 +160,7 @@ void Mesh::UpdateMatrix()
 	objectToWorld[3] = glm::vec4(position[0], position[1], position[2], 1.f);
 }
 
-void Mesh::Draw(Camera &camera, Light *mainLight)
+void Mesh::Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor)
 {
     shader->Activate();
 
@@ -173,17 +173,9 @@ void Mesh::Draw(Camera &camera, Light *mainLight)
     }
 
     UpdateMatrix();
-
-    if (mainLight)
-    {
-        glm::vec3 lightPos = -mainLight->GetLightPosition();
-        glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
-    }
-    else
-    {
-        glm::vec3 lightPos = -camera.Orientation;
-        glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
-    }
+    
+    glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
+    glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);
 
     glUniformMatrix4fv(glGetUniformLocation(shader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * objectToWorld));
 

@@ -11,7 +11,7 @@ void Renderer::Init_Scene(Camera *camera)
 	head->texture = head_diffuse;
 	head->shader = shader;
     strcpy(head->name, "head");
-	scene->AddMesh(head);
+	scene->AddObject(head);
 }
 
 int Renderer::AddPrimitive(std::string name)
@@ -20,7 +20,7 @@ int Renderer::AddPrimitive(std::string name)
 	mesh->texture = white_tex;
 	mesh->shader = shader;
     strcpy(mesh->name, name.c_str());
-	return scene->AddMesh(mesh);
+	return scene->AddObject(mesh);
 }
 
 void Renderer::Init_OpenGL()
@@ -105,15 +105,11 @@ void Renderer::Render_Rasterizer()
     delete pixels;
 }
 
-void Renderer::Delete()
+Renderer::~Renderer()
 {
-	head_diffuse->Delete();
     delete head_diffuse;
-	white_tex->Delete();
     delete white_tex;
 
-    shader->Delete();
     delete shader;
-    scene->Delete();
     delete scene;
 }

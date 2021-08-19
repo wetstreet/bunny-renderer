@@ -122,7 +122,8 @@ int main() {
             	if (ImGui::MenuItem("Directional Light"))
 				{
 					DirectionalLight *dir = new DirectionalLight();
-					renderer.scene->lights.push_back(dir);
+    				strcpy(dir->name, "directional light");
+					node_clicked = renderer.scene->AddObject(dir);
 				}
 				ImGui::EndMenu();
 			}
@@ -148,15 +149,25 @@ int main() {
 
 			if (node_clicked != -1)
 			{
-				Mesh *mesh = renderer.scene->meshes[node_clicked];
+				Object *object = renderer.scene->objects[node_clicked];
 				
-				ImGui::Checkbox("##isEnabled", &mesh->isEnabled);
+				ImGui::Checkbox("##isEnabled", &object->isEnabled);
 				ImGui::SameLine();
-				ImGui::InputText("##name", mesh->name, IM_ARRAYSIZE(mesh->name));
+				ImGui::InputText("##name", object->name, IM_ARRAYSIZE(object->name));
 
-				ImGui::InputFloat3("Tr", (float*)&mesh->position);
-				ImGui::InputFloat3("Rt", (float*)&mesh->rotation);
-				ImGui::InputFloat3("Sc", (float*)&mesh->scale);
+				ImGui::InputFloat3("Tr", (float*)&object->position);
+				ImGui::InputFloat3("Rt", (float*)&object->rotation);
+				ImGui::InputFloat3("Sc", (float*)&object->scale);
+
+				if (object->GetType() == Type_Light)
+				{
+					Light *light = (Light*)object;
+
+					ImGui::Text("------------Light------------");
+					
+					ImGui::ColorEdit3("Color", (float*)&light->color);
+					ImGui::InputFloat("Intensity", &light->intensity);
+				}
 			}
 
             ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -219,9 +230,9 @@ int main() {
             static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
 			static int selection_mask = (1 << 2);
-			for (int i = 0; i < renderer.scene->meshes.size(); i++)
+			for (int i = 0; i < renderer.scene->objects.size(); i++)
 			{
-				Mesh *mesh = renderer.scene->meshes[i];
+				Object *object = renderer.scene->objects[i];
 				ImGuiTreeNodeFlags node_flags = base_flags;
                 const bool is_selected = (selection_mask & (1 << i)) != 0;
                 if (is_selected)
@@ -236,12 +247,12 @@ int main() {
 				
 				node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
 				
-				if (mesh->isEnabled)
+				if (object->isEnabled)
             		ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
 				else
             		ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 100));
 
-				ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, mesh->name);
+				ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, object->name);
 				if (ImGui::IsItemClicked())
 					node_clicked = i;
 
@@ -258,7 +269,7 @@ int main() {
 
 				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
 				{
-					renderer.scene->RemoveMesh(node_clicked);
+					renderer.scene->RemoveObject(node_clicked);
 					node_clicked = -1;
 				}
 			}
@@ -307,8 +318,6 @@ int main() {
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-
-	renderer.Delete();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

@@ -1,7 +1,5 @@
 #include "rasterizer.h"
 
-// Vec3f lightDir(1.0f, 1.0f, 1.0f);
-
 struct GouraudShader : public IShader
 {
     glm::vec3 lightDir;
@@ -70,30 +68,32 @@ void Rasterizer::Render(uint8_t* pixels)
     glm::mat4 Projection = projection(-1.0f / glm::length(-camera->Orientation));
     glm::mat4 Viewport = viewport(0, 0, width, height);
     
-    for (int i = 0; i < scene->meshes.size(); i++)
+    for (int i = 0; i < scene->objects.size(); i++)
     {
-        Mesh *mesh = scene->meshes[i];
-
-        if (!mesh->isEnabled) continue;
-        
-        glm::mat4 Model = model_matrix(mesh->position, mesh->rotation, mesh->scale);
-        glm::mat4 MVP = Projection * View * Model;
-        shader.MVP = MVP;
-        shader.texture = mesh->texture;
-        
-        for (int j = 0; j < mesh->indices.size() / 3; j++)
+        Object *object = scene->objects[i];
+        if (object->GetType() == Type_Mesh && object->isEnabled)
         {
-            Varying varys[3];
+            Mesh *mesh = (Mesh*)object;
 
-            for (int k = 0; k < 3; k++)
+            glm::mat4 Model = model_matrix(mesh->position, mesh->rotation, mesh->scale);
+            glm::mat4 MVP = Projection * View * Model;
+            shader.MVP = MVP;
+            shader.texture = mesh->texture;
+            
+            for (int j = 0; j < mesh->indices.size() / 3; j++)
             {
-                int index = j * 3 + k;
-                Vertex vert = mesh->vertices[mesh->indices[index]];
-                varys[k] = shader.vertex(vert);
-                varys[k].position = Viewport * varys[k].position;
-            }
+                Varying varys[3];
 
-            triangle(varys, shader, pixels, zbuffer, width, height);
+                for (int k = 0; k < 3; k++)
+                {
+                    int index = j * 3 + k;
+                    Vertex vert = mesh->vertices[mesh->indices[index]];
+                    varys[k] = shader.vertex(vert);
+                    varys[k].position = Viewport * varys[k].position;
+                }
+
+                triangle(varys, shader, pixels, zbuffer, width, height);
+            }
         }
     }
     

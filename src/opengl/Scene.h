@@ -8,15 +8,15 @@ class Scene
 {
     public:
         Camera *camera;
-        std::vector<Mesh*> meshes;
-        std::vector<Light*> lights;
+        std::vector<Object*> objects;
 
         Scene(Camera *camera);
+        ~Scene();
+
         Light *GetMainLight();
         void Draw();
-        int AddMesh(Mesh *mesh);
-        void RemoveMesh(int index);
-        void Delete();
+        int AddObject(Object *object);
+        void RemoveObject(int index);
 };
 
 #endif //__SCENE_H__

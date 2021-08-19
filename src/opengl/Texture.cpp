@@ -39,7 +39,7 @@ void Texture::Unbind()
     glBindTexture(type, 0);
 }
 
-void Texture::Delete()
+Texture::~Texture()
 {
 	stbi_image_free(bytes);
 	glDeleteTextures(1, &ID);

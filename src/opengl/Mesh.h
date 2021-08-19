@@ -8,21 +8,18 @@
 #include "EBO.h"
 #include "Camera.h"
 #include "Texture.h"
-#include "../common/Light.h"
+#include "../common/Object.h"
 
-class Mesh
+class Mesh : public Object
 {
     public:
         std::vector<Vertex> vertices;
         std::vector<GLuint> indices;
         
-        bool isEnabled = true;
-        char name[32];
         VAO vao;
 
-        glm::vec3 position = glm::vec3(0);
-        glm::vec3 rotation = glm::vec3(0);
-        glm::vec3 scale = glm::vec3(1);
+        virtual Type GetType() { return Type_Mesh; };
+
         glm::mat4 objectToWorld = glm::mat4(1);
 
         Texture *texture;
@@ -32,7 +29,7 @@ class Mesh
         Mesh(std::vector<Vertex> &vertices, std::vector<GLuint> &indices);
 
         void UpdateMatrix();
-        void Draw(Camera &camera, Light *mainLight);
+        void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor);
 };
 
 std::ostream &operator<<(std::ostream &out, glm::vec4 &v);

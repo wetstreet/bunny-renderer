@@ -17,16 +17,16 @@ class Renderer
         void Init_OpenGL();
         void Render_OpenGL(GLFWwindow* window, float deltaTime);
         void Render_Rasterizer();
-        void Delete();
         
         int AddPrimitive(std::string name);
+        ~Renderer();
 
     private:
         Renderer() {}
 
     public:
         glm::vec2 viewport = glm::vec2(800, 800);
-        glm::vec3 clear_color = glm::vec3(0.45f, 0.55f, 0.60f);
+        glm::vec3 clear_color = glm::vec3(0.2f, 0.2f, 0.2f);
 	    GLuint texColorBuffer;
         GLuint rbo;
         GLuint framebuffer;
