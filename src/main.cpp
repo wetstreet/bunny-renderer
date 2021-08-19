@@ -280,11 +280,13 @@ int main() {
 		if (showScene)
 		{
     		ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
-			ImGui::Begin("Scene", & showScene);
+			ImGui::Begin("Scene", &showScene);
 
 			// Using a Child allow to fill all the space of the window.
 			// It also alows customization
 			ImGui::BeginChild("GameRender");
+
+            ImVec2 pos = ImGui::GetCursorScreenPos();
 			
 			// Get the size of the child (i.e. the whole draw size of the windows).
 			viewport = ImGui::GetWindowSize();
@@ -297,7 +299,20 @@ int main() {
 
 			// Because I use the texture from OpenGL, I need to invert the V from the UV.
 			ImGui::Image((ImTextureID)(intptr_t)renderer.texColorBuffer, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			
+
+
 			ImGui::EndChild();
+			
+			ImGui::BeginChild("GameRender");
+
+			ImDrawList *drawList = ImGui::GetWindowDrawList();
+            ImVec2 marker_min = ImVec2(pos.x + 100, pos.y + 100);
+			// std::cout << "pos=" << pos.x << " " << pos.y << std::endl;
+            drawList->AddLine(pos, marker_min, IM_COL32(0XFF, 0, 0, 0XFF), 3.f);
+
+			ImGui::EndChild();
+
 			ImGui::End();
 		}
 
