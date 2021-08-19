@@ -8,6 +8,7 @@
 #include "EBO.h"
 #include "Camera.h"
 #include "Texture.h"
+#include "../common/Light.h"
 
 class Mesh
 {
@@ -31,14 +32,8 @@ class Mesh
         Mesh(std::vector<Vertex> &vertices, std::vector<GLuint> &indices);
 
         void UpdateMatrix();
-        void Draw(Camera &camera);
+        void Draw(Camera &camera, Light *mainLight);
 };
-
-static const float ZPI = 3.14159265358979323846f;
-static const float RAD2DEG = (180.f / ZPI);
-static const float DEG2RAD = (ZPI / 180.f);
-
-static const glm::vec3 directionUnary[3] = { glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f) };
 
 std::ostream &operator<<(std::ostream &out, glm::vec4 &v);
 std::ostream &operator<<(std::ostream &out, glm::vec3 &v);

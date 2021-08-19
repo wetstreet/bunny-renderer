@@ -7,7 +7,8 @@
 #include "opengl/Scene.h"
 #include "opengl/Texture.h"
 
-#include "Renderer.h"
+#include "common/Renderer.h"
+#include "common/DirectionalLight.h"
 
 const unsigned int width = 1200;
 const unsigned int height = 800;
@@ -112,6 +113,16 @@ int main() {
             	if (ImGui::MenuItem("Cylinder"))
 				{
 					node_clicked = renderer.AddPrimitive("cylinder");
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Lights"))
+			{
+            	if (ImGui::MenuItem("Directional Light"))
+				{
+					DirectionalLight *dir = new DirectionalLight();
+					renderer.scene->lights.push_back(dir);
 				}
 				ImGui::EndMenu();
 			}

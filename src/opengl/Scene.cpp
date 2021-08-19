@@ -5,14 +5,29 @@ Scene::Scene(Camera *camera)
     Scene::camera = camera;
 }
 
-void Scene::Draw() const
+Light *Scene::GetMainLight()
 {
+    if (lights.size() == 0) return NULL;
+
+    Light *mainLight = lights[0];
+    for (int i = 1; i < lights.size(); i++)
+    {
+        if (lights[i]->intensity > mainLight->intensity)
+            mainLight = lights[i];
+    }
+    
+    return mainLight;
+}
+
+void Scene::Draw()
+{
+    Light *mainLight = GetMainLight();
     for (int i = 0; i < meshes.size(); i++)
     {
         Mesh *mesh = meshes[i];
         if (mesh->isEnabled)
         {
-            mesh->Draw(*camera);
+            mesh->Draw(*camera, mainLight);
         }
     }
 }
@@ -35,5 +50,9 @@ void Scene::Delete()
     for (int i = 0; i < meshes.size(); i++)
     {
         delete meshes[i];
+    }
+    for (int i = 0; i < lights.size(); i++)
+    {
+        delete lights[i];
     }
 }

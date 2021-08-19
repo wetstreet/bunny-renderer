@@ -1,9 +1,9 @@
 #ifndef __RENDERER_H__
 #define __RENDERER_H__
 
-#include "opengl/Scene.h"
-#include "opengl/Texture.h"
-#include "rasterizer/rasterizer.h"
+#include "../opengl/Scene.h"
+#include "../opengl/Texture.h"
+#include "../rasterizer/rasterizer.h"
 
 class Renderer
 {
