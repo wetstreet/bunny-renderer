@@ -1,6 +1,10 @@
 #include <iostream>
 
 #include "imgui/imgui.h"
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
+#include "imgui/imgui_internal.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
@@ -16,6 +20,35 @@ const unsigned int height = 800;
 Camera *camera;
 		
 int node_clicked = -1;
+
+ImVec2 GetScreenPos(glm::mat4 mat, glm::vec4 pos, ImVec2 start, ImVec2 size)
+{
+	glm::vec4 trans = mat * pos;
+
+	trans *= 0.5f / trans.w; // perspective division
+	trans += glm::vec4(0.5f, 0.5f, 0, 0); // convert [-1,1] to [0,1]
+
+	trans.y = 1.f - trans.y; // opengl/directx diff
+
+	trans.x *= size.x;
+	trans.y *= size.y;
+	trans.x += start.x;
+	trans.y += start.y;
+	return ImVec2(trans.x, trans.y);
+}
+
+void DrawArrow(ImVec2 origin, ImVec2 worldDirSSpace, ImDrawList *drawList, ImU32 color)
+{
+	ImVec2 dir(origin - worldDirSSpace);
+
+	float d = sqrtf(ImLengthSqr(dir));
+	dir /= d; // Normalize
+	dir *= 6.0f;
+
+	ImVec2 ortogonalDir(dir.y, -dir.x); // Perpendicular vector
+	ImVec2 a(worldDirSSpace + dir);
+	drawList->AddTriangleFilled(worldDirSSpace - dir, a + ortogonalDir, a - ortogonalDir, color);
+}
 
 int main() {
 	glfwInit();
@@ -285,8 +318,6 @@ int main() {
 			// Using a Child allow to fill all the space of the window.
 			// It also alows customization
 			ImGui::BeginChild("GameRender");
-
-            ImVec2 pos = ImGui::GetCursorScreenPos();
 			
 			// Get the size of the child (i.e. the whole draw size of the windows).
 			viewport = ImGui::GetWindowSize();
@@ -303,15 +334,43 @@ int main() {
 
 
 			ImGui::EndChild();
+
+			if (node_clicked != -1)
+			{
+				// draw gizmo
+				ImGui::BeginChild("GameRender");
+
+				Object *object = renderer.scene->objects[node_clicked];
+
+				ImDrawList *drawList = ImGui::GetWindowDrawList();
+
+				glm::mat4 mat;
+
+				bool local = false;
+				if (local)
+					mat = camera->cameraMatrix * object->objectToWorld; // local
+				else
+					mat = camera->cameraMatrix * glm::translate(object->position);
+				
+				ImVec2 origin = GetScreenPos(mat, glm::vec4(0, 0, 0, 1), windowPos, viewport);
+				ImVec2 right = 	GetScreenPos(mat, glm::vec4(1, 0, 0, 1), windowPos, viewport);
+				ImVec2 up = 	GetScreenPos(mat, glm::vec4(0, 1, 0, 1), windowPos, viewport);
+				ImVec2 front = 	GetScreenPos(mat, glm::vec4(0, 0, 1, 1), windowPos, viewport);
+
+				drawList->AddLine(origin, right, 	IM_COL32(255, 0, 0, 255), 3.f);
+				drawList->AddLine(origin, up, 		IM_COL32(0, 255, 0, 255), 3.f);
+				drawList->AddLine(origin, front, 	IM_COL32(0, 0, 255, 255), 3.f);
+				
+				DrawArrow(origin, right, 	drawList, IM_COL32(255, 0, 0, 255));
+				DrawArrow(origin, up,		drawList, IM_COL32(0, 255, 0, 255));
+				DrawArrow(origin, front, 	drawList, IM_COL32(0, 0, 255, 255));
+				
+				drawList->AddCircleFilled(origin, 6.f, IM_COL32(255, 255, 255, 255), 32);
+				
+
+				ImGui::EndChild();
+			}
 			
-			ImGui::BeginChild("GameRender");
-
-			ImDrawList *drawList = ImGui::GetWindowDrawList();
-            ImVec2 marker_min = ImVec2(pos.x + 100, pos.y + 100);
-			// std::cout << "pos=" << pos.x << " " << pos.y << std::endl;
-            drawList->AddLine(pos, marker_min, IM_COL32(0XFF, 0, 0, 0XFF), 3.f);
-
-			ImGui::EndChild();
 
 			ImGui::End();
 		}

@@ -19,6 +19,9 @@ class Object
         glm::vec3 position = glm::vec3(0);
         glm::vec3 rotation = glm::vec3(0);
         glm::vec3 scale = glm::vec3(1);
+
+        glm::mat4 objectToWorld = glm::mat4(1);
+        void UpdateMatrix();
 };
 
 static const float ZPI = 3.14159265358979323846f;

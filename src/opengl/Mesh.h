@@ -20,15 +20,12 @@ class Mesh : public Object
 
         virtual Type GetType() { return Type_Mesh; };
 
-        glm::mat4 objectToWorld = glm::mat4(1);
-
         Texture *texture;
         Shader *shader;
 
         Mesh(const char *filename);
         Mesh(std::vector<Vertex> &vertices, std::vector<GLuint> &indices);
 
-        void UpdateMatrix();
         void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor);
 };
 
