@@ -15,16 +15,27 @@ class Mesh : public Object
     public:
         std::vector<Vertex> vertices;
         std::vector<GLuint> indices;
+
+        std::vector<glm::vec3> verts;
+        std::vector<glm::vec3> normals;
+        std::vector<glm::vec2> uvs;
         
         VAO vao;
 
-        virtual Type GetType() { return Type_Mesh; };
+        glm::vec3 minPos = glm::vec3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+        glm::vec3 maxPos = glm::vec3(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
 
         Texture *texture;
         Shader *shader;
 
+        const char *filename;
+
         Mesh(const char *filename);
-        Mesh(std::vector<Vertex> &vertices, std::vector<GLuint> &indices);
+
+        virtual Type GetType() { return Type_Mesh; };
+
+        void CalcBounds();
+        void Bind();
 
         void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor);
 };
