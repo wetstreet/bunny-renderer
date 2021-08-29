@@ -40,9 +40,4 @@ class Mesh : public Object
         void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor);
 };
 
-std::ostream &operator<<(std::ostream &out, glm::vec4 &v);
-std::ostream &operator<<(std::ostream &out, glm::vec3 &v);
-std::ostream &operator<<(std::ostream &out, glm::vec2 &v);
-std::ostream &operator<<(std::ostream &out, glm::mat4 &m);
-
 #endif

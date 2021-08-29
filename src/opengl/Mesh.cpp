@@ -1,36 +1,5 @@
 #include "Mesh.h"
 
-std::ostream &operator<<(std::ostream &out, glm::vec4 &v)
-{
-    out << "(" << v.x << "," << v.y << "," << v.z << "," << v.w << ")";
-    return out;
-}
-
-std::ostream &operator<<(std::ostream &out, glm::vec3 &v)
-{
-    out << "(" << v.x << "," << v.y << "," << v.z << ")";
-    return out;
-}
-
-std::ostream &operator<<(std::ostream &out, glm::vec2 &v)
-{
-    out << "(" << v.x << "," << v.y << ")";
-    return out;
-}
-
-std::ostream &operator<<(std::ostream &out, glm::mat4 &m)
-{
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; j++)
-        {
-            out << m[i][j] << " ";
-        }
-        out << std::endl;
-    }
-    return out;
-}
-
 inline std::size_t hash_combine(const std::size_t& seed1, const std::size_t& seed2)
 {
     return seed1 ^ (seed2 + 0x9e3779b9 + (seed1<<6) + (seed1>>2));
@@ -60,9 +29,6 @@ void Mesh::CalcBounds()
         if (pos.y > maxPos.y) maxPos.y = pos.y;
         if (pos.z > maxPos.z) maxPos.z = pos.z;
     }
-    std::cout << filename << std::endl;
-    std::cout << "minPos=" << minPos << std::endl;
-    std::cout << "maxPos=" << maxPos << std::endl;
 }
 
 void Mesh::Bind()
