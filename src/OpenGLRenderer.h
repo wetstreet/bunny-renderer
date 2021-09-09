@@ -7,7 +7,7 @@ class OpenGLRenderer : public Renderer
 {
     public:
         OpenGLRenderer();
-        ~OpenGLRenderer();
+        virtual ~OpenGLRenderer();
 
         virtual void Render(Scene &scene);
 
