@@ -1,6 +1,7 @@
 #include "Renderer.h"
 
-void Renderer::Init_Scene(Camera *camera)
+
+void Renderer::Init_Scene()
 {
 	shader = new Shader("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
 	scene = new Scene(camera);
@@ -12,6 +13,7 @@ void Renderer::Init_Scene(Camera *camera)
 	head->shader = shader;
     strcpy(head->name, "head");
 	scene->AddObject(head);
+
 }
 
 int Renderer::AddPrimitive(std::string name)
@@ -70,6 +72,8 @@ void Renderer::Render_OpenGL(GLFWwindow* window, float deltaTime)
     scene->camera->updateMatrix(45.0f, 0.1f, 1000.0f, viewport.x, viewport.y);
 
     scene->Draw();
+
+    skybox.Draw(camera);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

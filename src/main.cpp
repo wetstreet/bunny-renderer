@@ -81,8 +81,8 @@ int main() {
 	});
 
 	Renderer renderer = Renderer::GetInstance();
-
-	renderer.Init_Scene(camera);
+	renderer.camera = camera;
+	renderer.Init_Scene();
 	renderer.Init_OpenGL();
 
 	ImVec2 viewport(800, 800);

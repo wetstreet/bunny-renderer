@@ -4,6 +4,7 @@
 #include "../opengl/Scene.h"
 #include "../opengl/Texture.h"
 #include "../rasterizer/rasterizer.h"
+#include "../opengl/Skybox.h"
 
 class Renderer
 {
@@ -13,7 +14,7 @@ class Renderer
             static Renderer renderer;
             return renderer;
         }
-        void Init_Scene(Camera *camera);
+        void Init_Scene();
         void Init_OpenGL();
         void Render_OpenGL(GLFWwindow* window, float deltaTime);
         void Render_Rasterizer();
@@ -23,10 +24,12 @@ class Renderer
 
     private:
         Renderer() {}
+        Skybox skybox;
 
     public:
         glm::vec2 viewport = glm::vec2(800, 800);
         glm::vec3 clear_color = glm::vec3(0.2f, 0.2f, 0.2f);
+        Camera *camera;
 	    GLuint texColorBuffer;
         GLuint rbo;
         GLuint framebuffer;
