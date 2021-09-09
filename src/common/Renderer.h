@@ -3,42 +3,19 @@
 
 #include "../opengl/Scene.h"
 #include "../opengl/Texture.h"
-#include "../rasterizer/rasterizer.h"
 #include "../opengl/Skybox.h"
 
 class Renderer
 {
     public:
-        static Renderer GetInstance()
-        {
-            static Renderer renderer;
-            return renderer;
-        }
-        void Init_Scene();
-        void Init_OpenGL();
-        void Render_OpenGL(GLFWwindow* window, float deltaTime);
-        void Render_Rasterizer();
-        
-        int AddPrimitive(std::string name);
-        ~Renderer();
+        virtual void Render(Scene &scene) = 0;
 
-    private:
-        Renderer() {}
+    protected:
         Skybox skybox;
 
     public:
-        glm::vec2 viewport = glm::vec2(800, 800);
-        glm::vec3 clear_color = glm::vec3(0.2f, 0.2f, 0.2f);
-        Camera *camera;
-	    GLuint texColorBuffer;
-        GLuint rbo;
-        GLuint framebuffer;
-	    GLuint image_texture;
-        Shader *shader;
-        Scene *scene;
-	    Rasterizer ras;
-        Texture *head_diffuse;
-        Texture *white_tex;
+        glm::ivec2 viewport = glm::ivec2(800, 800);
+	    GLuint renderTexture;
 };
 
 #endif //__RENDERER_H__

@@ -21,17 +21,17 @@ renderer:
 	@g++ -c src/opengl/Skybox.cpp -Iinclude
 	
 	@g++ -c include/tgaimage.cpp -Iinclude
-	@g++ -c src/rasterizer/rasterizer.cpp -Iinclude
 	@g++ -c src/rasterizer/our_gl.cpp -Iinclude
 	
 	@g++ -c src/common/Object.cpp -Iinclude
-	@g++ -c src/common/Renderer.cpp -Iinclude
 	@g++ -c src/common/DirectionalLight.cpp -Iinclude
-	@g++ -c src/main.cpp -Iinclude -o main.o
+	@g++ -c src/main.cpp -Iinclude
+	@g++ -c src/OpenGLRenderer.cpp -Iinclude
+	@g++ -c src/RasterizerRenderer.cpp -Iinclude
 
-	@g++ -o renderer.exe main.o Skybox.o Renderer.o Object.o DirectionalLight.o glad.o stb_image.o \
+	@g++ -o renderer.exe main.o OpenGLRenderer.o RasterizerRenderer.o Skybox.o Object.o DirectionalLight.o glad.o stb_image.o \
 			imgui.o imgui_demo.o imgui_draw.o imgui_impl_glfw.o imgui_impl_opengl3.o imgui_tables.o imgui_widgets.o \
-			Camera.o Texture.o VAO.o VBO.o EBO.o Shader.o Mesh.o Scene.o rasterizer.o our_gl.o tgaimage.o \
+			Camera.o Texture.o VAO.o VBO.o EBO.o Shader.o Mesh.o Scene.o our_gl.o tgaimage.o \
 			 -Iinclude -Llib -lmingw32 -lglfw3 -lopengl32 -lgdi32 -luser32 -limm32
 	@del *.o
 

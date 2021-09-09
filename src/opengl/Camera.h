@@ -24,6 +24,8 @@ class Camera
         glm::vec2 windowPos;
         glm::vec2 viewport;
 
+        glm::vec3 clearColor = glm::vec3(0.2f, 0.2f, 0.2f);
+
         bool firstClick = true;
 
         int width;

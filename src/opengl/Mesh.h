@@ -26,7 +26,6 @@ class Mesh : public Object
         glm::vec3 maxPos = glm::vec3(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
 
         Texture *texture;
-        Shader *shader;
 
         const char *filename;
 
@@ -37,7 +36,7 @@ class Mesh : public Object
         void CalcBounds();
         void Bind();
 
-        void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor);
+        void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor, Shader *shader);
 };
 
 #endif

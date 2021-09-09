@@ -110,7 +110,7 @@ Mesh::Mesh(const char *filename)
     Bind();
 }
 
-void Mesh::Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor)
+void Mesh::Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor, Shader *shader)
 {
     shader->Activate();
 

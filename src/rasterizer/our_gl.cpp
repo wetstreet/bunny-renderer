@@ -89,7 +89,7 @@ glm::mat4 projection(float coeff)
 
 const int depth  = 255;
 
-glm::mat4 viewport(int x, int y, int w, int h)
+glm::mat4 viewportMat(int x, int y, int w, int h)
 {
     glm::mat4 Viewport = glm::mat4(1);
     Viewport[0][3] = x + w / 2.0f;

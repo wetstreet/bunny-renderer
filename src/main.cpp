@@ -11,7 +11,8 @@
 #include "opengl/Scene.h"
 #include "opengl/Texture.h"
 
-#include "common/Renderer.h"
+#include "OpenGLRenderer.h"
+#include "RasterizerRenderer.h"
 #include "common/DirectionalLight.h"
 
 #include "common/Utils.h"
@@ -79,11 +80,10 @@ int main() {
 	{
 		camera->ScrollCallback(window, xoffset, yoffset);
 	});
+	Scene scene(camera);
 
-	Renderer renderer = Renderer::GetInstance();
-	renderer.camera = camera;
-	renderer.Init_Scene();
-	renderer.Init_OpenGL();
+	OpenGLRenderer openglRenderer;
+	RasterizerRenderer rasterizerRenderer;
 
 	ImVec2 viewport(800, 800);
 	ImVec2 windowPos;
@@ -91,7 +91,7 @@ int main() {
 	double lastTime = glfwGetTime();
 	
 	ImVec2 window_size;
-	ImVec2 content_size(renderer.ras.size.x, renderer.ras.size.y);
+	ImVec2 content_size(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
 
 	bool showInspector = true;
 	bool showScene = true;
@@ -109,7 +109,10 @@ int main() {
 		double deltaTime = nowTime - lastTime;
 		lastTime = nowTime;
 
-		renderer.Render_OpenGL(window, deltaTime);
+    	camera->SceneInputs(window, deltaTime);
+		openglRenderer.Render(scene);
+
+		// renderer.Render_OpenGL(window, deltaTime);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -121,19 +124,19 @@ int main() {
 			{
             	if (ImGui::MenuItem("Plane"))
 				{
-					node_clicked = renderer.AddPrimitive("plane");
+					node_clicked = scene.AddPrimitive("plane");
 				}
             	if (ImGui::MenuItem("Cube"))
 				{
-					node_clicked = renderer.AddPrimitive("cube");
+					node_clicked = scene.AddPrimitive("cube");
 				}
             	if (ImGui::MenuItem("Sphere"))
 				{
-					node_clicked = renderer.AddPrimitive("sphere");
+					node_clicked = scene.AddPrimitive("sphere");
 				}
             	if (ImGui::MenuItem("Cylinder"))
 				{
-					node_clicked = renderer.AddPrimitive("cylinder");
+					node_clicked = scene.AddPrimitive("cylinder");
 				}
 				ImGui::EndMenu();
 			}
@@ -144,7 +147,7 @@ int main() {
 				{
 					DirectionalLight *dir = new DirectionalLight();
     				strcpy(dir->name, "directional light");
-					node_clicked = renderer.scene->AddObject(dir);
+					node_clicked = scene.AddObject(dir);
 				}
 				ImGui::EndMenu();
 			}
@@ -170,7 +173,7 @@ int main() {
 
 			if (node_clicked != -1)
 			{
-				Object *object = renderer.scene->objects[node_clicked];
+				Object *object = scene.objects[node_clicked];
 				
 				ImGui::Checkbox("##isEnabled", &object->isEnabled);
 				ImGui::SameLine();
@@ -200,20 +203,21 @@ int main() {
 		{
             ImGui::Begin("Rasterizer", &showRasterizer);
 
-			ImGui::InputInt2("Size", (int*)&renderer.ras.size);
+			ImGui::InputInt2("Size", (int*)&rasterizerRenderer.viewport);
 			ImGui::SameLine();
 			if (ImGui::Button("Sync"))
 			{
-				renderer.ras.size.x = viewport.x;
-				renderer.ras.size.y = viewport.y;
+				rasterizerRenderer.viewport.x = viewport.x;
+				rasterizerRenderer.viewport.y = viewport.y;
 			}
 
 			if (ImGui::Button("rasterizer render"))
 			{
-				window_size = ImVec2(renderer.ras.size.x + 20, renderer.ras.size.y + 35);
-				content_size = ImVec2(renderer.ras.size.x, renderer.ras.size.y);
+				window_size = ImVec2(rasterizerRenderer.viewport.x + 20, rasterizerRenderer.viewport.y + 35);
+				content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
 
-				renderer.Render_Rasterizer();
+				rasterizerRenderer.Render(scene);
+				// renderer.Render_Rasterizer();
 
     			showImage = true;
 			}
@@ -225,7 +229,7 @@ int main() {
 		{
 			ImGui::SetNextWindowSize(window_size);
 			ImGui::Begin("Render Result", &showImage);
-			ImGui::Image((void*)(intptr_t)renderer.image_texture, content_size);
+			ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size);
 			ImGui::End();
 		}
 
@@ -239,7 +243,7 @@ int main() {
 			ImGui::InputFloat("Pan Speed", (float*)&camera->scenePanSpeed);
 			ImGui::InputFloat("Scroll Speed", (float*)&camera->sceneScrollSpeed);
 			
-			ImGui::ColorEdit3("Background", (float*)&renderer.clear_color);
+			ImGui::ColorEdit3("Background", (float*)&camera->clearColor);
 			
 			ImGui::End();
 		}
@@ -251,9 +255,9 @@ int main() {
             static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
 			static int selection_mask = (1 << 2);
-			for (int i = 0; i < renderer.scene->objects.size(); i++)
+			for (int i = 0; i < scene.objects.size(); i++)
 			{
-				Object *object = renderer.scene->objects[i];
+				Object *object = scene.objects[i];
 				ImGuiTreeNodeFlags node_flags = base_flags;
                 const bool is_selected = (selection_mask & (1 << i)) != 0;
                 if (is_selected)
@@ -290,7 +294,7 @@ int main() {
 
 				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
 				{
-					renderer.scene->RemoveObject(node_clicked);
+					scene.RemoveObject(node_clicked);
 					node_clicked = -1;
 				}
 			}
@@ -311,13 +315,13 @@ int main() {
 			viewport = ImGui::GetWindowSize();
 			windowPos = ImGui::GetWindowPos();
 
-			renderer.scene->camera->windowPos = glm::vec2(windowPos.x, windowPos.y);
-			renderer.scene->camera->viewport = glm::vec2(viewport.x, viewport.y);
-			renderer.viewport = glm::vec2(viewport.x, viewport.y);
+			scene.camera->windowPos = glm::vec2(windowPos.x, windowPos.y);
+			scene.camera->viewport = glm::vec2(viewport.x, viewport.y);
+			openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
 
 
 			// Because I use the texture from OpenGL, I need to invert the V from the UV.
-			ImGui::Image((ImTextureID)(intptr_t)renderer.texColorBuffer, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)(intptr_t)openglRenderer.renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
 			
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
@@ -340,9 +344,9 @@ int main() {
 					);
 					
 					node_clicked = -1;
-					for(int i = 0; i < renderer.scene->objects.size(); i++)
+					for(int i = 0; i < scene.objects.size(); i++)
 					{
-						Object* object = renderer.scene->objects[i];
+						Object* object = scene.objects[i];
 						if (object->GetType() == Type_Mesh)
 						{
 							Mesh* mesh = (Mesh*)object;
@@ -372,7 +376,7 @@ int main() {
 				// draw gizmo
 				ImGui::BeginChild("GameRender");
 
-				Object *object = renderer.scene->objects[node_clicked];
+				Object *object = scene.objects[node_clicked];
 
 				ImDrawList *drawList = ImGui::GetWindowDrawList();
 
