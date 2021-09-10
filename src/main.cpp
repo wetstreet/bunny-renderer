@@ -93,13 +93,18 @@ int main() {
 	ImVec2 window_size;
 	ImVec2 content_size(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
 
+	// regular window
 	bool showInspector = true;
 	bool showScene = true;
 	bool showSceneCamera = true;
 	bool showHierarchy = true;
 	bool showRasterizer = true;
 
+	// special window
 	bool showImage = false;
+	bool showCustomMeshPopup = false;
+	char customMeshName[32];
+    strcpy(customMeshName, "");
 
 	bool mUsing = false;
 
@@ -111,8 +116,6 @@ int main() {
 
     	camera->SceneInputs(window, deltaTime);
 		openglRenderer.Render(scene);
-
-		// renderer.Render_OpenGL(window, deltaTime);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -137,6 +140,10 @@ int main() {
             	if (ImGui::MenuItem("Cylinder"))
 				{
 					node_clicked = scene.AddPrimitive("cylinder");
+				}
+            	if (ImGui::MenuItem("Custom"))
+				{
+					showCustomMeshPopup = true;
 				}
 				ImGui::EndMenu();
 			}
@@ -199,6 +206,24 @@ int main() {
             ImGui::End();
         }
 
+		if (showCustomMeshPopup)
+		{
+            ImGui::Begin("Add Custom Mesh", &showCustomMeshPopup);
+
+			ImGui::InputText("##name", customMeshName, IM_ARRAYSIZE(customMeshName));
+
+			ImGui::SameLine();
+			
+			if (ImGui::Button("Ok"))
+			{
+				node_clicked = scene.AddPrimitive(customMeshName);
+    			strcpy(customMeshName, "");
+				showCustomMeshPopup = false;
+			}
+
+            ImGui::End();
+		}
+
 		if (showRasterizer)
 		{
             ImGui::Begin("Rasterizer", &showRasterizer);
@@ -217,7 +242,6 @@ int main() {
 				content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
 
 				rasterizerRenderer.Render(scene);
-				// renderer.Render_Rasterizer();
 
     			showImage = true;
 			}

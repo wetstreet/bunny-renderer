@@ -1,5 +1,10 @@
 #include "Object.h"
 
+void Object::SetName(const char *name)
+{
+    strcpy(this->name, name);
+}
+
 void Object::UpdateMatrix()
 {
 	objectToWorld = glm::mat4(1);

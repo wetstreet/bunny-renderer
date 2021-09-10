@@ -1,5 +1,14 @@
 #include "Mesh.h"
 
+Mesh::Mesh(const char *filename)
+{
+    Mesh::filename = filename;
+
+    ParseFile();
+    CalcBounds();
+    Bind();
+}
+
 inline std::size_t hash_combine(const std::size_t& seed1, const std::size_t& seed2)
 {
     return seed1 ^ (seed2 + 0x9e3779b9 + (seed1<<6) + (seed1>>2));
@@ -16,39 +25,8 @@ struct uvec3_hash {
     }
 };
 
-void Mesh::CalcBounds()
+void Mesh::ParseFile()
 {
-    for (int i = 0; i < verts.size(); i++)
-    {
-        glm::vec3 pos = verts[i];
-        if (pos.x < minPos.x) minPos.x = pos.x;
-        if (pos.y < minPos.y) minPos.y = pos.y;
-        if (pos.z < minPos.z) minPos.z = pos.z;
-
-        if (pos.x > maxPos.x) maxPos.x = pos.x;
-        if (pos.y > maxPos.y) maxPos.y = pos.y;
-        if (pos.z > maxPos.z) maxPos.z = pos.z;
-    }
-}
-
-void Mesh::Bind()
-{
-	vao.Bind();
-
-	VBO vbo(vertices);
-	EBO ebo(indices);
-
-	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), 0);
-	vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(float)));
-	vao.LinkAttrib(vbo, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
-	vao.Unbind();
-	vbo.Unbind();
-	ebo.Unbind();
-}
-
-Mesh::Mesh(const char *filename)
-{
-    Mesh::filename = filename;
     std::unordered_map<glm::uvec3, unsigned int, uvec3_hash> vertMap;
 
     std::ifstream in;
@@ -105,9 +83,36 @@ Mesh::Mesh(const char *filename)
             }
         }
     }
+}
 
-    CalcBounds();
-    Bind();
+void Mesh::CalcBounds()
+{
+    for (int i = 0; i < verts.size(); i++)
+    {
+        glm::vec3 pos = verts[i];
+        if (pos.x < minPos.x) minPos.x = pos.x;
+        if (pos.y < minPos.y) minPos.y = pos.y;
+        if (pos.z < minPos.z) minPos.z = pos.z;
+
+        if (pos.x > maxPos.x) maxPos.x = pos.x;
+        if (pos.y > maxPos.y) maxPos.y = pos.y;
+        if (pos.z > maxPos.z) maxPos.z = pos.z;
+    }
+}
+
+void Mesh::Bind()
+{
+	vao.Bind();
+
+	VBO vbo(vertices);
+	EBO ebo(indices);
+
+	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), 0);
+	vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(float)));
+	vao.LinkAttrib(vbo, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
+	vao.Unbind();
+	vbo.Unbind();
+	ebo.Unbind();
 }
 
 void Mesh::Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor, Shader *shader)

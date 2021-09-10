@@ -29,14 +29,17 @@ class Mesh : public Object
 
         const char *filename;
 
+    public:
         Mesh(const char *filename);
 
         virtual Type GetType() { return Type_Mesh; };
 
+        void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor, Shader *shader);
+
+    private:
+        void ParseFile();
         void CalcBounds();
         void Bind();
-
-        void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor, Shader *shader);
 };
 
 #endif

@@ -9,7 +9,7 @@ Scene::Scene(Camera *camera)
 
 	Mesh *head = new Mesh("obj/african_head/african_head.obj");
 	head->texture = head_diffuse;
-    strcpy(head->name, "head");
+    head->SetName("head");
 	AddObject(head);
 }
 
