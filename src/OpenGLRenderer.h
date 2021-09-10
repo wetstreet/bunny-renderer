@@ -10,11 +10,15 @@ class OpenGLRenderer : public Renderer
         virtual ~OpenGLRenderer();
 
         virtual void Render(Scene &scene);
+	    GLuint postprocessRT;
 
     private:
         GLuint rbo;
-        GLuint framebuffer;
+        GLuint FBO;
+        GLuint postprocessFBO;
+	    GLuint rectVAO, rectVBO;
         Shader *shader;
+        Shader *postprocessShader;
 };
 
 #endif //__OPENGL_RENDERER_H__

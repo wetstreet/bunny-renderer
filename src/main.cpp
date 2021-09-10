@@ -99,6 +99,7 @@ int main() {
 	bool showSceneCamera = true;
 	bool showHierarchy = true;
 	bool showRasterizer = true;
+	bool postprocess = false;
 
 	// special window
 	bool showImage = false;
@@ -268,6 +269,8 @@ int main() {
 			ImGui::InputFloat("Scroll Speed", (float*)&camera->sceneScrollSpeed);
 			
 			ImGui::ColorEdit3("Background", (float*)&camera->clearColor);
+
+			ImGui::Checkbox("Post Process", &postprocess);
 			
 			ImGui::End();
 		}
@@ -343,9 +346,11 @@ int main() {
 			scene.camera->viewport = glm::vec2(viewport.x, viewport.y);
 			openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
 
-
 			// Because I use the texture from OpenGL, I need to invert the V from the UV.
-			ImGui::Image((ImTextureID)(intptr_t)openglRenderer.renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			if (postprocess)
+				ImGui::Image((ImTextureID)(intptr_t)openglRenderer.postprocessRT, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			else
+				ImGui::Image((ImTextureID)(intptr_t)openglRenderer.renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
 			
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
