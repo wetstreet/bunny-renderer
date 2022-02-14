@@ -37,7 +37,7 @@ void DrawArrow(ImVec2 origin, ImVec2 worldDirSSpace, ImDrawList *drawList, ImU32
 	drawList->AddTriangleFilled(worldDirSSpace - dir, a + ortogonalDir, a - ortogonalDir, color);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

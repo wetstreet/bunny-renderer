@@ -52,8 +52,12 @@ add_library(STB_IMAGE "thirdparty/stb_image.cpp")
 # GLAD
 add_library(GLAD "thirdparty/glad.c")
 
+# imgui
+file(GLOB IMGUI_SOURCES "thirdparty/imgui/*.cpp")
+add_library(IMGUI ${IMGUI_SOURCES})
+
 # Put all libraries into a variable
-set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE)
+set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE)
 
 # Define the include DIRs
 include_directories(
@@ -93,4 +97,16 @@ if(WIN32)
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		"${PROJECT_SOURCE_DIR}/dlls"
 		$<TARGET_FILE_DIR:${PROJECT_NAME}>)
+endif()
+
+# Copy resources
+if(WIN32)
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${PROJECT_SOURCE_DIR}/res"
+		$<TARGET_FILE_DIR:${PROJECT_NAME}>/res)
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${PROJECT_SOURCE_DIR}/res"
+		"${CMAKE_BINARY_DIR}/res")
 endif()
