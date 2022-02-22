@@ -171,65 +171,22 @@ void Application::DrawGizmo()
 {
 	if (node_clicked != -1)
 	{
-		// draw gizmo
-		ImGui::BeginChild("GameRender");
+		ImGuizmo::SetOrthographic(false);
+		ImGuizmo::SetDrawlist();
+
+		float windowWidth = (float)ImGui::GetWindowWidth();
+		float windowHeight = (float)ImGui::GetWindowHeight();
+		ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
 
 		Object* object = scene->objects[node_clicked];
 
-		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		ImGuizmo::Manipulate(glm::value_ptr(scene->camera->view), glm::value_ptr(scene->camera->projection),
+			ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(object->objectToWorld));
 
-		glm::mat4 mat;
-
-		bool local = false;
-		if (local)
-			mat = camera->cameraMatrix * object->objectToWorld; // local
-		else
-			mat = camera->cameraMatrix * glm::translate(object->position);
-
-		ImVec2 origin = WorldToScreenPos(mat, glm::vec4(0, 0, 0, 1), windowPos, viewport);
-		glm::vec4 mouse = makeVect(ImGui::GetIO().MousePos);
-
-		int curAxis = -1;
-
-		static const glm::vec4 	directionUnary[3] = { glm::vec4(1, 0, 0, 1), glm::vec4(0, 1, 0, 1), glm::vec4(0, 0, 1, 1) };
-		static const ImU32 		directionColor[3] = { IM_COL32(255, 0, 0, 255), IM_COL32(0, 255, 0, 255), IM_COL32(0, 0, 255, 255) };
-		static const ImU32 selectionColor = IM_COL32(255, 128, 16, 138);
-
-		for (int i = 0; i < 3; i++)
+		if (ImGuizmo::IsUsing())
 		{
-			ImVec2 axis = WorldToScreenPos(mat, directionUnary[i], windowPos, viewport);
-
-			if (curAxis == -1)
-			{
-				glm::vec4 closestPointOnAxis = PointOnSegment(mouse, makeVect(origin), makeVect(axis));
-				if (glm::length(closestPointOnAxis - mouse) < 5.f)
-				{
-					curAxis = i;
-				}
-			}
-
-			ImU32 color = curAxis == i ? selectionColor : directionColor[i];
-			drawList->AddLine(origin, axis, color, 3.f);
-			DrawArrow(origin, axis, drawList, color);
+			object->position = glm::vec3(object->objectToWorld[3]);
 		}
-
-		if (mUsing)
-		{
-			std::cout << "click, axis=" << curAxis << std::endl;
-
-			if (!io->MouseDown[0])
-			{
-				mUsing = false;
-			}
-		}
-		else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && curAxis != -1)
-		{
-			mUsing = true;
-		}
-
-		drawList->AddCircleFilled(origin, 6.f, IM_COL32(255, 255, 255, 255), 32);
-
-		ImGui::EndChild();
 	}
 }
 
@@ -304,9 +261,9 @@ void Application::DrawScene()
 			}
 		}
 
-		ImGui::EndChild();
-
 		DrawGizmo();
+
+		ImGui::EndChild();
 
 		ImGui::End();
 	}

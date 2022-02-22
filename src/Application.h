@@ -6,6 +6,8 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "ImGuizmo/ImGuizmo.h"
+
 #include "opengl/Scene.h"
 #include "opengl/Texture.h"
 
@@ -73,6 +75,4 @@ private:
 	bool showImage = false;
 	bool showCustomMeshPopup = false;
 	char customMeshName[32];
-
-	bool mUsing = false;
 };

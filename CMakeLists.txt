@@ -56,8 +56,11 @@ add_library(GLAD "thirdparty/glad.c")
 file(GLOB IMGUI_SOURCES "thirdparty/imgui/*.cpp")
 add_library(IMGUI ${IMGUI_SOURCES})
 
+# ImGuizmo
+add_library(IMGUIZMO "thirdparty/ImGuizmo.cpp")
+
 # Put all libraries into a variable
-set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE)
+set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE IMGUIZMO)
 
 # Define the include DIRs
 include_directories(
@@ -65,6 +68,7 @@ include_directories(
 	"${CMAKE_SOURCE_DIR}/include"
 	"${CMAKE_SOURCE_DIR}/include/glad"
 	"${CMAKE_SOURCE_DIR}/include/glm"
+	"${CMAKE_SOURCE_DIR}/include/ImGuizmo"
 )
 
 # Define the link libraries
