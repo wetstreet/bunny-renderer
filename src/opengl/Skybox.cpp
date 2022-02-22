@@ -37,7 +37,7 @@ unsigned int skyboxIndices[] =
 
 Skybox::Skybox()
 {
-    skyboxShader = new Shader("src/opengl/shaders/skybox.vert", "src/opengl/shaders/skybox.frag");
+    skyboxShader = new Shader("res/shaders/skybox.vert", "res/shaders/skybox.frag");
 
 	// Create VAO, VBO, and EBO for the skybox
 	glGenVertexArrays(1, &skyboxVAO);
@@ -58,12 +58,12 @@ Skybox::Skybox()
 	// All the faces of the cubemap (make sure they are in this exact order)
 	std::string facesCubemap[6] =
 	{
-		"obj/skybox/right.jpg",
-		"obj/skybox/left.jpg",
-		"obj/skybox/top.jpg",
-		"obj/skybox/bottom.jpg",
-		"obj/skybox/front.jpg",
-		"obj/skybox/back.jpg"
+		"res/obj/skybox/right.jpg",
+		"res/obj/skybox/left.jpg",
+		"res/obj/skybox/top.jpg",
+		"res/obj/skybox/bottom.jpg",
+		"res/obj/skybox/front.jpg",
+		"res/obj/skybox/back.jpg"
 	};
 
 	// Creates the cubemap texture object

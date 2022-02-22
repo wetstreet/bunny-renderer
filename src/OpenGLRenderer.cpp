@@ -14,8 +14,8 @@ float rectangleVertices[] =
 
 OpenGLRenderer::OpenGLRenderer()
 {
-	shader = new Shader("src/opengl/shaders/default.vert", "src/opengl/shaders/default.frag");
-	postprocessShader = new Shader("src/opengl/shaders/postprocess.vert", "src/opengl/shaders/postprocess.frag");
+	shader = new Shader("res/shaders/default.vert", "res/shaders/default.frag");
+	postprocessShader = new Shader("res/shaders/postprocess.vert", "res/shaders/postprocess.frag");
 
 	glEnable(GL_DEPTH_TEST);
 

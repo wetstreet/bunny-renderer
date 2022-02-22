@@ -34,3 +34,6 @@
 .vscode
 # *.tga
 *.ini
+
+# cmake
+build
