@@ -4,10 +4,10 @@ Scene::Scene(Camera *camera)
 {
     Scene::camera = camera;
     
-	head_diffuse = new Texture("obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
-	white_tex = new Texture("obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+	head_diffuse = new Texture("res/obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+	white_tex = new Texture("res/obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
 
-	Mesh *head = new Mesh("obj/african_head/african_head.obj");
+	Mesh *head = new Mesh("res/obj/african_head/african_head.obj");
 	head->texture = head_diffuse;
     head->SetName("head");
 	AddObject(head);

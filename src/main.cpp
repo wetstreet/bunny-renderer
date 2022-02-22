@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 	OpenGLRenderer openglRenderer;
 	RasterizerRenderer rasterizerRenderer;
 
-	Application app;
+	Application app(camera, &scene, &io, &openglRenderer, &rasterizerRenderer);
 
 	double lastTime = glfwGetTime();
 
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-		app.DrawEditor(camera, scene, io, openglRenderer, rasterizerRenderer);
+		app.DrawEditor();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -19,16 +19,39 @@
 class Application
 {
 public:
-	Application()
+	Application(Camera* camera, Scene* scene, ImGuiIO* io, OpenGLRenderer* openglRenderer, RasterizerRenderer* rasterizerRenderer)
 	{
+		Application::camera = camera;
+		Application::scene = scene;
+		Application::io = io;
+		Application::openglRenderer = openglRenderer;
+		Application::rasterizerRenderer = rasterizerRenderer;
+
 		strcpy(customMeshName, "");
 	}
 
-	void DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRenderer& openglRenderer, RasterizerRenderer& rasterizerRenderer);
+	void DrawEditor();
+
+	void DrawMenu();
+	void DrawInspector();
+	void DrawScene();
+	void DrawGizmo();
+	void DrawHierarchy();
+	void DrawSceneCamera();
+	void DrawRasterizer();
+
+	void DrawCustomMeshPopup();
+	void DrawImage();
 
 	void DrawArrow(ImVec2 origin, ImVec2 worldDirSSpace, ImDrawList* drawList, ImU32 color);
 
 private:
+	Camera* camera;
+	Scene* scene;
+	ImGuiIO* io;
+	OpenGLRenderer* openglRenderer;
+	RasterizerRenderer* rasterizerRenderer;
+
 	ImVec2 viewport = ImVec2(800, 800);
 	ImVec2 windowPos;
 
@@ -43,6 +66,7 @@ private:
 	bool showSceneCamera = true;
 	bool showHierarchy = true;
 	bool showRasterizer = true;
+
 	bool postprocess = false;
 
 	// special window

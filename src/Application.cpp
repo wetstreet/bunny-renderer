@@ -1,6 +1,27 @@
 #include "Application.h"
 
-void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRenderer& openglRenderer, RasterizerRenderer& rasterizerRenderer)
+void Application::DrawEditor()
+{
+	DrawMenu();
+
+	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
+	DrawInspector();
+
+	DrawCustomMeshPopup();
+
+	DrawRasterizer();
+
+	DrawImage();
+
+	DrawSceneCamera();
+
+	DrawHierarchy();
+
+	DrawScene();
+}
+
+void Application::DrawMenu()
 {
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -8,19 +29,19 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 		{
 			if (ImGui::MenuItem("Plane"))
 			{
-				node_clicked = scene.AddPrimitive("plane");
+				node_clicked = scene->AddPrimitive("plane");
 			}
 			if (ImGui::MenuItem("Cube"))
 			{
-				node_clicked = scene.AddPrimitive("cube");
+				node_clicked = scene->AddPrimitive("cube");
 			}
 			if (ImGui::MenuItem("Sphere"))
 			{
-				node_clicked = scene.AddPrimitive("sphere");
+				node_clicked = scene->AddPrimitive("sphere");
 			}
 			if (ImGui::MenuItem("Cylinder"))
 			{
-				node_clicked = scene.AddPrimitive("cylinder");
+				node_clicked = scene->AddPrimitive("cylinder");
 			}
 			if (ImGui::MenuItem("Custom"))
 			{
@@ -35,7 +56,7 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 			{
 				DirectionalLight* dir = new DirectionalLight();
 				strcpy(dir->name, "directional light");
-				node_clicked = scene.AddObject(dir);
+				node_clicked = scene->AddObject(dir);
 			}
 			ImGui::EndMenu();
 		}
@@ -52,16 +73,17 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 
 		ImGui::EndMainMenuBar();
 	}
+}
 
-	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-
+void Application::DrawInspector()
+{
 	if (showInspector)
 	{
 		ImGui::Begin("Inspector", &showInspector);
 
 		if (node_clicked != -1)
 		{
-			Object* object = scene.objects[node_clicked];
+			Object* object = scene->objects[node_clicked];
 
 			ImGui::Checkbox("##isEnabled", &object->isEnabled);
 			ImGui::SameLine();
@@ -86,75 +108,10 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 
 		ImGui::End();
 	}
+}
 
-	if (showCustomMeshPopup)
-	{
-		ImGui::Begin("Add Custom Mesh", &showCustomMeshPopup);
-
-		ImGui::InputText("##name", customMeshName, IM_ARRAYSIZE(customMeshName));
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Ok"))
-		{
-			node_clicked = scene.AddPrimitive(customMeshName);
-			strcpy(customMeshName, "");
-			showCustomMeshPopup = false;
-		}
-
-		ImGui::End();
-	}
-
-	if (showRasterizer)
-	{
-		ImGui::Begin("Rasterizer", &showRasterizer);
-
-		ImGui::InputInt2("Size", (int*)&rasterizerRenderer.viewport);
-		ImGui::SameLine();
-		if (ImGui::Button("Sync"))
-		{
-			rasterizerRenderer.viewport.x = viewport.x;
-			rasterizerRenderer.viewport.y = viewport.y;
-		}
-
-		if (ImGui::Button("rasterizer render"))
-		{
-			window_size = ImVec2(rasterizerRenderer.viewport.x + 20, rasterizerRenderer.viewport.y + 35);
-			content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
-
-			rasterizerRenderer.Render(scene);
-
-			showImage = true;
-		}
-
-		ImGui::End();
-	}
-
-	if (showImage)
-	{
-		ImGui::SetNextWindowSize(window_size);
-		ImGui::Begin("Render Result", &showImage);
-		ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size);
-		ImGui::End();
-	}
-
-	if (showSceneCamera)
-	{
-		ImGui::Begin("Scene Camera", &showSceneCamera);
-
-		ImGui::InputFloat3("Position", (float*)&camera->Position);
-		ImGui::InputFloat("Move Speed", (float*)&camera->speed);
-		ImGui::InputFloat("Sensitivity", (float*)&camera->sensitivity);
-		ImGui::InputFloat("Pan Speed", (float*)&camera->scenePanSpeed);
-		ImGui::InputFloat("Scroll Speed", (float*)&camera->sceneScrollSpeed);
-
-		ImGui::ColorEdit3("Background", (float*)&camera->clearColor);
-
-		ImGui::Checkbox("Post Process", &postprocess);
-
-		ImGui::End();
-	}
-
+void Application::DrawHierarchy()
+{
 	if (showHierarchy)
 	{
 		ImGui::Begin("Hierarchy", &showHierarchy);
@@ -162,9 +119,9 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 		static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
 		static int selection_mask = (1 << 2);
-		for (int i = 0; i < scene.objects.size(); i++)
+		for (int i = 0; i < scene->objects.size(); i++)
 		{
-			Object* object = scene.objects[i];
+			Object* object = scene->objects[i];
 			ImGuiTreeNodeFlags node_flags = base_flags;
 			const bool is_selected = (selection_mask & (1 << i)) != 0;
 			if (is_selected)
@@ -201,14 +158,83 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 
 			if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
 			{
-				scene.RemoveObject(node_clicked);
+				scene->RemoveObject(node_clicked);
 				node_clicked = -1;
 			}
 		}
 
 		ImGui::End();
 	}
+}
 
+void Application::DrawGizmo()
+{
+	if (node_clicked != -1)
+	{
+		// draw gizmo
+		ImGui::BeginChild("GameRender");
+
+		Object* object = scene->objects[node_clicked];
+
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+		glm::mat4 mat;
+
+		bool local = false;
+		if (local)
+			mat = camera->cameraMatrix * object->objectToWorld; // local
+		else
+			mat = camera->cameraMatrix * glm::translate(object->position);
+
+		ImVec2 origin = WorldToScreenPos(mat, glm::vec4(0, 0, 0, 1), windowPos, viewport);
+		glm::vec4 mouse = makeVect(ImGui::GetIO().MousePos);
+
+		int curAxis = -1;
+
+		static const glm::vec4 	directionUnary[3] = { glm::vec4(1, 0, 0, 1), glm::vec4(0, 1, 0, 1), glm::vec4(0, 0, 1, 1) };
+		static const ImU32 		directionColor[3] = { IM_COL32(255, 0, 0, 255), IM_COL32(0, 255, 0, 255), IM_COL32(0, 0, 255, 255) };
+		static const ImU32 selectionColor = IM_COL32(255, 128, 16, 138);
+
+		for (int i = 0; i < 3; i++)
+		{
+			ImVec2 axis = WorldToScreenPos(mat, directionUnary[i], windowPos, viewport);
+
+			if (curAxis == -1)
+			{
+				glm::vec4 closestPointOnAxis = PointOnSegment(mouse, makeVect(origin), makeVect(axis));
+				if (glm::length(closestPointOnAxis - mouse) < 5.f)
+				{
+					curAxis = i;
+				}
+			}
+
+			ImU32 color = curAxis == i ? selectionColor : directionColor[i];
+			drawList->AddLine(origin, axis, color, 3.f);
+			DrawArrow(origin, axis, drawList, color);
+		}
+
+		if (mUsing)
+		{
+			std::cout << "click, axis=" << curAxis << std::endl;
+
+			if (!io->MouseDown[0])
+			{
+				mUsing = false;
+			}
+		}
+		else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && curAxis != -1)
+		{
+			mUsing = true;
+		}
+
+		drawList->AddCircleFilled(origin, 6.f, IM_COL32(255, 255, 255, 255), 32);
+
+		ImGui::EndChild();
+	}
+}
+
+void Application::DrawScene()
+{
 	if (showScene)
 	{
 		ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
@@ -222,15 +248,15 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 		viewport = ImGui::GetWindowSize();
 		windowPos = ImGui::GetWindowPos();
 
-		scene.camera->windowPos = glm::vec2(windowPos.x, windowPos.y);
-		scene.camera->viewport = glm::vec2(viewport.x, viewport.y);
-		openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
+		scene->camera->windowPos = glm::vec2(windowPos.x, windowPos.y);
+		scene->camera->viewport = glm::vec2(viewport.x, viewport.y);
+		openglRenderer->viewport = glm::vec2(viewport.x, viewport.y);
 
 		// Because I use the texture from OpenGL, I need to invert the V from the UV.
 		if (postprocess)
-			ImGui::Image((ImTextureID)(intptr_t)openglRenderer.postprocessRT, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)(intptr_t)openglRenderer->postprocessRT, viewport, ImVec2(0, 1), ImVec2(1, 0));
 		else
-			ImGui::Image((ImTextureID)(intptr_t)openglRenderer.renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)(intptr_t)openglRenderer->renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
 
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
@@ -253,9 +279,9 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 				);
 
 				node_clicked = -1;
-				for (int i = 0; i < scene.objects.size(); i++)
+				for (int i = 0; i < scene->objects.size(); i++)
 				{
-					Object* object = scene.objects[i];
+					Object* object = scene->objects[i];
 					if (object->GetType() == Type_Mesh)
 					{
 						Mesh* mesh = (Mesh*)object;
@@ -280,74 +306,91 @@ void Application::DrawEditor(Camera* camera, Scene& scene, ImGuiIO& io, OpenGLRe
 
 		ImGui::EndChild();
 
-		if (node_clicked != -1)
-		{
-			// draw gizmo
-			ImGui::BeginChild("GameRender");
-
-			Object* object = scene.objects[node_clicked];
-
-			ImDrawList* drawList = ImGui::GetWindowDrawList();
-
-			glm::mat4 mat;
-
-			bool local = false;
-			if (local)
-				mat = camera->cameraMatrix * object->objectToWorld; // local
-			else
-				mat = camera->cameraMatrix * glm::translate(object->position);
-
-			ImVec2 origin = WorldToScreenPos(mat, glm::vec4(0, 0, 0, 1), windowPos, viewport);
-			glm::vec4 mouse = makeVect(ImGui::GetIO().MousePos);
-
-			int curAxis = -1;
-
-			static const glm::vec4 	directionUnary[3] = { glm::vec4(1, 0, 0, 1), glm::vec4(0, 1, 0, 1), glm::vec4(0, 0, 1, 1) };
-			static const ImU32 		directionColor[3] = { IM_COL32(255, 0, 0, 255), IM_COL32(0, 255, 0, 255), IM_COL32(0, 0, 255, 255) };
-			static const ImU32 selectionColor = IM_COL32(255, 128, 16, 138);
-
-			for (int i = 0; i < 3; i++)
-			{
-				ImVec2 axis = WorldToScreenPos(mat, directionUnary[i], windowPos, viewport);
-
-				if (curAxis == -1)
-				{
-					glm::vec4 closestPointOnAxis = PointOnSegment(mouse, makeVect(origin), makeVect(axis));
-					if (glm::length(closestPointOnAxis - mouse) < 5.f)
-					{
-						curAxis = i;
-					}
-				}
-
-				ImU32 color = curAxis == i ? selectionColor : directionColor[i];
-				drawList->AddLine(origin, axis, color, 3.f);
-				DrawArrow(origin, axis, drawList, color);
-			}
-
-			if (mUsing)
-			{
-				std::cout << "click, axis=" << curAxis << std::endl;
-
-				if (!io.MouseDown[0])
-				{
-					mUsing = false;
-				}
-			}
-			else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && curAxis != -1)
-			{
-				mUsing = true;
-			}
-
-			drawList->AddCircleFilled(origin, 6.f, IM_COL32(255, 255, 255, 255), 32);
-
-			ImGui::EndChild();
-		}
-
+		DrawGizmo();
 
 		ImGui::End();
 	}
 }
 
+void Application::DrawSceneCamera()
+{
+	if (showSceneCamera)
+	{
+		ImGui::Begin("Scene Camera", &showSceneCamera);
+
+		ImGui::InputFloat3("Position", (float*)&camera->Position);
+		ImGui::InputFloat("Move Speed", (float*)&camera->speed);
+		ImGui::InputFloat("Sensitivity", (float*)&camera->sensitivity);
+		ImGui::InputFloat("Pan Speed", (float*)&camera->scenePanSpeed);
+		ImGui::InputFloat("Scroll Speed", (float*)&camera->sceneScrollSpeed);
+
+		ImGui::ColorEdit3("Background", (float*)&camera->clearColor);
+
+		ImGui::Checkbox("Post Process", &postprocess);
+
+		ImGui::End();
+	}
+}
+
+void Application::DrawImage()
+{
+	if (showImage)
+	{
+		ImGui::SetNextWindowSize(window_size);
+		ImGui::Begin("Render Result", &showImage);
+		ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer->renderTexture, content_size);
+		ImGui::End();
+	}
+}
+
+void Application::DrawRasterizer()
+{
+	if (showRasterizer)
+	{
+		ImGui::Begin("Rasterizer", &showRasterizer);
+
+		ImGui::InputInt2("Size", (int*)&rasterizerRenderer->viewport);
+		ImGui::SameLine();
+		if (ImGui::Button("Sync"))
+		{
+			rasterizerRenderer->viewport.x = viewport.x;
+			rasterizerRenderer->viewport.y = viewport.y;
+		}
+
+		if (ImGui::Button("rasterizer render"))
+		{
+			window_size = ImVec2(rasterizerRenderer->viewport.x + 20, rasterizerRenderer->viewport.y + 35);
+			content_size = ImVec2(rasterizerRenderer->viewport.x, rasterizerRenderer->viewport.y);
+
+			rasterizerRenderer->Render(*scene);
+
+			showImage = true;
+		}
+
+		ImGui::End();
+	}
+}
+
+void Application::DrawCustomMeshPopup()
+{
+	if (showCustomMeshPopup)
+	{
+		ImGui::Begin("Add Custom Mesh", &showCustomMeshPopup);
+
+		ImGui::InputText("##name", customMeshName, IM_ARRAYSIZE(customMeshName));
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Ok"))
+		{
+			node_clicked = scene->AddPrimitive(customMeshName);
+			strcpy(customMeshName, "");
+			showCustomMeshPopup = false;
+		}
+
+		ImGui::End();
+	}
+}
 
 void Application::DrawArrow(ImVec2 origin, ImVec2 worldDirSSpace, ImDrawList* drawList, ImU32 color)
 {
