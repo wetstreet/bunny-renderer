@@ -44,8 +44,7 @@ public:
 
 	void DrawCustomMeshPopup();
 	void DrawImage();
-
-	void DrawArrow(ImVec2 origin, ImVec2 worldDirSSpace, ImDrawList* drawList, ImU32 color);
+	void ClickToSelect();
 
 private:
 	Camera* camera;

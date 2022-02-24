@@ -17,7 +17,7 @@ class Object
         bool isEnabled = true;
         char name[32];
         glm::vec3 position = glm::vec3(0);
-        glm::vec3 rotation = glm::vec3(0);
+        glm::vec3 rotation = glm::vec3(0); // in radians
         glm::vec3 scale = glm::vec3(1);
 
         glm::mat4 objectToWorld = glm::mat4(1);

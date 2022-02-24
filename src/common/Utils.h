@@ -31,6 +31,8 @@ glm::vec4 PointOnSegment(const glm::vec4& point, const glm::vec4& vertPos1, cons
 
 glm::vec4 makeVect(const ImVec2 v);
 
+bool DecomposeTransform(const glm::mat4& ModelMatrix, glm::vec3& Translation, glm::vec3& Rotation, glm::vec3& Scale);
+
 // std::ostream &operator<<(std::ostream &out, glm::vec4 &v);
 // std::ostream &operator<<(std::ostream &out, glm::vec3 &v);
 // std::ostream &operator<<(std::ostream &out, glm::vec2 &v);

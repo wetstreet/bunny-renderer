@@ -1,4 +1,5 @@
 #include "Object.h"
+#include <glm/gtx/quaternion.hpp>
 
 void Object::SetName(const char *name)
 {
@@ -7,27 +8,7 @@ void Object::SetName(const char *name)
 
 void Object::UpdateMatrix()
 {
-	objectToWorld = glm::mat4(1);
-
-	for (int i = 0; i < 3; i++)
-	{
-		objectToWorld = glm::rotate(objectToWorld, rotation[i] * DEG2RAD, directionUnary[i]);
-	}
-
-	float validScale[3];
-	for (int i = 0; i < 3; i++)
-	{
-		if (fabsf(scale[i]) < FLT_EPSILON)
-		{
-		    validScale[i] = 0.001f;
-		}
-		else
-		{
-		    validScale[i] = scale[i];
-		}
-	}
-	objectToWorld[0] *= validScale[0];
-	objectToWorld[1] *= validScale[1];
-	objectToWorld[2] *= validScale[2];
-	objectToWorld[3] = glm::vec4(position[0], position[1], position[2], 1.f);
+	objectToWorld = glm::translate(glm::mat4(1.0f), position)
+		* glm::toMat4(glm::quat(rotation))
+		* glm::scale(glm::mat4(1.0f), scale);
 }

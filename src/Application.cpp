@@ -90,7 +90,9 @@ void Application::DrawInspector()
 			ImGui::InputText("##name", object->name, IM_ARRAYSIZE(object->name));
 
 			ImGui::InputFloat3("Tr", (float*)&object->position);
-			ImGui::InputFloat3("Rt", (float*)&object->rotation);
+			glm::vec3 degrees = glm::degrees(object->rotation);
+			ImGui::InputFloat3("Rt", (float*)&degrees);
+			object->rotation = glm::radians(degrees);
 			ImGui::InputFloat3("Sc", (float*)&object->scale);
 
 			if (object->GetType() == Type_Light)
@@ -181,11 +183,64 @@ void Application::DrawGizmo()
 		Object* object = scene->objects[node_clicked];
 
 		ImGuizmo::Manipulate(glm::value_ptr(scene->camera->view), glm::value_ptr(scene->camera->projection),
-			ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, glm::value_ptr(object->objectToWorld));
+			ImGuizmo::OPERATION::ROTATE, ImGuizmo::LOCAL, glm::value_ptr(object->objectToWorld));
 
 		if (ImGuizmo::IsUsing())
 		{
-			object->position = glm::vec3(object->objectToWorld[3]);
+			glm::vec3 translation, rotation, scale;
+			DecomposeTransform(object->objectToWorld, translation, rotation, scale);
+			object->position = translation;
+			object->rotation = rotation;
+			object->scale = scale;
+		}
+	}
+}
+
+void Application::ClickToSelect()
+{
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	{
+		ImVec2 mouse = ImGui::GetIO().MousePos;
+
+		if (mouse.x >= windowPos.x && mouse.x <= windowPos.x + viewport.x && mouse.y >= windowPos.y && mouse.y <= windowPos.y + viewport.y)
+		{
+			mouse -= windowPos;
+			mouse.y = viewport.y - mouse.y;
+
+			glm::vec3 ray_origin;
+			glm::vec3 ray_direction;
+			ScreenPosToWorldRay(
+				mouse.x, mouse.y,
+				viewport.x, viewport.y,
+				camera->view,
+				camera->projection,
+				ray_origin,
+				ray_direction
+			);
+
+			node_clicked = -1;
+			for (int i = 0; i < scene->objects.size(); i++)
+			{
+				Object* object = scene->objects[i];
+				if (object->GetType() == Type_Mesh)
+				{
+					Mesh* mesh = (Mesh*)object;
+
+					float intersection_distance; // Output of TestRayOBBIntersection()
+
+					if (TestRayOBBIntersection(
+						ray_origin,
+						ray_direction,
+						mesh->minPos,
+						mesh->maxPos,
+						mesh->objectToWorld,
+						intersection_distance)
+						) {
+						node_clicked = i;
+						break;
+					}
+				}
+			}
 		}
 	}
 }
@@ -215,51 +270,7 @@ void Application::DrawScene()
 		else
 			ImGui::Image((ImTextureID)(intptr_t)openglRenderer->renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
 
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-		{
-			ImVec2 mouse = ImGui::GetIO().MousePos;
-
-			if (mouse.x >= windowPos.x && mouse.x <= windowPos.x + viewport.x && mouse.y >= windowPos.y && mouse.y <= windowPos.y + viewport.y)
-			{
-				mouse -= windowPos;
-				mouse.y = viewport.y - mouse.y;
-
-				glm::vec3 ray_origin;
-				glm::vec3 ray_direction;
-				ScreenPosToWorldRay(
-					mouse.x, mouse.y,
-					viewport.x, viewport.y,
-					camera->view,
-					camera->projection,
-					ray_origin,
-					ray_direction
-				);
-
-				node_clicked = -1;
-				for (int i = 0; i < scene->objects.size(); i++)
-				{
-					Object* object = scene->objects[i];
-					if (object->GetType() == Type_Mesh)
-					{
-						Mesh* mesh = (Mesh*)object;
-
-						float intersection_distance; // Output of TestRayOBBIntersection()
-
-						if (TestRayOBBIntersection(
-							ray_origin,
-							ray_direction,
-							mesh->minPos,
-							mesh->maxPos,
-							mesh->objectToWorld,
-							intersection_distance)
-							) {
-							node_clicked = i;
-							break;
-						}
-					}
-				}
-			}
-		}
+		ClickToSelect();
 
 		DrawGizmo();
 
@@ -347,17 +358,4 @@ void Application::DrawCustomMeshPopup()
 
 		ImGui::End();
 	}
-}
-
-void Application::DrawArrow(ImVec2 origin, ImVec2 worldDirSSpace, ImDrawList* drawList, ImU32 color)
-{
-	ImVec2 dir(origin - worldDirSSpace);
-
-	float d = sqrtf(ImLengthSqr(dir));
-	dir /= d; // Normalize
-	dir *= 6.0f;
-
-	ImVec2 ortogonalDir(dir.y, -dir.x); // Perpendicular vector
-	ImVec2 a(worldDirSSpace + dir);
-	drawList->AddTriangleFilled(worldDirSSpace - dir, a + ortogonalDir, a - ortogonalDir, color);
 }
