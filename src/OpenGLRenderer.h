@@ -11,14 +11,21 @@ class OpenGLRenderer : public Renderer
 
         virtual void Render(Scene &scene);
 	    GLuint postprocessRT;
+        GLuint outlineRT;
 
     private:
         GLuint rbo;
         GLuint FBO;
         GLuint postprocessFBO;
+        GLuint outlineFBO;
 	    GLuint rectVAO, rectVBO;
-        Shader *shader;
-        Shader *postprocessShader;
+        Shader* shader;
+        Shader* postprocessShader;
+
+        Shader* outlineShader;
+        Shader* outlineCompareShader;
+        Shader* outlineBlurShader;
+        Shader* outlineMergeShader;
 };
 
 #endif //__OPENGL_RENDERER_H__

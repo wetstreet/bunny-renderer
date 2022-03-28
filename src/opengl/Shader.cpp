@@ -65,7 +65,7 @@ void Shader::compileErrors(unsigned int shader, const char* type)
         if (hasCompiled == GL_FALSE)
         {
             glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "SHADER_COMPILAATION_ERROR for:" << type << "\n" << std::endl;
+            std::cout << "SHADER_COMPILAATION_ERROR for:" << type << ",log=" << infoLog << "\n" << std::endl;
         }
     }
     else

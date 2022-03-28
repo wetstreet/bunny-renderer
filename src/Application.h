@@ -10,6 +10,7 @@
 
 #include "opengl/Scene.h"
 #include "opengl/Texture.h"
+#include "opengl/Selection.h"
 
 #include "OpenGLRenderer.h"
 #include "RasterizerRenderer.h"
@@ -55,8 +56,6 @@ private:
 
 	ImVec2 viewport = ImVec2(800, 800);
 	ImVec2 windowPos;
-
-	int node_clicked = -1;
 
 	ImVec2 window_size;
 	ImVec2 content_size;

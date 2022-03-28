@@ -63,14 +63,31 @@ void Scene::Draw(Shader *shader)
         if (object->GetType() == Type_Mesh && object->isEnabled)
         {
             Mesh *mesh = (Mesh*)object;
-            mesh->Draw(*camera, lightPos, lightColor, shader);
+
+            // todo: move to material
+            shader->Activate();
+
+            if (mesh->texture != NULL)
+            {
+                mesh->texture->texUnit(*shader, "tex0", 0);
+                mesh->texture->Bind();
+            }
+
+            glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
+            glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);
+
+            mesh->UpdateMatrix();
+            glUniformMatrix4fv(glGetUniformLocation(shader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera->cameraMatrix * mesh->objectToWorld));
+            // todo end
+
+            mesh->Draw();
         }
     }
 }
 
 int Scene::AddPrimitive(std::string name)
 {
-	Mesh *mesh = new Mesh(("obj/" + name + ".obj").c_str());
+	Mesh *mesh = new Mesh(("res/obj/" + name + ".obj").c_str());
 	mesh->texture = white_tex;
     strcpy(mesh->name, name.c_str());
 	return AddObject(mesh);

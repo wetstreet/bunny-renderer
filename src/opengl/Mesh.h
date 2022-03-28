@@ -34,7 +34,7 @@ class Mesh : public Object
 
         virtual Type GetType() { return Type_Mesh; };
 
-        void Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor, Shader *shader);
+        void Draw();
 
     private:
         void ParseFile();

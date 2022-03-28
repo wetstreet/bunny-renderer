@@ -75,6 +75,7 @@ void Application::DrawMenu()
 	}
 }
 
+int gizmoType = (int)ImGuizmo::OPERATION::TRANSLATE;
 void Application::DrawInspector()
 {
 	if (showInspector)
@@ -104,6 +105,11 @@ void Application::DrawInspector()
 				ImGui::ColorEdit3("Color", (float*)&light->color);
 				ImGui::InputFloat("Intensity", &light->intensity);
 			}
+
+
+			ImGui::RadioButton("Translate", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
+			ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
+			ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE);
 		}
 
 		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -120,7 +126,7 @@ void Application::DrawHierarchy()
 
 		static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
-		static int selection_mask = (1 << 2);
+		static int selection_mask = 0;
 		for (int i = 0; i < scene->objects.size(); i++)
 		{
 			Object* object = scene->objects[i];
@@ -128,13 +134,6 @@ void Application::DrawHierarchy()
 			const bool is_selected = (selection_mask & (1 << i)) != 0;
 			if (is_selected)
 				node_flags |= ImGuiTreeNodeFlags_Selected;
-			// bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, "Selectable Node %d", i);
-			// if (ImGui::IsItemClicked())
-			// 	node_clicked = i;
-			// if (node_open)
-			// {
-			// 	ImGui::TreePop();
-			// }
 
 			node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
 
@@ -164,6 +163,9 @@ void Application::DrawHierarchy()
 				node_clicked = -1;
 			}
 		}
+		else {
+			selection_mask = 0;
+		}
 
 		ImGui::End();
 	}
@@ -183,7 +185,7 @@ void Application::DrawGizmo()
 		Object* object = scene->objects[node_clicked];
 
 		ImGuizmo::Manipulate(glm::value_ptr(scene->camera->view), glm::value_ptr(scene->camera->projection),
-			ImGuizmo::OPERATION::ROTATE, ImGuizmo::LOCAL, glm::value_ptr(object->objectToWorld));
+			(ImGuizmo::OPERATION)gizmoType, ImGuizmo::LOCAL, glm::value_ptr(object->objectToWorld));
 
 		if (ImGuizmo::IsUsing())
 		{
@@ -266,7 +268,7 @@ void Application::DrawScene()
 
 		// Because I use the texture from OpenGL, I need to invert the V from the UV.
 		if (postprocess)
-			ImGui::Image((ImTextureID)(intptr_t)openglRenderer->postprocessRT, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)(intptr_t)openglRenderer->outlineRT, viewport, ImVec2(0, 1), ImVec2(1, 0));
 		else
 			ImGui::Image((ImTextureID)(intptr_t)openglRenderer->renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
 

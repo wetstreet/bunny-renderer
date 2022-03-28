@@ -115,24 +115,8 @@ void Mesh::Bind()
 	ebo.Unbind();
 }
 
-void Mesh::Draw(Camera &camera, glm::vec3 &lightPos, glm::vec3 &lightColor, Shader *shader)
+void Mesh::Draw()
 {
-    shader->Activate();
-
     vao.Bind();
-
-    if (texture != NULL)
-    {
-        texture->texUnit(*shader, "tex0", 0);
-        texture->Bind();
-    }
-
-    UpdateMatrix();
-    
-    glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
-    glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);
-
-    glUniformMatrix4fv(glGetUniformLocation(shader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * objectToWorld));
-
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
