@@ -2,9 +2,26 @@
 
 void RasterizerRenderer::Render(Scene &scene)
 {
-    uint8_t* pixels = new uint8_t[viewport.x * viewport.y * 3];
+    uint8_t* pixels = new uint8_t[viewport.x * viewport.y * 4];
     std::cout << "x =" << viewport.x << ",y=" << viewport.y << std::endl;
     Rasterize(scene, pixels);
+    //for (int j = 0; j < viewport.y; j++)
+    //{
+    //    for (int i = 0; i < viewport.x; i++)
+    //    {
+    //        int index = i + j * viewport.x;
+
+    //        pixels[index * 4] = 255 * (float)i / (viewport.x - 1);
+    //        pixels[index * 4 + 1] = 255 * (float)j / (viewport.y - 1);
+    //        pixels[index * 4 + 2] = scene.camera.clearColor[2] * 255;
+    //        pixels[index * 4 + 3] = 255;
+    //        //pixels[index * 4] = scene.camera.clearColor[0] * 255;
+    //        //pixels[index * 4 + 1] = scene.camera.clearColor[1] * 255;
+    //        //pixels[index * 4 + 2] = scene.camera.clearColor[2] * 255;
+    //        //pixels[index * 4 + 3] = 255;
+    //        std::cout << "index=" << index << ",color=" << (int)pixels[index * 3] << "," << (int)pixels[index * 3 + 1] << "," << (int)pixels[index * 3 + 2] << std::endl;
+    //    }
+    //}
 
     // Create a OpenGL texture identifier
     glGenTextures(1, &renderTexture);
@@ -20,9 +37,9 @@ void RasterizerRenderer::Render(Scene &scene)
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
-    delete pixels;
+    delete [] pixels;
 }
 
 struct GouraudShader : public IShader
@@ -52,21 +69,22 @@ struct GouraudShader : public IShader
 
 void RasterizerRenderer::Clear(uint8_t* pixels, glm::vec3 &clearColor)
 {
-    for (int i = 0; i < viewport.x; i++)
+    for (int j = 0; j < viewport.y; j++)
     {
-        for (int j = 0; j < viewport.y; j++)
+        for (int i = 0; i < viewport.x; i++)
         {
             int index = i + j * viewport.x;
-            pixels[index * 3] = clearColor[0] * 255;
-            pixels[index * 3 + 1] = clearColor[1] * 255;
-            pixels[index * 3 + 2] = clearColor[2] * 255;
+            pixels[index * 4] = clearColor[0] * 255;
+            pixels[index * 4 + 1] = clearColor[1] * 255;
+            pixels[index * 4 + 2] = clearColor[2] * 255;
+            pixels[index * 4 + 3] = 255;
         }
     }
 }
 
 void RasterizerRenderer::flip_vertically(uint8_t* pixels)
 {
-    unsigned long bytes_per_line = viewport.x * 3;
+    unsigned long bytes_per_line = viewport.x * 4;
     unsigned char *line = new unsigned char[bytes_per_line];
     int half = viewport.y >> 1;
     for (int j=0; j<half; j++) {

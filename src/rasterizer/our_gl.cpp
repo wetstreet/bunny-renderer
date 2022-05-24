@@ -170,9 +170,10 @@ void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, in
                 }
             }
             glm::vec4 color = shader.fragment(o);
-            pixels[index * 3] = color.r * 255;
-            pixels[index * 3 + 1] = color.g * 255;
-            pixels[index * 3 + 2] = color.b * 255;
+            pixels[index * 4] = color.r * 255;
+            pixels[index * 4 + 1] = color.g * 255;
+            pixels[index * 4 + 2] = color.b * 255;
+            pixels[index * 4 + 3] = 255;
             zbuffer[index] = frag_depth;
         }
     }
