@@ -2,7 +2,9 @@
 
 void RasterizerRenderer::Render(Scene &scene)
 {
-    uint8_t* pixels = Rasterize(scene);
+    uint8_t* pixels = new uint8_t[viewport.x * viewport.y * 3];
+    std::cout << "x =" << viewport.x << ",y=" << viewport.y << std::endl;
+    Rasterize(scene, pixels);
 
     // Create a OpenGL texture identifier
     glGenTextures(1, &renderTexture);
@@ -27,7 +29,7 @@ struct GouraudShader : public IShader
 {
     glm::vec3 lightDir;
     glm::mat4 MVP;
-    Texture *texture;
+    std::shared_ptr<Texture> texture;
 
     virtual Varying vertex(Vertex i)
     {
@@ -77,29 +79,28 @@ void RasterizerRenderer::flip_vertically(uint8_t* pixels)
     delete [] line;
 }
 
-uint8_t* RasterizerRenderer::Rasterize(Scene &scene)
+void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
 {
-    uint8_t* pixels = new uint8_t[viewport.x * viewport.y * 3];
-    Clear(pixels, scene.camera->clearColor);
+    Clear(pixels, scene.camera.clearColor);
 
     int *zbuffer = new int[viewport.x * viewport.y];
     
     GouraudShader shader;
-    shader.lightDir = -scene.camera->Orientation;
+    shader.lightDir = -scene.camera.Orientation;
 
-    Camera *camera = scene.camera;
+    Camera &camera = scene.camera;
 
-    glm::vec3 center = camera->Position + camera->Orientation;
-    glm::mat4 View = lookat(camera->Position, center, camera->Up);
-    glm::mat4 Projection = projection(-1.0f / glm::length(-camera->Orientation));
+    glm::vec3 center = camera.Position + camera.Orientation;
+    glm::mat4 View = lookat(camera.Position, center, camera.Up);
+    glm::mat4 Projection = projection(-1.0f / glm::length(-camera.Orientation));
     glm::mat4 Viewport = viewportMat(0, 0, viewport.x, viewport.y);
     
     for (int i = 0; i < scene.objects.size(); i++)
     {
-        Object *object = scene.objects[i];
+        std::shared_ptr<Object> object = scene.objects[i];
         if (object->GetType() == Type_Mesh && object->isEnabled)
         {
-            Mesh *mesh = (Mesh*)object;
+            std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
 
             glm::mat4 Model = model_matrix(mesh->position, mesh->rotation, mesh->scale);
             glm::mat4 MVP = Projection * View * Model;
@@ -122,8 +123,8 @@ uint8_t* RasterizerRenderer::Rasterize(Scene &scene)
             }
         }
     }
+
+    delete[] zbuffer;
     
     flip_vertically(pixels);
-
-    return pixels;
 }

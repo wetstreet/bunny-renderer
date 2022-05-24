@@ -3,7 +3,7 @@
 const unsigned int width = 1200;
 const unsigned int height = 800;
 
-Camera *camera;
+std::unique_ptr<Camera> camera;
 
 int main(int argc, char* argv[]) {
 	glfwInit();
@@ -42,18 +42,18 @@ int main(int argc, char* argv[]) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-	camera = new Camera(width, height, glm::vec3(0.0f, 0.0f, 5.0f));
+	camera = std::make_unique<Camera>(width, height, glm::vec3(0.0f, 0.0f, 5.0f));
 
 	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset)
 	{
 		camera->ScrollCallback(window, xoffset, yoffset);
 	});
-	Scene scene(camera);
+	Scene scene(*camera);
 
 	OpenGLRenderer openglRenderer;
 	RasterizerRenderer rasterizerRenderer;
 
-	Application app(camera, &scene, &io, &openglRenderer, &rasterizerRenderer);
+	Application app(*camera, scene, io, openglRenderer, rasterizerRenderer);
 
 	double lastTime = glfwGetTime();
 
@@ -94,8 +94,6 @@ int main(int argc, char* argv[]) {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
-	delete camera;
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

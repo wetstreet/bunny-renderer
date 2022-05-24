@@ -8,17 +8,17 @@
 class Scene
 {
     public:
-        Camera *camera;
-        std::vector<Object*> objects;
-        Texture *head_diffuse;
-        Texture *white_tex;
+        Camera &camera;
+        std::vector<std::shared_ptr<Object>> objects;
+        std::shared_ptr<Texture> head_diffuse;
+        std::shared_ptr<Texture> white_tex;
 
     public:
-        Scene(Camera *camera);
+        Scene(Camera &camera);
         ~Scene();
-        Light *GetMainLight();
+        std::shared_ptr<Light> GetMainLight();
         void Draw(Shader *shader);
-        int AddObject(Object *object);
+        int AddObject(std::shared_ptr<Object>);
         void RemoveObject(int index);
         int AddPrimitive(std::string name);
 };

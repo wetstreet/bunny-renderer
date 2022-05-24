@@ -1,13 +1,11 @@
 #include "Scene.h"
 
-Scene::Scene(Camera *camera)
+Scene::Scene(Camera &camera) : camera(camera)
 {
-    Scene::camera = camera;
-    
-	head_diffuse = new Texture("res/obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
-	white_tex = new Texture("res/obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+	head_diffuse = std::make_shared<Texture>("res/obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+	white_tex = std::make_shared<Texture>("res/obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
 
-	Mesh *head = new Mesh("res/obj/african_head/african_head.obj");
+	std::shared_ptr<Mesh> head = std::make_shared<Mesh>("res/obj/african_head/african_head.obj");
 	head->texture = head_diffuse;
     head->SetName("head");
 	AddObject(head);
@@ -15,23 +13,17 @@ Scene::Scene(Camera *camera)
 
 Scene::~Scene()
 {
-    for (int i = 0; i < objects.size(); i++)
-    {
-        delete objects[i];
-    }
-    delete head_diffuse;
-    delete white_tex;
+    objects.clear();
 }
 
-Light *Scene::GetMainLight()
+std::shared_ptr<Light> Scene::GetMainLight()
 {
-    Light *mainLight = NULL;
+    std::shared_ptr<Light> mainLight = NULL;
     for (int i = 0; i < objects.size(); i++)
     {
-        Object *object = objects[i];
-        if (object->GetType() == Type_Light && object->isEnabled)
+        if (objects[i]->GetType() == Type_Light && objects[i]->isEnabled)
         {
-            Light *light = (Light*)object;
+            std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(objects[i]);
             if (mainLight == NULL || light->intensity > mainLight->intensity)
                 mainLight = light;
         }
@@ -42,7 +34,7 @@ Light *Scene::GetMainLight()
 
 void Scene::Draw(Shader *shader)
 {
-    Light *mainLight = GetMainLight();
+    std::shared_ptr<Light> mainLight = GetMainLight();
 
     glm::vec3 lightPos;
     glm::vec3 lightColor;
@@ -53,16 +45,16 @@ void Scene::Draw(Shader *shader)
     }
     else
     {
-        lightPos = -camera->Orientation;
+        lightPos = -camera.Orientation;
         lightColor = glm::vec3(1);
     }
 
     for (int i = 0; i < objects.size(); i++)
     {
-        Object *object = objects[i];
+        std::shared_ptr<Object> object = objects[i];
         if (object->GetType() == Type_Mesh && object->isEnabled)
         {
-            Mesh *mesh = (Mesh*)object;
+            std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
 
             // todo: move to material
             shader->Activate();
@@ -77,7 +69,7 @@ void Scene::Draw(Shader *shader)
             glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);
 
             mesh->UpdateMatrix();
-            glUniformMatrix4fv(glGetUniformLocation(shader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera->cameraMatrix * mesh->objectToWorld));
+            glUniformMatrix4fv(glGetUniformLocation(shader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * mesh->objectToWorld));
             // todo end
 
             mesh->Draw();
@@ -87,13 +79,13 @@ void Scene::Draw(Shader *shader)
 
 int Scene::AddPrimitive(std::string name)
 {
-	Mesh *mesh = new Mesh(("res/obj/" + name + ".obj").c_str());
+	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(("res/obj/" + name + ".obj").c_str());
 	mesh->texture = white_tex;
     strcpy(mesh->name, name.c_str());
 	return AddObject(mesh);
 }
 
-int Scene::AddObject(Object *object)
+int Scene::AddObject(std::shared_ptr<Object> object)
 {
     objects.push_back(object);
     return objects.size() - 1;
@@ -101,7 +93,6 @@ int Scene::AddObject(Object *object)
 
 void Scene::RemoveObject(int index)
 {
-    Object *object = objects[index];
+    std::shared_ptr<Object> object = objects[index];
     objects.erase(objects.begin() + index);
-    delete object;
 }

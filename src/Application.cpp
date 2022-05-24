@@ -29,19 +29,19 @@ void Application::DrawMenu()
 		{
 			if (ImGui::MenuItem("Plane"))
 			{
-				node_clicked = scene->AddPrimitive("plane");
+				node_clicked = scene.AddPrimitive("plane");
 			}
 			if (ImGui::MenuItem("Cube"))
 			{
-				node_clicked = scene->AddPrimitive("cube");
+				node_clicked = scene.AddPrimitive("cube");
 			}
 			if (ImGui::MenuItem("Sphere"))
 			{
-				node_clicked = scene->AddPrimitive("sphere");
+				node_clicked = scene.AddPrimitive("sphere");
 			}
 			if (ImGui::MenuItem("Cylinder"))
 			{
-				node_clicked = scene->AddPrimitive("cylinder");
+				node_clicked = scene.AddPrimitive("cylinder");
 			}
 			if (ImGui::MenuItem("Custom"))
 			{
@@ -54,9 +54,9 @@ void Application::DrawMenu()
 		{
 			if (ImGui::MenuItem("Directional Light"))
 			{
-				DirectionalLight* dir = new DirectionalLight();
-				strcpy(dir->name, "directional light");
-				node_clicked = scene->AddObject(dir);
+				std::shared_ptr<DirectionalLight> dirLight = std::make_shared<DirectionalLight>();
+				strcpy(dirLight->name, "directional light");
+				node_clicked = scene.AddObject(dirLight);
 			}
 			ImGui::EndMenu();
 		}
@@ -84,8 +84,8 @@ void Application::DrawInspector()
 
 		if (node_clicked != -1)
 		{
-			Object* object = scene->objects[node_clicked];
-
+			std::shared_ptr<Object> object = scene.objects[node_clicked];
+			
 			ImGui::Checkbox("##isEnabled", &object->isEnabled);
 			ImGui::SameLine();
 			ImGui::InputText("##name", object->name, IM_ARRAYSIZE(object->name));
@@ -98,7 +98,7 @@ void Application::DrawInspector()
 
 			if (object->GetType() == Type_Light)
 			{
-				Light* light = (Light*)object;
+				std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(object);
 
 				ImGui::Text("------------Light------------");
 
@@ -127,9 +127,9 @@ void Application::DrawHierarchy()
 		static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
 		static int selection_mask = 0;
-		for (int i = 0; i < scene->objects.size(); i++)
+		for (int i = 0; i < scene.objects.size(); i++)
 		{
-			Object* object = scene->objects[i];
+			std::shared_ptr<Object> object = scene.objects[i];
 			ImGuiTreeNodeFlags node_flags = base_flags;
 			const bool is_selected = (selection_mask & (1 << i)) != 0;
 			if (is_selected)
@@ -159,7 +159,7 @@ void Application::DrawHierarchy()
 
 			if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
 			{
-				scene->RemoveObject(node_clicked);
+				scene.RemoveObject(node_clicked);
 				node_clicked = -1;
 			}
 		}
@@ -182,9 +182,9 @@ void Application::DrawGizmo()
 		float windowHeight = (float)ImGui::GetWindowHeight();
 		ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
 
-		Object* object = scene->objects[node_clicked];
+		std::shared_ptr<Object> object = scene.objects[node_clicked];
 
-		ImGuizmo::Manipulate(glm::value_ptr(scene->camera->view), glm::value_ptr(scene->camera->projection),
+		ImGuizmo::Manipulate(glm::value_ptr(scene.camera.view), glm::value_ptr(scene.camera.projection),
 			(ImGuizmo::OPERATION)gizmoType, ImGuizmo::LOCAL, glm::value_ptr(object->objectToWorld));
 
 		if (ImGuizmo::IsUsing())
@@ -214,19 +214,19 @@ void Application::ClickToSelect()
 			ScreenPosToWorldRay(
 				mouse.x, mouse.y,
 				viewport.x, viewport.y,
-				camera->view,
-				camera->projection,
+				camera.view,
+				camera.projection,
 				ray_origin,
 				ray_direction
 			);
 
 			node_clicked = -1;
-			for (int i = 0; i < scene->objects.size(); i++)
+			for (int i = 0; i < scene.objects.size(); i++)
 			{
-				Object* object = scene->objects[i];
+				std::shared_ptr<Object> object = scene.objects[i];
 				if (object->GetType() == Type_Mesh)
 				{
-					Mesh* mesh = (Mesh*)object;
+					std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
 
 					float intersection_distance; // Output of TestRayOBBIntersection()
 
@@ -262,15 +262,15 @@ void Application::DrawScene()
 		viewport = ImGui::GetWindowSize();
 		windowPos = ImGui::GetWindowPos();
 
-		scene->camera->windowPos = glm::vec2(windowPos.x, windowPos.y);
-		scene->camera->viewport = glm::vec2(viewport.x, viewport.y);
-		openglRenderer->viewport = glm::vec2(viewport.x, viewport.y);
+		scene.camera.windowPos = glm::vec2(windowPos.x, windowPos.y);
+		scene.camera.viewport = glm::vec2(viewport.x, viewport.y);
+		openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
 
 		// Because I use the texture from OpenGL, I need to invert the V from the UV.
 		if (postprocess)
-			ImGui::Image((ImTextureID)(intptr_t)openglRenderer->outlineRT, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)(intptr_t)openglRenderer.outlineRT, viewport, ImVec2(0, 1), ImVec2(1, 0));
 		else
-			ImGui::Image((ImTextureID)(intptr_t)openglRenderer->renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)(intptr_t)openglRenderer.renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
 
 		ClickToSelect();
 
@@ -288,13 +288,13 @@ void Application::DrawSceneCamera()
 	{
 		ImGui::Begin("Scene Camera", &showSceneCamera);
 
-		ImGui::InputFloat3("Position", (float*)&camera->Position);
-		ImGui::InputFloat("Move Speed", (float*)&camera->speed);
-		ImGui::InputFloat("Sensitivity", (float*)&camera->sensitivity);
-		ImGui::InputFloat("Pan Speed", (float*)&camera->scenePanSpeed);
-		ImGui::InputFloat("Scroll Speed", (float*)&camera->sceneScrollSpeed);
+		ImGui::InputFloat3("Position", (float*)&camera.Position);
+		ImGui::InputFloat("Move Speed", (float*)&camera.speed);
+		ImGui::InputFloat("Sensitivity", (float*)&camera.sensitivity);
+		ImGui::InputFloat("Pan Speed", (float*)&camera.scenePanSpeed);
+		ImGui::InputFloat("Scroll Speed", (float*)&camera.sceneScrollSpeed);
 
-		ImGui::ColorEdit3("Background", (float*)&camera->clearColor);
+		ImGui::ColorEdit3("Background", (float*)&camera.clearColor);
 
 		ImGui::Checkbox("Post Process", &postprocess);
 
@@ -308,7 +308,7 @@ void Application::DrawImage()
 	{
 		ImGui::SetNextWindowSize(window_size);
 		ImGui::Begin("Render Result", &showImage);
-		ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer->renderTexture, content_size);
+		ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size);
 		ImGui::End();
 	}
 }
@@ -319,20 +319,20 @@ void Application::DrawRasterizer()
 	{
 		ImGui::Begin("Rasterizer", &showRasterizer);
 
-		ImGui::InputInt2("Size", (int*)&rasterizerRenderer->viewport);
+		ImGui::InputInt2("Size", (int*)&rasterizerRenderer.viewport);
 		ImGui::SameLine();
 		if (ImGui::Button("Sync"))
 		{
-			rasterizerRenderer->viewport.x = viewport.x;
-			rasterizerRenderer->viewport.y = viewport.y;
+			rasterizerRenderer.viewport.x = viewport.x;
+			rasterizerRenderer.viewport.y = viewport.y;
 		}
 
 		if (ImGui::Button("rasterizer render"))
 		{
-			window_size = ImVec2(rasterizerRenderer->viewport.x + 20, rasterizerRenderer->viewport.y + 35);
-			content_size = ImVec2(rasterizerRenderer->viewport.x, rasterizerRenderer->viewport.y);
+			window_size = ImVec2(rasterizerRenderer.viewport.x + 20, rasterizerRenderer.viewport.y + 35);
+			content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
 
-			rasterizerRenderer->Render(*scene);
+			rasterizerRenderer.Render(scene);
 
 			showImage = true;
 		}
@@ -353,7 +353,7 @@ void Application::DrawCustomMeshPopup()
 
 		if (ImGui::Button("Ok"))
 		{
-			node_clicked = scene->AddPrimitive(customMeshName);
+			node_clicked = scene.AddPrimitive(customMeshName);
 			strcpy(customMeshName, "");
 			showCustomMeshPopup = false;
 		}

@@ -9,7 +9,7 @@ class Skybox
     public:
         Skybox();
         ~Skybox();
-        void Draw(Camera *camera);
+        void Draw(Camera &camera);
 
     private:
         Shader *skyboxShader;

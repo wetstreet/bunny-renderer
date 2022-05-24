@@ -74,53 +74,20 @@ include_directories(
 # Define the link libraries
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 
-# Create virtual folders to make it look nicer in VS
-if(MSVC_IDE)
-	# Macro to preserve source files hierarchy in the IDE
-	macro(GroupSources curdir)
-		file(GLOB children RELATIVE ${PROJECT_SOURCE_DIR}/${curdir} ${PROJECT_SOURCE_DIR}/${curdir}/*)
-
-		foreach(child ${children})
-			if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/${curdir}/${child})
-				GroupSources(${curdir}/${child})
-			else()
-				string(REPLACE "/" "\\" groupname ${curdir})
-				string(REPLACE "src" "Sources" groupname ${groupname})
-				source_group(${groupname} FILES ${PROJECT_SOURCE_DIR}/${curdir}/${child})
-			endif()
-		endforeach()
-	endmacro()
-
-	# Run macro
-	GroupSources(src)
-endif()
-
-# Copy dlls
 if(WIN32)
+	# Copy dlls
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		"${PROJECT_SOURCE_DIR}/dlls"
 		$<TARGET_FILE_DIR:${PROJECT_NAME}>)
-endif()
 
-# Copy resources
-if(WIN32)
-	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_directory
-		"${PROJECT_SOURCE_DIR}/res"
-		$<TARGET_FILE_DIR:${PROJECT_NAME}>/res)
+	# Copy resources
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		"${PROJECT_SOURCE_DIR}/res"
 		"${CMAKE_BINARY_DIR}/res")
-endif()
-
-# Copy imgui config
-if(WIN32)
-	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-		"${PROJECT_SOURCE_DIR}/imgui.ini"
-		$<TARGET_FILE_DIR:${PROJECT_NAME}>/imgui.ini)
+		
+	# Copy imgui config
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
 		"${PROJECT_SOURCE_DIR}/imgui.ini"

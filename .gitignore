@@ -36,4 +36,5 @@
 # *.ini
 
 # cmake
+.vs
 build

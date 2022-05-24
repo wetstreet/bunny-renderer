@@ -25,7 +25,7 @@ class Mesh : public Object
         glm::vec3 minPos = glm::vec3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
         glm::vec3 maxPos = glm::vec3(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
 
-        Texture *texture;
+        std::shared_ptr<Texture> texture;
 
         const char *filename;
 

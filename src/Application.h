@@ -22,14 +22,9 @@
 class Application
 {
 public:
-	Application(Camera* camera, Scene* scene, ImGuiIO* io, OpenGLRenderer* openglRenderer, RasterizerRenderer* rasterizerRenderer)
+	Application(Camera &camera, Scene &scene, ImGuiIO &io, OpenGLRenderer &openglRenderer, RasterizerRenderer &rasterizerRenderer)
+		: camera(camera), scene(scene), io(io), openglRenderer(openglRenderer), rasterizerRenderer(rasterizerRenderer)
 	{
-		Application::camera = camera;
-		Application::scene = scene;
-		Application::io = io;
-		Application::openglRenderer = openglRenderer;
-		Application::rasterizerRenderer = rasterizerRenderer;
-
 		strcpy(customMeshName, "");
 	}
 
@@ -48,11 +43,11 @@ public:
 	void ClickToSelect();
 
 private:
-	Camera* camera;
-	Scene* scene;
-	ImGuiIO* io;
-	OpenGLRenderer* openglRenderer;
-	RasterizerRenderer* rasterizerRenderer;
+	Camera &camera;
+	Scene &scene;
+	ImGuiIO &io;
+	OpenGLRenderer &openglRenderer;
+	RasterizerRenderer &rasterizerRenderer;
 
 	ImVec2 viewport = ImVec2(800, 800);
 	ImVec2 windowPos;

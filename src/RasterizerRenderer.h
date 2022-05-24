@@ -14,7 +14,7 @@ class RasterizerRenderer : public Renderer
         virtual void Render(Scene &scene);
         
     private:
-        uint8_t* Rasterize(Scene &scene);
+        void Rasterize(Scene &scene, uint8_t*pixels);
         void Clear(uint8_t* pixels, glm::vec3 &clearColor);
         void flip_vertically(uint8_t* pixels);
 };

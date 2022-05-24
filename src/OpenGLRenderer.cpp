@@ -59,6 +59,7 @@ OpenGLRenderer::OpenGLRenderer()
 	glBindFramebuffer(GL_FRAMEBUFFER, outlineFBO);
 	// outlinert
 	glGenTextures(1, &outlineRT);
+	char* name = "outlineRT";
 	glBindTexture(GL_TEXTURE_2D, outlineRT);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -106,11 +107,11 @@ void OpenGLRenderer::Render(Scene &scene)
     glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-    glm::vec3 clearColor = scene.camera->clearColor;
+    glm::vec3 clearColor = scene.camera.clearColor;
     glClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    scene.camera->updateMatrix(45.0f, 0.1f, 1000.0f, viewport.x, viewport.y);
+    scene.camera.updateMatrix(45.0f, 0.1f, 1000.0f, viewport.x, viewport.y);
 
     scene.Draw(shader);
 
@@ -151,15 +152,15 @@ void OpenGLRenderer::Render(Scene &scene)
 
 		glEnable(GL_DEPTH_TEST);
 
-		Object* selected = scene.objects[node_clicked];
+		std::shared_ptr<Object> selected = scene.objects[node_clicked];
 		if (selected->GetType() == Type_Mesh)
 		{
-			Mesh* mesh = (Mesh*)selected;
+			std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(selected);
 			outlineShader->Activate();
 
 			glm::vec4 draw_color(1 / 255.0f, 1, 1, 1);
 			glUniform4fv(glGetUniformLocation(outlineShader->ID, "_DRAW_COLOR"), 1, (float*)&draw_color);
-			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(scene.camera->cameraMatrix * mesh->objectToWorld));
+			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(scene.camera.cameraMatrix * mesh->objectToWorld));
 
 			mesh->Draw();
 		}
@@ -171,12 +172,12 @@ void OpenGLRenderer::Render(Scene &scene)
 
 		if (selected->GetType() == Type_Mesh)
 		{
-			Mesh* mesh = (Mesh*)selected;
+			std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(selected);
 			outlineShader->Activate();
 
 			glm::vec4 draw_color(0, 0, 1, 1);
 			glUniform4fv(glGetUniformLocation(outlineShader->ID, "_DRAW_COLOR"), 1, (float*)&draw_color);
-			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(scene.camera->cameraMatrix * mesh->objectToWorld));
+			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(scene.camera.cameraMatrix * mesh->objectToWorld));
 
 			mesh->Draw();
 		}
