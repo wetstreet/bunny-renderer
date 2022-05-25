@@ -68,6 +68,7 @@ Skybox::Skybox()
 
 	// Creates the cubemap texture object
 	glGenTextures(1, &cubemapTexture);
+	glObjectLabel(GL_TEXTURE, cubemapTexture, -1, "skybox");
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

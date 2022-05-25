@@ -3,6 +3,14 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/matrix_decompose.hpp"
 
+std::string GetFileNameFromPath(const char* path)
+{
+	std::string s(path);
+	int slash = s.find_last_of('/');
+	int dot = s.find_last_of('.');
+	return s.substr(slash + 1, dot - slash - 1);
+}
+
 void ScreenPosToWorldRay(
 	int mouseX, int mouseY,             // Mouse position, in pixels, from bottom-left corner of the window
 	int screenWidth, int screenHeight,  // Window size, in pixels

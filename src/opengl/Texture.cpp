@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include "common/Utils.h"
 
 Texture::Texture(const char* image, GLenum texType, GLenum slot, GLenum format, GLenum pixelType)
 {
@@ -9,6 +10,8 @@ Texture::Texture(const char* image, GLenum texType, GLenum slot, GLenum format, 
 	glGenTextures(1, &ID);
 	glActiveTexture(slot);
 	glBindTexture(texType, ID);
+
+	glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(image).c_str());
 
 	glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

@@ -1,4 +1,5 @@
 #include "Shader.h"
+#include "common/Utils.h"
 
 std::string get_file_contents(const char* filename)
 {
@@ -36,6 +37,7 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
     compileErrors(fragmentShader, "FRAGMENT");
 
 	ID = glCreateProgram();
+	glObjectLabel(GL_PROGRAM, ID, -1, GetFileNameFromPath(vertexFile).c_str());
 	glAttachShader(ID, vertexShader);
 	glAttachShader(ID, fragmentShader);
 	glLinkProgram(ID);

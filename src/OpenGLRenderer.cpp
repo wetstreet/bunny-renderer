@@ -42,6 +42,7 @@ OpenGLRenderer::OpenGLRenderer()
 	// color rt
 	glGenTextures(1, &renderTexture);
 	glBindTexture(GL_TEXTURE_2D, renderTexture);
+	glObjectLabel(GL_TEXTURE, renderTexture, -1, "Color RT");
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -59,8 +60,8 @@ OpenGLRenderer::OpenGLRenderer()
 	glBindFramebuffer(GL_FRAMEBUFFER, outlineFBO);
 	// outlinert
 	glGenTextures(1, &outlineRT);
-	char* name = "outlineRT";
 	glBindTexture(GL_TEXTURE_2D, outlineRT);
+	glObjectLabel(GL_TEXTURE, outlineRT, -1, "Outline RT");
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -74,6 +75,7 @@ OpenGLRenderer::OpenGLRenderer()
 	// postprocess color rt
 	glGenTextures(1, &postprocessRT);
 	glBindTexture(GL_TEXTURE_2D, postprocessRT);
+	glObjectLabel(GL_TEXTURE, postprocessRT, -1, "PostProcess RT");
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -200,6 +202,8 @@ void OpenGLRenderer::Render(Scene &scene)
 		outlineBlurShader->Activate();
 		glUniform1i(glGetUniformLocation(outlineBlurShader->ID, "_MainTex"), 0);
 		glBindTexture(GL_TEXTURE_2D, postprocessRT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glUniform4fv(glGetUniformLocation(outlineBlurShader->ID, "_MainTex_TexelSize"), 1, (float*)&texelSize);
 		glm::vec2 blurDirection(1.0f, 0.0f);
 		glUniform2fv(glGetUniformLocation(outlineBlurShader->ID, "_BlurDirection"), 1, (float*)&blurDirection);
@@ -212,6 +216,8 @@ void OpenGLRenderer::Render(Scene &scene)
 		outlineBlurShader->Activate();
 		glUniform1i(glGetUniformLocation(outlineBlurShader->ID, "_MainTex"), 0);
 		glBindTexture(GL_TEXTURE_2D, outlineRT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glUniform4fv(glGetUniformLocation(outlineBlurShader->ID, "_MainTex_TexelSize"), 1, (float*)&texelSize);
 		blurDirection = glm::vec2(0.0f, 1.0f);
 		glUniform2fv(glGetUniformLocation(outlineBlurShader->ID, "_BlurDirection"), 1, (float*)&blurDirection);
@@ -224,6 +230,7 @@ void OpenGLRenderer::Render(Scene &scene)
 		glBlendEquation(GL_FUNC_ADD);
 		glDisable(GL_DEPTH_TEST);
 
+		// merge outline
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 		outlineMergeShader->Activate();
 		glUniform1i(glGetUniformLocation(outlineMergeShader->ID, "_MainTex"), 0);

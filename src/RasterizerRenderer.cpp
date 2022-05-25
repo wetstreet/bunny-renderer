@@ -3,25 +3,7 @@
 void RasterizerRenderer::Render(Scene &scene)
 {
     uint8_t* pixels = new uint8_t[viewport.x * viewport.y * 4];
-    std::cout << "x =" << viewport.x << ",y=" << viewport.y << std::endl;
     Rasterize(scene, pixels);
-    //for (int j = 0; j < viewport.y; j++)
-    //{
-    //    for (int i = 0; i < viewport.x; i++)
-    //    {
-    //        int index = i + j * viewport.x;
-
-    //        pixels[index * 4] = 255 * (float)i / (viewport.x - 1);
-    //        pixels[index * 4 + 1] = 255 * (float)j / (viewport.y - 1);
-    //        pixels[index * 4 + 2] = scene.camera.clearColor[2] * 255;
-    //        pixels[index * 4 + 3] = 255;
-    //        //pixels[index * 4] = scene.camera.clearColor[0] * 255;
-    //        //pixels[index * 4 + 1] = scene.camera.clearColor[1] * 255;
-    //        //pixels[index * 4 + 2] = scene.camera.clearColor[2] * 255;
-    //        //pixels[index * 4 + 3] = 255;
-    //        std::cout << "index=" << index << ",color=" << (int)pixels[index * 3] << "," << (int)pixels[index * 3 + 1] << "," << (int)pixels[index * 3 + 2] << std::endl;
-    //    }
-    //}
 
     // Create a OpenGL texture identifier
     glGenTextures(1, &renderTexture);
