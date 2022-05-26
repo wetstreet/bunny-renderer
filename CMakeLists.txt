@@ -59,8 +59,12 @@ add_library(IMGUI ${IMGUI_SOURCES})
 # ImGuizmo
 add_library(IMGUIZMO "thirdparty/ImGuizmo.cpp")
 
+find_library(COMCTL32 Comctl32.lib)
+find_library(PROPSYS Propsys.lib)
+find_library(SHLWAPI Shlwapi.lib)
+
 # Put all libraries into a variable
-set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE IMGUIZMO)
+set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE IMGUIZMO ${COMCTL32} ${PROPSYS} ${SHLWAPI})
 
 # Define the include DIRs
 include_directories(

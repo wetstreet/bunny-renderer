@@ -1,0 +1,63 @@
+#include "Dialog.h"
+
+std::string wstring2string(std::wstring wstr)
+{
+    std::string result;
+    int len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.size(), NULL, 0, NULL, NULL);
+    if (len <= 0)return result;
+    char* buffer = new char[len + 1];
+    if (buffer == NULL)return result;
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.size(), buffer, len, NULL, NULL);
+    buffer[len] = '\0';
+    result.append(buffer);
+    delete[] buffer;
+    return result;
+}
+
+std::string OpenFileDialog()
+{
+    std::string s;
+    // CoCreate the File Open Dialog object.
+    IFileDialog* pfd = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+    if (SUCCEEDED(hr))
+    {
+        // Create an event handling object, and hook it up to the dialog.
+        IFileDialogEvents* pfde = NULL;
+
+        // Set the options on the dialog.
+        DWORD dwFlags;
+
+        pfd->GetOptions(&dwFlags);
+        pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM);
+        pfd->SetFileTypes(ARRAYSIZE(c_rgSaveTypes), c_rgSaveTypes);
+        pfd->SetFileTypeIndex(1);
+        pfd->SetDefaultExtension(L"png");
+
+        // Show the dialog
+        hr = pfd->Show(NULL);
+        if (SUCCEEDED(hr))
+        {
+            // Obtain the result, once the user clicks the 'Open' button.
+            // The result is an IShellItem object.
+            IShellItem* psiResult;
+            hr = pfd->GetResult(&psiResult);
+            if (SUCCEEDED(hr))
+            {
+                // We are just going to print out the name of the file for sample sake.
+                PWSTR pszFilePath = NULL;
+                hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                std::wstringstream ss;
+                ss << pszFilePath;
+                s = wstring2string(ss.str());
+
+                CoTaskMemFree(pszFilePath);
+                psiResult->Release();
+            }
+        }
+
+        pfd->Release();
+    }
+    return s;
+}
