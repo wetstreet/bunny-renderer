@@ -11,18 +11,8 @@
 #define __DIALOG_H__
 
 #include <string>
-#include <sstream>
-
-#include <shlobj.h>
-
-const COMDLG_FILTERSPEC c_rgSaveTypes[] =
-{
-    {L"PNG Files (*.png)",          L"*.png"},
-    {L"All Documents (*.*)",        L"*.*"}
-};
-
-std::string wstring2string(std::wstring wstr);
 
 std::string OpenFileDialog();
+std::string SaveFileDialog();
 
 #endif // __DIALOG_H__

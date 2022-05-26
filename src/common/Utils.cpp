@@ -7,6 +7,8 @@ std::string GetFileNameFromPath(const char* path)
 {
 	std::string s(path);
 	int slash = s.find_last_of('/');
+	if (slash == -1)
+		slash = s.find_last_of('\\');
 	int dot = s.find_last_of('.');
 	return s.substr(slash + 1, dot - slash - 1);
 }

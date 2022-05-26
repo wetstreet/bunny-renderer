@@ -37,8 +37,6 @@ public:
 	void DrawHierarchy();
 	void DrawSceneCamera();
 	void DrawRasterizer();
-
-	void DrawCustomMeshPopup();
 	void DrawImage();
 	void ClickToSelect();
 

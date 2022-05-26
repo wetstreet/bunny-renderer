@@ -1,4 +1,5 @@
 #include "Application.h"
+#include "common/Dialog.h"
 
 void Application::DrawEditor()
 {
@@ -7,8 +8,6 @@ void Application::DrawEditor()
 	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
 	DrawInspector();
-
-	DrawCustomMeshPopup();
 
 	DrawRasterizer();
 
@@ -45,7 +44,17 @@ void Application::DrawMenu()
 			}
 			if (ImGui::MenuItem("Custom"))
 			{
-				showCustomMeshPopup = true;
+				std::string s = OpenFileDialog();
+				if (s.size() != 0)
+				{
+					const char* path = s.c_str();
+					std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(path);
+					mesh->texture = scene.white_tex;
+					std::string filename = GetFileNameFromPath(path);
+					strcpy(mesh->name, filename.c_str());
+					scene.AddObject(mesh);
+				}
+
 			}
 			ImGui::EndMenu();
 		}
@@ -200,7 +209,7 @@ void Application::DrawGizmo()
 
 void Application::ClickToSelect()
 {
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver())
 	{
 		ImVec2 mouse = ImGui::GetIO().MousePos;
 
@@ -335,27 +344,6 @@ void Application::DrawRasterizer()
 			rasterizerRenderer.Render(scene);
 
 			showImage = true;
-		}
-
-		ImGui::End();
-	}
-}
-
-void Application::DrawCustomMeshPopup()
-{
-	if (showCustomMeshPopup)
-	{
-		ImGui::Begin("Add Custom Mesh", &showCustomMeshPopup);
-
-		ImGui::InputText("##name", customMeshName, IM_ARRAYSIZE(customMeshName));
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Ok"))
-		{
-			node_clicked = scene.AddPrimitive(customMeshName);
-			strcpy(customMeshName, "");
-			showCustomMeshPopup = false;
 		}
 
 		ImGui::End();
