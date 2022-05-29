@@ -2,8 +2,10 @@
 #include "common/Utils.h"
 
 Texture::Texture(const char* image, GLenum texType, GLenum slot, GLenum format, GLenum pixelType)
+	: path(image), type(texType)
 {
-    type = texType;
+	name = GetFileNameFromPath(path);
+
 	stbi_set_flip_vertically_on_load(true);
 	bytes = stbi_load(image, &width, &height, &numColCh, 0);
 
@@ -11,7 +13,7 @@ Texture::Texture(const char* image, GLenum texType, GLenum slot, GLenum format, 
 	glActiveTexture(slot);
 	glBindTexture(texType, ID);
 
-	glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(image).c_str());
+	glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(path).c_str());
 
 	glTexParameteri(texType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(texType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

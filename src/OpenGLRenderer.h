@@ -9,11 +9,13 @@ class OpenGLRenderer : public Renderer
         OpenGLRenderer();
         virtual ~OpenGLRenderer();
 
+        int GetObjectID(int x, int y);
         virtual void Render(Scene &scene);
 	    GLuint postprocessRT;
         GLuint outlineRT;
 
     private:
+        GLuint objectIdRT;
         GLuint rbo;
         GLuint FBO;
         GLuint postprocessFBO;

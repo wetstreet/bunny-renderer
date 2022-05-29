@@ -2,13 +2,7 @@
 
 Scene::Scene(Camera &camera) : camera(camera)
 {
-	head_diffuse = std::make_shared<Texture>("res/obj/african_head/african_head_diffuse.tga", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
 	white_tex = std::make_shared<Texture>("res/obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
-
-	std::shared_ptr<Mesh> head = std::make_shared<Mesh>("res/obj/african_head/african_head.obj");
-	head->texture = head_diffuse;
-    head->SetName("head");
-	AddObject(head);
 }
 
 Scene::~Scene()
@@ -70,6 +64,7 @@ void Scene::Draw(Shader *shader)
                     mesh->texture->Bind();
                 }
 
+                glUniform1i(glGetUniformLocation(shader->ID, "_ObjectID"), i);
                 glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
                 glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);
 

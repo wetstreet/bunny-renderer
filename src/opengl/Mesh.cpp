@@ -1,9 +1,9 @@
 #include "Mesh.h"
+#include "common/Utils.h"
 
-Mesh::Mesh(const char *filename)
+Mesh::Mesh(const char *path)
+    : path(path)
 {
-    Mesh::filename = filename;
-
     ParseFile();
     CalcBounds();
     Bind();
@@ -30,7 +30,7 @@ void Mesh::ParseFile()
     std::unordered_map<glm::uvec3, unsigned int, uvec3_hash> vertMap;
 
     std::ifstream in;
-    in.open(filename, std::ifstream::in);
+    in.open(path, std::ifstream::in);
     if (in.fail()) return;
     std::string line;
     while (!in.eof()) {

@@ -12,7 +12,7 @@
 
 #include <string>
 
-std::string OpenFileDialog();
+std::string OpenFileDialog(int index = 2);
 std::string SaveFileDialog();
 
 #endif // __DIALOG_H__

@@ -3,9 +3,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/matrix_decompose.hpp"
 
-std::string GetFileNameFromPath(const char* path)
+std::string GetFileNameFromPath(std::string s)
 {
-	std::string s(path);
 	int slash = s.find_last_of('/');
 	if (slash == -1)
 		slash = s.find_last_of('\\');
@@ -292,11 +291,6 @@ bool DecomposeTransform(const glm::mat4& ModelMatrix, glm::vec3& Translation, gl
 
 	return true;
 }
-
-// std::ostream &operator<<(std::ostream &out, glm::vec4 &v);
-// std::ostream &operator<<(std::ostream &out, glm::vec3 &v);
-// std::ostream &operator<<(std::ostream &out, glm::vec2 &v);
-// std::ostream &operator<<(std::ostream &out, glm::mat4 &m);
 
 std::ostream &operator<<(std::ostream &out, glm::vec4 &v)
 {

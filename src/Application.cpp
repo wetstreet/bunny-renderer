@@ -44,15 +44,13 @@ void Application::DrawMenu()
 			}
 			if (ImGui::MenuItem("Custom"))
 			{
-				std::string s = OpenFileDialog();
-				if (s.size() != 0)
+				std::string path = OpenFileDialog();
+				if (path.size() != 0)
 				{
-					const char* path = s.c_str();
-					std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(path);
+					std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(path.c_str());
+					mesh->SetName(GetFileNameFromPath(path).c_str());
 					mesh->texture = scene.white_tex;
-					std::string filename = GetFileNameFromPath(path);
-					strcpy(mesh->name, filename.c_str());
-					scene.AddObject(mesh);
+					node_clicked = scene.AddObject(mesh);
 				}
 
 			}
@@ -64,7 +62,7 @@ void Application::DrawMenu()
 			if (ImGui::MenuItem("Directional Light"))
 			{
 				std::shared_ptr<DirectionalLight> dirLight = std::make_shared<DirectionalLight>();
-				strcpy(dirLight->name, "directional light");
+				dirLight->SetName("directional light");
 				node_clicked = scene.AddObject(dirLight);
 			}
 			ImGui::EndMenu();
@@ -91,6 +89,8 @@ void Application::DrawInspector()
 	{
 		ImGui::Begin("Inspector", &showInspector);
 
+		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
 		if (node_clicked != -1)
 		{
 			std::shared_ptr<Object> object = scene.objects[node_clicked];
@@ -105,23 +105,48 @@ void Application::DrawInspector()
 			object->rotation = glm::radians(degrees);
 			ImGui::InputFloat3("Sc", (float*)&object->scale);
 
-			if (object->GetType() == Type_Light)
-			{
-				std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(object);
-
-				ImGui::Text("------------Light------------");
-
-				ImGui::ColorEdit3("Color", (float*)&light->color);
-				ImGui::InputFloat("Intensity", &light->intensity);
-			}
-
 
 			ImGui::RadioButton("Translate", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
 			ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
 			ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE);
-		}
 
-		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+			if (object->GetType() == Type_Light)
+			{
+				ImGui::Text("------------Light------------");
+				std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(object);
+				ImGui::ColorEdit3("Color", (float*)&light->color);
+				ImGui::InputFloat("Intensity", &light->intensity);
+			}
+			else if (object->GetType() == Type_Mesh)
+			{
+				ImGui::Text("------------Mesh------------");
+				std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
+				ImGui::Text("Stats:");
+				std::stringstream ss;
+				ss << "Vertices: " << mesh->vertices.size() << std::endl
+					<< "Triangles: " << (mesh->indices.size() / 3) << std::endl
+					<< "Path: " << mesh->path;
+				ImGui::Text(ss.str().c_str());
+				ss.clear();
+				ss.str("");
+
+				ImGui::Spacing();
+				ImGui::Text("Texture:");
+				if (ImGui::ImageButton((ImTextureID)(intptr_t)mesh->texture->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
+				{
+					std::string s = OpenFileDialog(1);
+					if (s.size() > 0)
+					{
+						std::shared_ptr<Texture> tex = std::make_shared<Texture>(s.c_str(), GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+						mesh->texture = tex;
+					}
+				}
+				Texture& tex = *mesh->texture;
+				ss << GetFileNameFromPath(tex.path) << std::endl << "Size: " << tex.width << "x" << tex.height ;
+				ImGui::Text(ss.str().c_str());
+			}
+		}
 
 		ImGui::End();
 	}
@@ -211,47 +236,15 @@ void Application::ClickToSelect()
 {
 	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver())
 	{
-		ImVec2 mouse = ImGui::GetIO().MousePos;
+		ImVec2 mousePos = ImGui::GetMousePos();
+		mousePos -= windowPos;
+		mousePos.y = viewport.y - mousePos.y;
+		int mouseX = (int)mousePos.x;
+		int mouseY = (int)mousePos.y;
 
-		if (mouse.x >= windowPos.x && mouse.x <= windowPos.x + viewport.x && mouse.y >= windowPos.y && mouse.y <= windowPos.y + viewport.y)
+		if (mouseX >= 0 && mouseY >= 0 && mouseX <= viewport.x && mouseY <= viewport.y)
 		{
-			mouse -= windowPos;
-			mouse.y = viewport.y - mouse.y;
-
-			glm::vec3 ray_origin;
-			glm::vec3 ray_direction;
-			ScreenPosToWorldRay(
-				mouse.x, mouse.y,
-				viewport.x, viewport.y,
-				camera.view,
-				camera.projection,
-				ray_origin,
-				ray_direction
-			);
-
-			node_clicked = -1;
-			for (int i = 0; i < scene.objects.size(); i++)
-			{
-				std::shared_ptr<Object> object = scene.objects[i];
-				if (object->GetType() == Type_Mesh)
-				{
-					std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
-
-					float intersection_distance; // Output of TestRayOBBIntersection()
-
-					if (TestRayOBBIntersection(
-						ray_origin,
-						ray_direction,
-						mesh->minPos,
-						mesh->maxPos,
-						mesh->objectToWorld,
-						intersection_distance)
-						) {
-						node_clicked = i;
-						break;
-					}
-				}
-			}
+			node_clicked = openglRenderer.GetObjectID(mouseX, mouseY);
 		}
 	}
 }

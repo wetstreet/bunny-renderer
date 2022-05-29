@@ -6,7 +6,8 @@
 
 const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 {
-    {L"PNG Files (*.png)",          L"*.png"},
+    //{L"PNG Files (*.png)",          L"*.png"},
+    {L"Image (*.png; *.tga)",       L"*.png;*.tga"},
     {L"OBJ Files (*.obj)",          L"*.obj"},
     {L"All Documents (*.*)",        L"*.*"}
 };
@@ -70,7 +71,7 @@ std::string FileDialog(const CLSID id)
     return s;
 }
 
-std::string OpenFileDialog()
+std::string OpenFileDialog(int index)
 {
     std::string s;
     // CoCreate the File Open Dialog object.
@@ -84,8 +85,7 @@ std::string OpenFileDialog()
         pfd->GetOptions(&dwFlags);
         pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM);
         pfd->SetFileTypes(ARRAYSIZE(c_rgSaveTypes), c_rgSaveTypes);
-        pfd->SetFileTypeIndex(2);
-        pfd->SetDefaultExtension(L"png");
+        pfd->SetFileTypeIndex(index);
 
         // Show the dialog
         hr = pfd->Show(NULL);
@@ -101,11 +101,15 @@ std::string OpenFileDialog()
                 PWSTR pszFilePath = NULL;
                 hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
-                std::wstringstream ss;
-                ss << pszFilePath;
-                s = wstring2string(ss.str());
+                if (pszFilePath != NULL)
+                {
+                    std::wstringstream ss;
+                    ss << pszFilePath;
+                    s = wstring2string(ss.str());
 
-                CoTaskMemFree(pszFilePath);
+                    CoTaskMemFree(pszFilePath);
+                }
+
                 psiResult->Release();
             }
         }

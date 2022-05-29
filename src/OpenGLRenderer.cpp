@@ -43,17 +43,35 @@ OpenGLRenderer::OpenGLRenderer()
 	glGenTextures(1, &renderTexture);
 	glBindTexture(GL_TEXTURE_2D, renderTexture);
 	glObjectLabel(GL_TEXTURE, renderTexture, -1, "Color RT");
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewport.x, viewport.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTexture, 0);
+
+	// object id rt
+	glGenTextures(1, &objectIdRT);
+	glBindTexture(GL_TEXTURE_2D, objectIdRT);
+	glObjectLabel(GL_TEXTURE, objectIdRT, -1, "Object ID RT");
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, viewport.x, viewport.y, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, objectIdRT, 0);
 
     // depth & stencil rbo
 	glGenRenderbuffers(1, &rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glObjectLabel(GL_RENDERBUFFER, rbo, -1, "Depth Stencil Buffer");
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, viewport.x, viewport.y);  
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
+	GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+	glDrawBuffers(2, buffers);
 
 	// outline fbo
 	glGenFramebuffers(1, &outlineFBO);
@@ -92,6 +110,18 @@ OpenGLRenderer::~OpenGLRenderer()
 	delete outlineMergeShader;
 }
 
+int OpenGLRenderer::GetObjectID(int x, int y)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	glReadBuffer(GL_COLOR_ATTACHMENT1);
+	int pixelData;
+	glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	return pixelData;
+}
+
 void OpenGLRenderer::Render(Scene &scene)
 {
 	// update rt size
@@ -113,7 +143,10 @@ void OpenGLRenderer::Render(Scene &scene)
     glClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    scene.camera.updateMatrix(45.0f, 0.1f, 1000.0f, viewport.x, viewport.y);
+	int noID = -1;
+	glClearTexImage(objectIdRT, 0, GL_RED_INTEGER, GL_INT, &noID);
+
+    scene.camera.updateMatrix(viewport.x, viewport.y);
 
     scene.Draw(shader);
 

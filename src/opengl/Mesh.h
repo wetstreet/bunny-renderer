@@ -27,7 +27,7 @@ class Mesh : public Object
 
         std::shared_ptr<Texture> texture;
 
-        const char *filename;
+        std::string path;
 
     public:
         Mesh(const char *filename);

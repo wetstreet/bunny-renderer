@@ -26,6 +26,10 @@ class Camera
 
         glm::vec3 clearColor = glm::vec3(0.2f, 0.2f, 0.2f);
 
+        float FOVdeg = 45.0f;
+        float nearPlane = 0.1f;
+        float farPlane = 1000.0f;
+
         bool firstClick = true;
 
         int width;
@@ -38,7 +42,7 @@ class Camera
 
         Camera(int width, int height, glm::vec3 position);
 
-        void updateMatrix(float FOVdeg, float nearPlane, float farPlane, float width, float height);
+        void updateMatrix(float width, float height);
         void Matrix(Shader& shader, const char* uniform);
 
         // input handling
