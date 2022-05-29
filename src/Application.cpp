@@ -207,7 +207,7 @@ void Application::DrawHierarchy()
 
 void Application::DrawGizmo()
 {
-	if (node_clicked != -1)
+	if (node_clicked != -1 && node_clicked < scene.objects.size())
 	{
 		ImGuizmo::SetOrthographic(false);
 		ImGuizmo::SetDrawlist();

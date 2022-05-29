@@ -43,7 +43,7 @@ OpenGLRenderer::OpenGLRenderer()
 	glGenTextures(1, &renderTexture);
 	glBindTexture(GL_TEXTURE_2D, renderTexture);
 	glObjectLabel(GL_TEXTURE, renderTexture, -1, "Color RT");
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -127,24 +127,29 @@ void OpenGLRenderer::Render(Scene &scene)
 	// update rt size
     glBindTexture(GL_TEXTURE_2D, renderTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glBindTexture(GL_TEXTURE_2D, objectIdRT);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, viewport.x, viewport.y, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
     
     glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, viewport.x, viewport.y);  
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    glViewport(0, 0, viewport.x, viewport.y);
-
+	// starts render
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-    glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	glViewport(0, 0, viewport.x, viewport.y);
+	glScissor(0, 0, viewport.x, viewport.y);
 
-    glm::vec3 clearColor = scene.camera.clearColor;
-    glClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	glm::vec3 clearColor = scene.camera.clearColor;
 	int noID = -1;
+
+	glDepthMask(GL_TRUE);
+    glClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearTexImage(objectIdRT, 0, GL_RED_INTEGER, GL_INT, &noID);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
 
     scene.camera.updateMatrix(viewport.x, viewport.y);
 
