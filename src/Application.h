@@ -8,15 +8,14 @@
 
 #include "ImGuizmo/ImGuizmo.h"
 
-#include "opengl/Scene.h"
-#include "opengl/Texture.h"
-#include "opengl/Selection.h"
+#include "common/Scene.h"
+#include "common/Texture.h"
+#include "common/Selection.h"
+#include "common/DirectionalLight.h"
+#include "common/Utils.h"
 
 #include "OpenGLRenderer.h"
 #include "RasterizerRenderer.h"
-#include "common/DirectionalLight.h"
-
-#include "common/Utils.h"
 
 
 class Application

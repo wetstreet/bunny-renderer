@@ -1,9 +1,9 @@
 #ifndef __RENDERER_H__
 #define __RENDERER_H__
 
-#include "../opengl/Scene.h"
-#include "../opengl/Texture.h"
-#include "../opengl/Skybox.h"
+#include "Scene.h"
+#include "Texture.h"
+#include "Skybox.h"
 
 class Renderer
 {

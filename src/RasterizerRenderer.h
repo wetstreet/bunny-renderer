@@ -6,7 +6,6 @@
 
 #include "common/Renderer.h"
 #include "rasterizer/our_gl.h"
-#include "opengl/Scene.h"
 
 class RasterizerRenderer : public Renderer
 {

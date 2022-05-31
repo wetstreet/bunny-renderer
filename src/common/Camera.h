@@ -9,8 +9,6 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/vector_angle.hpp"
 
-#include "Shader.h"
-
 class Camera
 {
     public:
@@ -43,7 +41,6 @@ class Camera
         Camera(int width, int height, glm::vec3 position);
 
         void updateMatrix(float width, float height);
-        void Matrix(Shader& shader, const char* uniform);
 
         // input handling
         void SceneInputs(GLFWwindow* window, float deltaTime);

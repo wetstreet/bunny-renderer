@@ -3,8 +3,9 @@
 
 #include "tgaimage.h"
 #include "glm/glm.hpp"
-#include "../opengl/VBO.h"
-#include "../opengl/Texture.h"
+#include "../common/Vertex.h"
+#include "../common/Texture.h"
+#include "../common/Camera.h"
 
 glm::mat4 model_matrix(glm::vec3 &position, glm::vec3 &rotation, glm::vec3 &scale);
 glm::mat4 viewportMat(int x, int y, int w, int h);
@@ -26,6 +27,6 @@ struct IShader
 };
 
 glm::vec3 tex2D(Texture &tex, glm::vec2 &uv);
-void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height);
+void triangle(Varying *varys, IShader &shader, uint8_t* pixels, float*zbuffer, int width, int height, Camera& camera);
 
 #endif //__OUR_GL_H__

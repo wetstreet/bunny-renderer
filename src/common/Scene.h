@@ -3,7 +3,8 @@
 
 #include "Mesh.h"
 #include "Texture.h"
-#include "../common/Light.h"
+#include "Light.h"
+#include "Camera.h"
 
 class Scene
 {

@@ -13,11 +13,6 @@ void Camera::updateMatrix(float width, float height)
     cameraMatrix = projection * view;
 }
 
-void Camera::Matrix(Shader& shader, const char* uniform)
-{
-    glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
-}
-
 bool Camera::MouseInScene(GLFWwindow* window, double mouseX, double mouseY)
 {
     int xpos, ypos;

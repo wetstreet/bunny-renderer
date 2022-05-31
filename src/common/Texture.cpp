@@ -1,5 +1,5 @@
 #include "Texture.h"
-#include "common/Utils.h"
+#include "Utils.h"
 
 Texture::Texture(const char* image, GLenum texType, GLenum slot, GLenum format, GLenum pixelType)
 	: path(image), type(texType)

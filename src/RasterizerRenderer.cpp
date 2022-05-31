@@ -1,4 +1,5 @@
 #include "RasterizerRenderer.h"
+#include "common/Utils.h"
 
 void RasterizerRenderer::Render(Scene &scene)
 {
@@ -83,7 +84,7 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
 {
     Clear(pixels, scene.camera.clearColor);
 
-    int *zbuffer = new int[viewport.x * viewport.y];
+    float *zbuffer = new float[viewport.x * viewport.y];
     
     GouraudShader shader;
     shader.lightDir = -scene.camera.Orientation;
@@ -92,8 +93,8 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
 
     glm::vec3 center = camera.Position + camera.Orientation;
     glm::mat4 View = lookat(camera.Position, center, camera.Up);
-    glm::mat4 Projection = glm::perspective(glm::radians(camera.FOVdeg), (float)(viewport.x / viewport.y), camera.nearPlane, camera.farPlane);
-    //glm::mat4 Projection = projection(-1.0f / glm::length(-camera.Orientation));
+    //glm::mat4 Projection = glm::perspective(glm::radians(camera.FOVdeg), (float)(viewport.x / viewport.y), camera.nearPlane, camera.farPlane);
+    glm::mat4 Projection = projection(-1.0f / glm::length(-camera.Orientation));
     glm::mat4 Viewport = viewportMat(0, 0, viewport.x, viewport.y);
     
     for (int i = 0; i < scene.objects.size(); i++)
@@ -120,7 +121,7 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
                     varys[k].position = Viewport * varys[k].position;
                 }
 
-                triangle(varys, shader, pixels, zbuffer, viewport.x, viewport.y);
+                triangle(varys, shader, pixels, zbuffer, viewport.x, viewport.y, camera);
             }
         }
     }

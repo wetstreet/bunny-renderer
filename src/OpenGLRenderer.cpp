@@ -1,5 +1,5 @@
 #include "OpenGLRenderer.h"
-#include "opengl/Selection.h"
+#include "common/Selection.h"
 
 float rectangleVertices[] =
 {

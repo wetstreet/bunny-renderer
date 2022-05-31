@@ -4,11 +4,10 @@
 #include <string>
 #include <unordered_map>
 
-#include "VAO.h"
-#include "EBO.h"
-#include "Camera.h"
+#include "../opengl/VAO.h"
+#include "../opengl/EBO.h"
 #include "Texture.h"
-#include "../common/Object.h"
+#include "Object.h"
 
 class Mesh : public Object
 {

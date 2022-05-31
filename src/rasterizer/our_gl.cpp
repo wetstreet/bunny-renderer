@@ -2,7 +2,7 @@
 #include <limits>
 #include <cstdlib>
 #include "our_gl.h"
-#include "../opengl/Mesh.h"
+#include "../common/Mesh.h"
 
 IShader::~IShader() {}
 
@@ -121,7 +121,7 @@ glm::vec3 tex2D(Texture &tex, glm::vec2 &uv)
     return glm::vec3(tex.bytes[index*3]/255.0f, tex.bytes[index*3+1]/255.0f, tex.bytes[index*3+2]/255.0f);
 }
 
-void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, int width, int height)
+void triangle(Varying *varys, IShader &shader, uint8_t* pixels, float*zbuffer, int width, int height, Camera& camera)
 {
     glm::vec2 bboxmin = glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     glm::vec2 bboxmax = glm::vec2(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -147,10 +147,11 @@ void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, in
 
             float z = varys[0].position[2] * c.x + varys[1].position[2] * c.y + varys[2].position[2] * c.z;
             float w = varys[0].position[3] * c.x + varys[1].position[3] * c.y + varys[2].position[3] * c.z;
-            float frag_depth = std::max(0, std::min(255, int(z/w + 0.5)));
+            float depth = std::max(0.0f, std::min((z / w - camera.nearPlane) / (camera.farPlane - camera.nearPlane), 1.0f));
+
             int index = P.x + P.y * width;
 
-            if (c.x < 0 || c.y < 0 || c.z < 0 || zbuffer[index] > frag_depth) continue;
+            if (c.x < 0 || c.y < 0 || c.z < 0 || zbuffer[index] > depth) continue;
 
             Varying o;
             o.uv = glm::vec2(0, 0);
@@ -174,7 +175,7 @@ void triangle(Varying *varys, IShader &shader, uint8_t* pixels, int *zbuffer, in
             pixels[index * 4 + 1] = color.g * 255;
             pixels[index * 4 + 2] = color.b * 255;
             pixels[index * 4 + 3] = 255;
-            zbuffer[index] = frag_depth;
+            zbuffer[index] = depth;
         }
     }
 }
