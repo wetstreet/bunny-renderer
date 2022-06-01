@@ -7,11 +7,11 @@ out vec3 normal;
 
 out vec2 texCoord;
 
-uniform mat4 camMatrix;
+uniform mat4 br_ObjectToClip;
 
 void main()
 {
-	gl_Position = camMatrix * vec4(aPos, 1.0);
+	gl_Position = br_ObjectToClip * vec4(aPos, 1.0);
 	normal = aNormal;
 	texCoord = aTex;
 }

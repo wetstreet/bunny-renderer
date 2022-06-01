@@ -2,7 +2,7 @@
 
 Scene::Scene(Camera &camera) : camera(camera)
 {
-	white_tex = std::make_shared<Texture>("res/obj/white_texture.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+	white_tex = std::make_shared<Texture>("res/obj/white_texture.png");
 }
 
 Scene::~Scene()
@@ -68,7 +68,8 @@ void Scene::Draw(Shader *shader)
                 glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
                 glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);
 
-                glUniformMatrix4fv(glGetUniformLocation(shader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * mesh->objectToWorld));
+                glUniformMatrix4fv(glGetUniformLocation(shader->ID, "br_ObjectToClip"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * mesh->objectToWorld));
+                glUniformMatrix4fv(glGetUniformLocation(shader->ID, "br_ObjectToWorld"), 1, GL_FALSE, glm::value_ptr(mesh->objectToWorld));
                 // todo end
 
                 mesh->Draw();

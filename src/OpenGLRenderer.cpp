@@ -200,7 +200,7 @@ void OpenGLRenderer::Render(Scene &scene)
 
 			glm::vec4 draw_color(1 / 255.0f, 1, 1, 1);
 			glUniform4fv(glGetUniformLocation(outlineShader->ID, "_DRAW_COLOR"), 1, (float*)&draw_color);
-			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(scene.camera.cameraMatrix * mesh->objectToWorld));
+			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "br_ObjectToClip"), 1, GL_FALSE, glm::value_ptr(scene.camera.cameraMatrix * mesh->objectToWorld));
 
 			mesh->Draw();
 		}
@@ -217,7 +217,7 @@ void OpenGLRenderer::Render(Scene &scene)
 
 			glm::vec4 draw_color(0, 0, 1, 1);
 			glUniform4fv(glGetUniformLocation(outlineShader->ID, "_DRAW_COLOR"), 1, (float*)&draw_color);
-			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "camMatrix"), 1, GL_FALSE, glm::value_ptr(scene.camera.cameraMatrix * mesh->objectToWorld));
+			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "br_ObjectToClip"), 1, GL_FALSE, glm::value_ptr(scene.camera.cameraMatrix * mesh->objectToWorld));
 
 			mesh->Draw();
 		}

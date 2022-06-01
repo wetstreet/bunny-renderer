@@ -35,7 +35,6 @@ public:
 	void DrawGizmo();
 	void DrawHierarchy();
 	void DrawSceneCamera();
-	void DrawRasterizer();
 	void DrawImage();
 	void ClickToSelect();
 

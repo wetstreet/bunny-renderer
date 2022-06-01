@@ -9,8 +9,6 @@ void Application::DrawEditor()
 
 	DrawInspector();
 
-	DrawRasterizer();
-
 	DrawImage();
 
 	DrawSceneCamera();
@@ -105,12 +103,6 @@ void Application::DrawInspector()
 			object->rotation = glm::radians(degrees);
 			ImGui::InputFloat3("Sc", (float*)&object->scale);
 
-
-			ImGui::RadioButton("Translate", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
-			ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
-			ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE);
-
-
 			if (object->GetType() == Type_Light)
 			{
 				ImGui::Text("------------Light------------");
@@ -138,7 +130,7 @@ void Application::DrawInspector()
 					std::string s = OpenFileDialog(1);
 					if (s.size() > 0)
 					{
-						std::shared_ptr<Texture> tex = std::make_shared<Texture>(s.c_str(), GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+						std::shared_ptr<Texture> tex = std::make_shared<Texture>(s.c_str());
 						mesh->texture = tex;
 					}
 				}
@@ -256,6 +248,28 @@ void Application::DrawScene()
 		ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Scene", &showScene);
 
+		ImGui::RadioButton("Translate", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
+		ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
+		ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE); ImGui::SameLine();
+
+		if (ImGui::Button("rasterizer render"))
+		{
+			rasterizerRenderer.viewport.x = viewport.x;
+			rasterizerRenderer.viewport.y = viewport.y;
+
+			window_size = ImVec2(rasterizerRenderer.viewport.x + 20, rasterizerRenderer.viewport.y + 35);
+			content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
+
+			double startTime = glfwGetTime();
+
+			rasterizerRenderer.Render(scene);
+
+			double deltaTime = glfwGetTime() - startTime;
+			std::cout << "Render finished, took " << deltaTime << " seconds." << std::endl;
+
+			showImage = true;
+		}
+
 		// Using a Child allow to fill all the space of the window.
 		// It also alows customization
 		ImGui::BeginChild("GameRender");
@@ -311,34 +325,6 @@ void Application::DrawImage()
 		ImGui::SetNextWindowSize(window_size);
 		ImGui::Begin("Render Result", &showImage);
 		ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size);
-		ImGui::End();
-	}
-}
-
-void Application::DrawRasterizer()
-{
-	if (showRasterizer)
-	{
-		ImGui::Begin("Rasterizer", &showRasterizer);
-
-		ImGui::InputInt2("Size", (int*)&rasterizerRenderer.viewport);
-		ImGui::SameLine();
-		if (ImGui::Button("Sync"))
-		{
-			rasterizerRenderer.viewport.x = viewport.x;
-			rasterizerRenderer.viewport.y = viewport.y;
-		}
-
-		if (ImGui::Button("rasterizer render"))
-		{
-			window_size = ImVec2(rasterizerRenderer.viewport.x + 20, rasterizerRenderer.viewport.y + 35);
-			content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
-
-			rasterizerRenderer.Render(scene);
-
-			showImage = true;
-		}
-
 		ImGui::End();
 	}
 }

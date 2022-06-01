@@ -29,24 +29,29 @@ struct GouraudShader : public IShader
 {
     glm::vec3 lightDir;
     glm::mat4 MVP;
+    glm::mat4 objectToWorld;
     std::shared_ptr<Texture> texture;
 
     virtual Varying vertex(Vertex i)
     {
         Varying o;
         o.uv = i.texcoord;
-        o.normal = i.normal; // mul(i.normal, object_2_world);
+        o.normal = objectToWorld * glm::vec4(i.normal, 0);
         o.position = MVP * glm::vec4(i.position, 1);
         return o;
     }
 
     virtual glm::vec4 fragment(Varying &varying)
     {
-        glm::vec3 color = tex2D(*texture, varying.uv);
+        glm::vec4 color = texture->tex2D(varying.uv);
 
         float nl = std::max(0.0f, glm::dot(varying.normal, lightDir));
 
-        return glm::vec4(color * nl, 1);
+        color.r *= nl;
+        color.g *= nl;
+        color.b *= nl;
+
+        return color;
     }
 };
 
@@ -84,7 +89,9 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
 {
     Clear(pixels, scene.camera.clearColor);
 
-    float *zbuffer = new float[viewport.x * viewport.y];
+    int length = viewport.x * viewport.y;
+    float *zbuffer = new float[length];
+    std::fill(zbuffer, zbuffer + length, 1.0f);
     
     GouraudShader shader;
     shader.lightDir = -scene.camera.Orientation;
@@ -92,9 +99,6 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
     Camera &camera = scene.camera;
 
     glm::vec3 center = camera.Position + camera.Orientation;
-    glm::mat4 View = lookat(camera.Position, center, camera.Up);
-    //glm::mat4 Projection = glm::perspective(glm::radians(camera.FOVdeg), (float)(viewport.x / viewport.y), camera.nearPlane, camera.farPlane);
-    glm::mat4 Projection = projection(-1.0f / glm::length(-camera.Orientation));
     glm::mat4 Viewport = viewportMat(0, 0, viewport.x, viewport.y);
     
     for (int i = 0; i < scene.objects.size(); i++)
@@ -104,10 +108,9 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
         {
             std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
 
-            glm::mat4 Model = model_matrix(mesh->position, mesh->rotation, mesh->scale);
-            glm::mat4 MVP = Projection * View * Model;
-            shader.MVP = MVP;
+            shader.MVP = camera.cameraMatrix * mesh->objectToWorld;
             shader.texture = mesh->texture;
+            shader.objectToWorld = mesh->objectToWorld;
             
             for (int j = 0; j < mesh->indices.size() / 3; j++)
             {
@@ -121,7 +124,8 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
                     varys[k].position = Viewport * varys[k].position;
                 }
 
-                triangle(varys, shader, pixels, zbuffer, viewport.x, viewport.y, camera);
+                // todo : cull back face
+                triangle(varys, shader, pixels, zbuffer, viewport.x, viewport.y);
             }
         }
     }
