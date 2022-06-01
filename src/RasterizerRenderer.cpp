@@ -3,26 +3,33 @@
 
 void RasterizerRenderer::Render(Scene &scene)
 {
-    uint8_t* pixels = new uint8_t[viewport.x * viewport.y * 4];
-    Rasterize(scene, pixels);
+    int length = viewport.x * viewport.y;
+
+    uint8_t* pixels = new uint8_t[length * 4];
+    float* zbuffer = new float[length];
+    std::fill(zbuffer, zbuffer + length, 1.0f);
+
+    Rasterize(scene, pixels, zbuffer);
 
     // Create a OpenGL texture identifier
     glGenTextures(1, &renderTexture);
     glBindTexture(GL_TEXTURE_2D, renderTexture);
-
-    // Setup filtering parameters for display
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-
-    // Upload pixels into texture
-#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
-    delete [] pixels;
+    glGenTextures(1, &depthTexture);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, viewport.x, viewport.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, zbuffer);
+
+    delete[] zbuffer;
+    delete[] pixels;
 }
 
 struct GouraudShader : public IShader
@@ -70,28 +77,56 @@ void RasterizerRenderer::Clear(uint8_t* pixels, glm::vec3 &clearColor)
     }
 }
 
-void RasterizerRenderer::flip_vertically(uint8_t* pixels)
+void flip_vertically(uint8_t* pixels, int width, int height)
 {
-    unsigned long bytes_per_line = viewport.x * 4;
-    unsigned char *line = new unsigned char[bytes_per_line];
-    int half = viewport.y >> 1;
-    for (int j=0; j<half; j++) {
-        unsigned long l1 = j*bytes_per_line;
-        unsigned long l2 = (viewport.y-1-j)*bytes_per_line;
-        memmove((void *)line,      (void *)(pixels+l1), bytes_per_line);
-        memmove((void *)(pixels+l1), (void *)(pixels+l2), bytes_per_line);
-        memmove((void *)(pixels+l2), (void *)line,      bytes_per_line);
+    unsigned long bytes_per_line = width * 4;
+    unsigned char* line = new unsigned char[bytes_per_line];
+    int half = height >> 1;
+    for (int j = 0; j < half; j++) {
+        unsigned long l1 = j * bytes_per_line;
+        unsigned long l2 = (height - 1 - j) * bytes_per_line;
+        memmove((void*)line, (void*)(pixels + l1), bytes_per_line);
+        memmove((void*)(pixels + l1), (void*)(pixels + l2), bytes_per_line);
+        memmove((void*)(pixels + l2), (void*)line, bytes_per_line);
     }
-    delete [] line;
+    delete[] line;
 }
 
-void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
+void flip_vertically(float* pixels, int width, int height)
+{
+    unsigned long bytes_per_line = width * 4;
+    float* line = new float[width];
+    int half = height >> 1;
+    for (int j = 0; j < half; j++) {
+        unsigned long l1 = j * width;
+        unsigned long l2 = (height - 1 - j) * width;
+        memmove((void*)line, (void*)(pixels + l1), bytes_per_line);
+        memmove((void*)(pixels + l1), (void*)(pixels + l2), bytes_per_line);
+        memmove((void*)(pixels + l2), (void*)line, bytes_per_line);
+    }
+    delete[] line;
+}
+
+void RemapZBuffer(float* zbuffer, int width, int height)
+{
+    int length = width * height;
+    // find minimal zbuffer value
+    float min = 1.0f;
+    for (int i = 0; i < length; i++)
+    {
+        if (zbuffer[i] < min)
+            min = zbuffer[i];
+    }
+    // map from [0,1] to [min,1]
+    for (int i = 0; i < length; i++)
+    {
+        zbuffer[i] = (zbuffer[i] - min) / (1 - min);
+    }
+}
+
+void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels, float* zbuffer)
 {
     Clear(pixels, scene.camera.clearColor);
-
-    int length = viewport.x * viewport.y;
-    float *zbuffer = new float[length];
-    std::fill(zbuffer, zbuffer + length, 1.0f);
     
     GouraudShader shader;
     shader.lightDir = -scene.camera.Orientation;
@@ -130,7 +165,8 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels)
         }
     }
 
-    delete[] zbuffer;
-    
-    flip_vertically(pixels);
+    RemapZBuffer(zbuffer, viewport.x, viewport.y);
+    flip_vertically(zbuffer, viewport.x, viewport.y);
+
+    flip_vertically(pixels, viewport.x, viewport.y);
 }

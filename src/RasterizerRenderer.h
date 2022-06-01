@@ -11,11 +11,11 @@ class RasterizerRenderer : public Renderer
 {
     public:
         virtual void Render(Scene &scene);
+        GLuint depthTexture;
         
     private:
-        void Rasterize(Scene &scene, uint8_t*pixels);
+        void Rasterize(Scene &scene, uint8_t*pixels, float* zbuffer);
         void Clear(uint8_t* pixels, glm::vec3 &clearColor);
-        void flip_vertically(uint8_t* pixels);
 };
 
 #endif //__RASTERIZER_RENDERER_H__

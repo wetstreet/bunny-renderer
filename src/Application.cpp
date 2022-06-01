@@ -16,6 +16,8 @@ void Application::DrawEditor()
 	DrawHierarchy();
 
 	DrawScene();
+
+	DrawToolBar();
 }
 
 void Application::DrawMenu()
@@ -70,9 +72,10 @@ void Application::DrawMenu()
 		{
 			if (ImGui::MenuItem("Inspector")) showInspector = true;
 			if (ImGui::MenuItem("Scene")) showScene = true;
-			if (ImGui::MenuItem("SceneCamera")) showSceneCamera = true;
-			if (ImGui::MenuItem("Rasterizer")) showRasterizer = true;
+			if (ImGui::MenuItem("Scene Camera")) showSceneCamera = true;
+			if (ImGui::MenuItem("Render Result")) showImage = true;
 			if (ImGui::MenuItem("Hierarchy")) showHierarchy = true;
+			if (ImGui::MenuItem("Tool Bar")) showToolBar = true;
 			ImGui::EndMenu();
 		}
 
@@ -86,8 +89,6 @@ void Application::DrawInspector()
 	if (showInspector)
 	{
 		ImGui::Begin("Inspector", &showInspector);
-
-		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
 		if (node_clicked != -1)
 		{
@@ -248,28 +249,6 @@ void Application::DrawScene()
 		ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Scene", &showScene);
 
-		ImGui::RadioButton("Translate", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
-		ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
-		ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE); ImGui::SameLine();
-
-		if (ImGui::Button("rasterizer render"))
-		{
-			rasterizerRenderer.viewport.x = viewport.x;
-			rasterizerRenderer.viewport.y = viewport.y;
-
-			window_size = ImVec2(rasterizerRenderer.viewport.x + 20, rasterizerRenderer.viewport.y + 35);
-			content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
-
-			double startTime = glfwGetTime();
-
-			rasterizerRenderer.Render(scene);
-
-			double deltaTime = glfwGetTime() - startTime;
-			std::cout << "Render finished, took " << deltaTime << " seconds." << std::endl;
-
-			showImage = true;
-		}
-
 		// Using a Child allow to fill all the space of the window.
 		// It also alows customization
 		ImGui::BeginChild("GameRender");
@@ -318,12 +297,48 @@ void Application::DrawSceneCamera()
 	}
 }
 
+void Application::DrawToolBar()
+{
+	if (showToolBar)
+	{
+		ImGui::Begin("Tool Bar", &showToolBar, ImGuiWindowFlags_NoDecoration);
+
+		ImGui::RadioButton("Translate", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
+		ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
+		ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE); ImGui::SameLine();
+
+		if (ImGui::Button("rasterizer render"))
+		{
+			rasterizerRenderer.viewport.x = viewport.x;
+			rasterizerRenderer.viewport.y = viewport.y;
+
+			window_size = ImVec2(rasterizerRenderer.viewport.x + 20, rasterizerRenderer.viewport.y + 35);
+			content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
+
+			double startTime = glfwGetTime();
+
+			rasterizerRenderer.Render(scene);
+
+			double deltaTime = glfwGetTime() - startTime;
+			std::cout << "Render finished, took " << deltaTime << " seconds." << std::endl;
+
+			showImage = true;
+		}
+
+		ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+		ImGui::End();
+	}
+}
+
 void Application::DrawImage()
 {
 	if (showImage)
 	{
 		ImGui::SetNextWindowSize(window_size);
 		ImGui::Begin("Render Result", &showImage);
+		//ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.depthTexture, content_size); // visualize depth buffer
 		ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size);
 		ImGui::End();
 	}

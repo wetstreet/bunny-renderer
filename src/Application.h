@@ -36,6 +36,7 @@ public:
 	void DrawHierarchy();
 	void DrawSceneCamera();
 	void DrawImage();
+	void DrawToolBar();
 	void ClickToSelect();
 
 private:
@@ -57,6 +58,7 @@ private:
 	bool showSceneCamera = true;
 	bool showHierarchy = true;
 	bool showRasterizer = true;
+	bool showToolBar = true;
 
 	bool postprocess = false;
 
