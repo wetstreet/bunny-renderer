@@ -93,51 +93,80 @@ void Application::DrawInspector()
 		if (node_clicked != -1)
 		{
 			std::shared_ptr<Object> object = scene.objects[node_clicked];
-			
+
 			ImGui::Checkbox("##isEnabled", &object->isEnabled);
 			ImGui::SameLine();
 			ImGui::InputText("##name", object->name, IM_ARRAYSIZE(object->name));
 
-			ImGui::InputFloat3("Tr", (float*)&object->position);
-			glm::vec3 degrees = glm::degrees(object->rotation);
-			ImGui::InputFloat3("Rt", (float*)&degrees);
-			object->rotation = glm::radians(degrees);
-			ImGui::InputFloat3("Sc", (float*)&object->scale);
+			if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				if (ImGui::Button("P"))
+				{
+					object->position.x = 0;
+					object->position.y = 0;
+					object->position.z = 0;
+				}
+				ImGui::SameLine();
+				ImGui::DragFloat3("Position", (float*)&object->position, 0.01f);
+
+				glm::vec3 degrees = glm::degrees(object->rotation);
+				if (ImGui::Button("R"))
+				{
+					degrees.x = 0;
+					degrees.y = 0;
+					degrees.z = 0;
+				}
+				ImGui::SameLine();
+				ImGui::DragFloat3("Rotation", (float*)&degrees, 0.01f);
+				object->rotation = glm::radians(degrees);
+
+				if (ImGui::Button("S"))
+				{
+					object->scale.x = 1;
+					object->scale.y = 1;
+					object->scale.z = 1;
+				}
+				ImGui::SameLine();
+				ImGui::DragFloat3("Scale", (float*)&object->scale, 0.01f);
+			}
 
 			if (object->GetType() == Type_Light)
 			{
-				ImGui::Text("------------Light------------");
-				std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(object);
-				ImGui::ColorEdit3("Color", (float*)&light->color);
-				ImGui::InputFloat("Intensity", &light->intensity);
+				if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(object);
+					ImGui::ColorEdit3("Color", (float*)&light->color);
+					ImGui::InputFloat("Intensity", &light->intensity);
+				}
 			}
 			else if (object->GetType() == Type_Mesh)
 			{
-				ImGui::Text("------------Mesh------------");
-				std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
-				ImGui::Text("Stats:");
-				std::stringstream ss;
-				ss << "Vertices: " << mesh->vertices.size() << std::endl
-					<< "Triangles: " << (mesh->indices.size() / 3) << std::endl
-					<< "Path: " << mesh->path;
-				ImGui::Text(ss.str().c_str());
-				ss.clear();
-				ss.str("");
-
-				ImGui::Spacing();
-				ImGui::Text("Texture:");
-				if (ImGui::ImageButton((ImTextureID)(intptr_t)mesh->texture->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
+				if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					std::string s = OpenFileDialog(1);
-					if (s.size() > 0)
+					std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
+					std::stringstream ss;
+					ss << "Vertices: " << mesh->vertices.size() << std::endl
+						<< "Triangles: " << (mesh->indices.size() / 3) << std::endl
+						<< "Path: " << mesh->path;
+					ImGui::Text(ss.str().c_str());
+					ss.clear();
+					ss.str("");
+
+					ImGui::Separator();
+
+					Texture& tex = *mesh->texture;
+					ss << GetFileNameFromPath(tex.path) << std::endl << "Size: " << tex.width << "x" << tex.height;
+					ImGui::Text(ss.str().c_str());
+					if (ImGui::ImageButton((ImTextureID)(intptr_t)mesh->texture->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
 					{
-						std::shared_ptr<Texture> tex = std::make_shared<Texture>(s.c_str());
-						mesh->texture = tex;
+						std::string s = OpenFileDialog(1);
+						if (s.size() > 0)
+						{
+							std::shared_ptr<Texture> tex = std::make_shared<Texture>(s.c_str());
+							mesh->texture = tex;
+						}
 					}
 				}
-				Texture& tex = *mesh->texture;
-				ss << GetFileNameFromPath(tex.path) << std::endl << "Size: " << tex.width << "x" << tex.height ;
-				ImGui::Text(ss.str().c_str());
 			}
 		}
 
@@ -247,13 +276,15 @@ void Application::DrawScene()
 	if (showScene)
 	{
 		ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Scene", &showScene);
+		bool visible = ImGui::Begin("Scene", &showScene);
+		if (!visible)
+		{
+			ImGui::End();
+			return;
+		}
+		// todo: skip scene camera manipulation when scene is not visible
 
-		// Using a Child allow to fill all the space of the window.
-		// It also alows customization
 		ImGui::BeginChild("GameRender");
-
-		// Get the size of the child (i.e. the whole draw size of the windows).
 		viewport = ImGui::GetWindowSize();
 		windowPos = ImGui::GetWindowPos();
 
@@ -261,11 +292,10 @@ void Application::DrawScene()
 		scene.camera.viewport = glm::vec2(viewport.x, viewport.y);
 		openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
 
+		GLuint rtID = postprocess ? openglRenderer.postprocessRT : openglRenderer.renderTexture;
+
 		// Because I use the texture from OpenGL, I need to invert the V from the UV.
-		if (postprocess)
-			ImGui::Image((ImTextureID)(intptr_t)openglRenderer.outlineRT, viewport, ImVec2(0, 1), ImVec2(1, 0));
-		else
-			ImGui::Image((ImTextureID)(intptr_t)openglRenderer.renderTexture, viewport, ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((ImTextureID)(intptr_t)rtID, viewport, ImVec2(0, 1), ImVec2(1, 0));
 
 		ClickToSelect();
 
@@ -303,7 +333,7 @@ void Application::DrawToolBar()
 	{
 		ImGui::Begin("Tool Bar", &showToolBar, ImGuiWindowFlags_NoDecoration);
 
-		ImGui::RadioButton("Translate", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
+		ImGui::RadioButton("Move", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
 		ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
 		ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE); ImGui::SameLine();
 
@@ -323,6 +353,8 @@ void Application::DrawToolBar()
 			std::cout << "Render finished, took " << deltaTime << " seconds." << std::endl;
 
 			showImage = true;
+
+			ImGui::SetWindowFocus("Render Result");
 		}
 
 		ImGui::SameLine(ImGui::GetWindowWidth() - 200);

@@ -127,10 +127,18 @@ void OpenGLRenderer::Render(Scene &scene)
 	// update rt size
     glBindTexture(GL_TEXTURE_2D, renderTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindTexture(GL_TEXTURE_2D, objectIdRT);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, viewport.x, viewport.y, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D, postprocessRT);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D, outlineRT);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glBindTexture(GL_TEXTURE_2D, 0);
     
+	// update zbuffer size
     glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, viewport.x, viewport.y);  
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -157,31 +165,12 @@ void OpenGLRenderer::Render(Scene &scene)
 
     skybox.Draw(scene.camera);
 
-    // post process
-    glBindTexture(GL_TEXTURE_2D, postprocessRT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, postprocessFBO);
-    glDisable(GL_DEPTH_TEST);
-
-    postprocessShader->Activate();
-	glUniform1i(glGetUniformLocation(postprocessShader->ID, "screenTexture"), 0);
-    glBindTexture(GL_TEXTURE_2D, renderTexture);
-
-    glBindVertexArray(rectVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
 	if (node_clicked != -1)
 	{
-
+		// disable zwrite
 		glDepthMask(GL_FALSE);
 
-		// outline
-		glBindTexture(GL_TEXTURE_2D, outlineRT);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glBindTexture(GL_TEXTURE_2D, 0);
-
+		// draw outline
 		glBindFramebuffer(GL_FRAMEBUFFER, outlineFBO);
 
 		glClearColor(0, 0, 0, 0);
@@ -279,9 +268,16 @@ void OpenGLRenderer::Render(Scene &scene)
 		glUniform1f(glGetUniformLocation(outlineMergeShader->ID, "_OutlineFade"), 1);
 		glBindVertexArray(rectVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
 	}
+
+	// postprocess
+	glDisable(GL_DEPTH_TEST);
+	glBindFramebuffer(GL_FRAMEBUFFER, postprocessFBO);
+	postprocessShader->Activate();
+	glUniform1i(glGetUniformLocation(postprocessShader->ID, "screenTexture"), 0);
+	glBindTexture(GL_TEXTURE_2D, renderTexture);
+	glBindVertexArray(rectVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // editor background
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
