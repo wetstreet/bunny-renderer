@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "common/Renderer.h"
-#include "rasterizer/our_gl.h"
 
 class RasterizerRenderer : public Renderer
 {

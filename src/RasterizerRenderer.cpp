@@ -1,5 +1,6 @@
 #include "RasterizerRenderer.h"
 #include "common/Utils.h"
+#include "rasterizer/our_gl.h"
 
 void RasterizerRenderer::Render(Scene &scene)
 {
@@ -31,36 +32,6 @@ void RasterizerRenderer::Render(Scene &scene)
     delete[] zbuffer;
     delete[] pixels;
 }
-
-struct GouraudShader : public IShader
-{
-    glm::vec3 lightDir;
-    glm::mat4 MVP;
-    glm::mat4 objectToWorld;
-    std::shared_ptr<Texture> texture;
-
-    virtual Varying vertex(Vertex i)
-    {
-        Varying o;
-        o.uv = i.texcoord;
-        o.normal = objectToWorld * glm::vec4(i.normal, 0);
-        o.position = MVP * glm::vec4(i.position, 1);
-        return o;
-    }
-
-    virtual glm::vec4 fragment(Varying &varying)
-    {
-        glm::vec4 color = texture->tex2D(varying.uv);
-
-        float nl = std::max(0.0f, glm::dot(varying.normal, lightDir));
-
-        color.r *= nl;
-        color.g *= nl;
-        color.b *= nl;
-
-        return color;
-    }
-};
 
 void RasterizerRenderer::Clear(uint8_t* pixels, glm::vec3 &clearColor)
 {
@@ -128,8 +99,10 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels, float* zbuffer
 {
     Clear(pixels, scene.camera.clearColor);
     
-    GouraudShader shader;
-    shader.lightDir = -scene.camera.Orientation;
+    GouraudShader defaultShader;
+    NormalShader normalShader;
+    IShader* pDefault = &defaultShader;
+    IShader* pNormal = &normalShader;
 
     Camera &camera = scene.camera;
 
@@ -143,9 +116,14 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels, float* zbuffer
         {
             std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
 
-            shader.MVP = camera.cameraMatrix * mesh->objectToWorld;
-            shader.texture = mesh->texture;
-            shader.objectToWorld = mesh->objectToWorld;
+            IShader* shader = mesh->normalMap ? pNormal : pDefault;
+
+            shader->lightDir = -scene.camera.Orientation;
+
+            shader->MVP = camera.cameraMatrix * mesh->objectToWorld;
+            shader->texture = mesh->texture;
+            shader->normalMap = mesh->normalMap;
+            shader->objectToWorld = mesh->objectToWorld;
             
             for (int j = 0; j < mesh->indices.size() / 3; j++)
             {
@@ -155,12 +133,12 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels, float* zbuffer
                 {
                     int index = j * 3 + k;
                     Vertex vert = mesh->vertices[mesh->indices[index]];
-                    varys[k] = shader.vertex(vert);
+                    varys[k] = shader->vertex(vert);
                     varys[k].position = Viewport * varys[k].position;
                 }
 
                 // todo : cull back face
-                triangle(varys, shader, pixels, zbuffer, viewport.x, viewport.y);
+                triangle(varys, *shader, pixels, zbuffer, viewport.x, viewport.y);
             }
         }
     }
