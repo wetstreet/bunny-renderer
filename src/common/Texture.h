@@ -23,6 +23,9 @@ class Texture
         void texUnit(Shader& shader, const char* uniform, GLuint unit);
         void Bind();
         void Unbind();
+    private:
+        static glm::vec2 vec2_zero;
+        static glm::vec2 vec2_one;
 };
 
 #endif //__TEXTURE_H__

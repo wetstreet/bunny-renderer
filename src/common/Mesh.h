@@ -36,9 +36,9 @@ class Mesh : public Object
         void Draw();
 
     private:
-        void ParseFile();
         void CalcBounds();
         void Bind();
+        bool LoadMesh(const std::string& pFile);
 };
 
 #endif

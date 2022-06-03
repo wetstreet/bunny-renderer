@@ -1,6 +1,9 @@
 #include "Texture.h"
 #include "Utils.h"
 
+glm::vec2 Texture::vec2_zero = glm::vec2(0, 0); 
+glm::vec2 Texture::vec2_one = glm::vec2(1, 1);
+
 Texture::Texture(const char* image)
 	: path(image)
 {
@@ -41,7 +44,10 @@ void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
 
 glm::vec4 Texture::tex2D(glm::vec2& uv)
 {
-	glm::ivec2 intuv(uv.x * width, uv.y * height);
+	// clamp
+	glm::vec2 uvModified = glm::clamp(uv, vec2_zero, vec2_one);
+
+	glm::ivec2 intuv(uvModified.x * width, uvModified.y * height);
 	int index = intuv.x + intuv.y * width;
 	return glm::vec4(bytes[index * numColCh] / 255.0f, bytes[index * numColCh + 1] / 255.0f, bytes[index * numColCh + 2] / 255.0f,
 		numColCh == 4 ? bytes[index * numColCh + 3] / 255.0f : 1);

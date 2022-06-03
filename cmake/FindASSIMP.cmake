@@ -10,6 +10,14 @@ FIND_PATH( ASSIMP_INCLUDE_DIR assimp/mesh.h
 	/opt/local/include
 	"${CMAKE_SOURCE_DIR}/include"
 )
+
+
+if(MSVC12)
+set(ASSIMP_MSVC_VERSION "vc120")
+elseif(MSVC14)	
+set(ASSIMP_MSVC_VERSION "vc140")
+endif(MSVC12)
+
 FIND_LIBRARY( ASSIMP_LIBRARY assimp
 	/usr/lib64
 	/usr/lib

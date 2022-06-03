@@ -1,10 +1,54 @@
 #include "Mesh.h"
 #include "common/Utils.h"
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+
+bool Mesh::LoadMesh(const std::string& pFile) {
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFile(pFile,
+        aiProcess_CalcTangentSpace |
+        aiProcess_Triangulate |
+        aiProcess_JoinIdenticalVertices);
+
+    if (nullptr == scene) {
+        std::cout << "Mesh load failed!: " << pFile << std::endl  << importer.GetErrorString() << std::endl;
+        return false;
+    }
+
+    const aiMesh* model = scene->mMeshes[0];
+
+    const aiVector3D aiZeroVector(0.0f, 0.0f, 0.0f);
+    for (unsigned int i = 0; i < model->mNumVertices; i++)
+    {
+        const aiVector3D* pPos = &(model->mVertices[i]);
+        const aiVector3D* pNormal = &(model->mNormals[i]);
+        const aiVector3D* pTexCoord = model->HasTextureCoords(0) ? &(model->mTextureCoords[0][i]) : &aiZeroVector;
+
+        Vertex vert{ glm::vec3(pPos->x, pPos->y, pPos->z),
+                    glm::vec3(pNormal->x, pNormal->y, pNormal->z),
+                    glm::vec2(pTexCoord->x, pTexCoord->y)};
+
+        vertices.push_back(vert);
+    }
+
+    for (unsigned int i = 0; i < model->mNumFaces; i++)
+    {
+        const aiFace& face = model->mFaces[i];
+        assert(face.mNumIndices == 3);
+        indices.push_back(face.mIndices[0]);
+        indices.push_back(face.mIndices[1]);
+        indices.push_back(face.mIndices[2]);
+    }
+
+    return true;
+}
 
 Mesh::Mesh(const char *path)
     : path(path)
 {
-    ParseFile();
+    LoadMesh(path);
     CalcBounds();
     Bind();
 }
@@ -24,66 +68,6 @@ struct uvec3_hash {
         return hash_combine(h12, h3);
     }
 };
-
-void Mesh::ParseFile()
-{
-    std::unordered_map<glm::uvec3, unsigned int, uvec3_hash> vertMap;
-
-    std::ifstream in;
-    in.open(path, std::ifstream::in);
-    if (in.fail()) return;
-    std::string line;
-    while (!in.eof()) {
-        std::getline(in, line);
-        std::istringstream iss(line.c_str());
-        char trash;
-        if (!line.compare(0, 2, "v ")) {
-            iss >> trash;
-            glm::vec3 v;
-            for (int i=0;i<3;i++)
-            {
-                iss >> v[i];
-            }
-            verts.push_back(v);
-        } else if (!line.compare(0, 3, "vt ")) {
-            iss >> trash >> trash;
-            glm::vec2 v;
-            for (int i=0;i<2;i++)
-            {
-                iss >> v[i];
-            }
-            uvs.push_back(v);
-        } else if (!line.compare(0, 3, "vn ")) {
-            iss >> trash >> trash;
-            glm::vec3 v;
-            for (int i=0;i<3;i++)
-            {
-                iss >> v[i];
-            }
-            normals.push_back(v);
-        } else if (!line.compare(0, 2, "f ")) {
-            glm::uvec3 tmp;
-            iss >> trash;
-            while (iss >> tmp[0] >> trash >> tmp[1] >> trash >> tmp[2]) {
-                for (int i = 0; i < 3; i++)
-                {
-                    tmp[i]--;// in wavefront obj all indices start at 1, not zero
-                }
-                if (vertMap.count(tmp) == 0)
-                {
-                    Vertex vert{verts[tmp[0]], normals[tmp[2]] , uvs[tmp[1]]};
-                    vertMap.insert(std::pair<glm::uvec3, unsigned int>(tmp, vertices.size()));
-                    indices.push_back(vertices.size());
-                    vertices.push_back(vert);
-                }
-                else
-                {
-                    indices.push_back(vertMap[tmp]);
-                }
-            }
-        }
-    }
-}
 
 void Mesh::CalcBounds()
 {
