@@ -25,6 +25,7 @@ class Mesh : public Object
         glm::vec3 maxPos = glm::vec3(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
 
         std::shared_ptr<Texture> texture;
+        std::shared_ptr<Texture> normalMap;
 
         std::string path;
 

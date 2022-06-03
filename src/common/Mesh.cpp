@@ -25,10 +25,12 @@ bool Mesh::LoadMesh(const std::string& pFile) {
         const aiVector3D* pPos = &(model->mVertices[i]);
         const aiVector3D* pNormal = &(model->mNormals[i]);
         const aiVector3D* pTexCoord = model->HasTextureCoords(0) ? &(model->mTextureCoords[0][i]) : &aiZeroVector;
+        const aiVector3D* pTangent = &(model->mTangents[i]);
 
         Vertex vert{ glm::vec3(pPos->x, pPos->y, pPos->z),
                     glm::vec3(pNormal->x, pNormal->y, pNormal->z),
-                    glm::vec2(pTexCoord->x, pTexCoord->y)};
+                    glm::vec2(pTexCoord->x, pTexCoord->y),
+                    glm::vec3(pTangent->x, pTangent->y, pTangent->z) };
 
         vertices.push_back(vert);
     }
@@ -94,6 +96,7 @@ void Mesh::Bind()
 	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), 0);
 	vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(float)));
 	vao.LinkAttrib(vbo, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    vao.LinkAttrib(vbo, 3, 3, GL_FLOAT, sizeof(Vertex), (void*)(8 * sizeof(float)));
 	vao.Unbind();
 	vbo.Unbind();
 	ebo.Unbind();

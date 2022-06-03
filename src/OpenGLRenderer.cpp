@@ -15,12 +15,13 @@ float rectangleVertices[] =
 
 OpenGLRenderer::OpenGLRenderer()
 {
-	shader = new Shader("res/shaders/default.vert", "res/shaders/default.frag");
-	postprocessShader = new Shader("res/shaders/postprocess.vert", "res/shaders/postprocess.frag");
-	outlineShader = new Shader("res/shaders/outline.vert", "res/shaders/outline.frag");
-	outlineCompareShader = new Shader("res/shaders/outlineCompareIds.vert", "res/shaders/outlineCompareIds.frag");
-	outlineBlurShader = new Shader("res/shaders/outlineBlur.vert", "res/shaders/outlineBlur.frag");
-	outlineMergeShader = new Shader("res/shaders/outlineMerge.vert", "res/shaders/outlineMerge.frag");
+	Shader::Init();
+
+	postprocessShader = std::make_shared<Shader>("res/shaders/postprocess.vert", "res/shaders/postprocess.frag");
+	outlineShader = std::make_shared<Shader>("res/shaders/outline.vert", "res/shaders/outline.frag");
+	outlineCompareShader = std::make_shared<Shader>("res/shaders/outlineCompareIds.vert", "res/shaders/outlineCompareIds.frag");
+	outlineBlurShader = std::make_shared<Shader>("res/shaders/outlineBlur.vert", "res/shaders/outlineBlur.frag");
+	outlineMergeShader = std::make_shared<Shader>("res/shaders/outlineMerge.vert", "res/shaders/outlineMerge.frag");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -102,12 +103,6 @@ OpenGLRenderer::OpenGLRenderer()
 
 OpenGLRenderer::~OpenGLRenderer()
 {
-    delete shader;
-    delete postprocessShader;
-	delete outlineShader;
-	delete outlineCompareShader;
-	delete outlineBlurShader;
-	delete outlineMergeShader;
 }
 
 int OpenGLRenderer::GetObjectID(int x, int y)
@@ -161,7 +156,7 @@ void OpenGLRenderer::Render(Scene &scene)
 
     scene.camera.updateMatrix(viewport.x, viewport.y);
 
-    scene.Draw(shader);
+    scene.Draw();
 
     skybox.Draw(scene.camera);
 

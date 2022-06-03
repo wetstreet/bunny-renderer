@@ -21,13 +21,13 @@ class OpenGLRenderer : public Renderer
         GLuint postprocessFBO;
         GLuint outlineFBO;
 	    GLuint rectVAO, rectVBO;
-        Shader* shader;
-        Shader* postprocessShader;
 
-        Shader* outlineShader;
-        Shader* outlineCompareShader;
-        Shader* outlineBlurShader;
-        Shader* outlineMergeShader;
+        std::shared_ptr<Shader> postprocessShader;
+
+        std::shared_ptr<Shader> outlineShader;
+        std::shared_ptr<Shader> outlineCompareShader;
+        std::shared_ptr<Shader> outlineBlurShader;
+        std::shared_ptr<Shader> outlineMergeShader;
 };
 
 #endif //__OPENGL_RENDERER_H__

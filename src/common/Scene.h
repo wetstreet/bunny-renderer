@@ -17,7 +17,7 @@ class Scene
         Scene(Camera &camera);
         ~Scene();
         std::shared_ptr<Light> GetMainLight();
-        void Draw(Shader *shader);
+        void Draw();
         int AddObject(std::shared_ptr<Object>);
         void RemoveObject(int index);
         int AddPrimitive(std::string name);

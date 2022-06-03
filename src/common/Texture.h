@@ -16,7 +16,7 @@ class Texture
 
         unsigned char* bytes;
         int width, height, numColCh;
-        Texture(const char* image);
+        Texture(const char* image, GLenum slot);
         ~Texture();
 
         glm::vec4 tex2D(glm::vec2& uv);
@@ -26,6 +26,7 @@ class Texture
     private:
         static glm::vec2 vec2_zero;
         static glm::vec2 vec2_one;
+        GLenum slot;
 };
 
 #endif //__TEXTURE_H__

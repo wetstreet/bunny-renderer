@@ -17,6 +17,10 @@ class Shader
         Shader(const char* vertexFile, const char* fragmentFile);
         ~Shader();
 
+        static void Init();
+        static std::shared_ptr<Shader> defaultShader;
+        static std::shared_ptr<Shader> normalShader;
+
         void Activate();
     private:
         void compileErrors(unsigned int shader, const char* type);

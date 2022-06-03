@@ -4,8 +4,8 @@
 glm::vec2 Texture::vec2_zero = glm::vec2(0, 0); 
 glm::vec2 Texture::vec2_one = glm::vec2(1, 1);
 
-Texture::Texture(const char* image)
-	: path(image)
+Texture::Texture(const char* image, GLenum slot)
+	: path(image), slot(slot)
 {
 	name = GetFileNameFromPath(path);
 
@@ -18,7 +18,7 @@ Texture::Texture(const char* image)
 		format = GL_RGBA;
 
 	glGenTextures(1, &ID);
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(slot);
 	glBindTexture(GL_TEXTURE_2D, ID);
 
 	glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(path).c_str());
@@ -37,9 +37,8 @@ Texture::Texture(const char* image)
 
 void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
 {
-	GLuint texUni = glGetUniformLocation(shader.ID, uniform);
 	shader.Activate();
-	glUniform1i(texUni, unit);
+	glUniform1i(glGetUniformLocation(shader.ID, uniform), unit);
 }
 
 glm::vec4 Texture::tex2D(glm::vec2& uv)
@@ -55,11 +54,13 @@ glm::vec4 Texture::tex2D(glm::vec2& uv)
 
 void Texture::Bind()
 {
+	glActiveTexture(slot);
     glBindTexture(GL_TEXTURE_2D, ID);
 }
 
 void Texture::Unbind()
 {
+	glActiveTexture(slot);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

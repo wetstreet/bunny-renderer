@@ -1,6 +1,15 @@
 #include "Shader.h"
 #include "common/Utils.h"
 
+std::shared_ptr<Shader> Shader::defaultShader;
+std::shared_ptr<Shader> Shader::normalShader;
+
+void Shader::Init()
+{
+    defaultShader = std::make_shared<Shader>("res/shaders/default.vert", "res/shaders/default.frag");
+    normalShader = std::make_shared<Shader>("res/shaders/normal.vert", "res/shaders/normal.frag");
+}
+
 std::string get_file_contents(const char* filename)
 {
 	std::ifstream in(filename, std::ios::binary);

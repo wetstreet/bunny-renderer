@@ -149,21 +149,51 @@ void Application::DrawInspector()
 						<< "Triangles: " << (mesh->indices.size() / 3) << std::endl
 						<< "Path: " << mesh->path;
 					ImGui::Text(ss.str().c_str());
-					ss.clear();
-					ss.str("");
+					ss.clear(); ss.str("");
 
 					ImGui::Separator();
 
 					Texture& tex = *mesh->texture;
 					ss << GetFileNameFromPath(tex.path) << std::endl << "Size: " << tex.width << "x" << tex.height;
 					ImGui::Text(ss.str().c_str());
-					if (ImGui::ImageButton((ImTextureID)(intptr_t)mesh->texture->ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
+					ss.clear(); ss.str("");
+					if (ImGui::ImageButton((ImTextureID)(intptr_t)tex.ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
 					{
 						std::string s = OpenFileDialog(1);
 						if (s.size() > 0)
 						{
-							std::shared_ptr<Texture> tex = std::make_shared<Texture>(s.c_str());
-							mesh->texture = tex;
+							mesh->texture = std::make_shared<Texture>(s.c_str(), GL_TEXTURE0);
+						}
+					}
+
+					ImGui::Separator();
+					GLuint ID = 0;
+					if (mesh->normalMap)
+					{
+						Texture& normalMap = *mesh->normalMap;
+						ss << GetFileNameFromPath(normalMap.path) << std::endl << "Size: " << normalMap.width << "x" << normalMap.height;
+						ImGui::Text(ss.str().c_str());
+						ss.clear(); ss.str("");
+						ID = normalMap.ID;
+					}
+					else
+					{
+						ImGui::Text("no texture");
+					}
+					if (ImGui::ImageButton((ImTextureID)(intptr_t)ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
+					{
+						std::string s = OpenFileDialog(1);
+						if (s.size() > 0)
+						{
+							mesh->normalMap = std::make_shared<Texture>(s.c_str(), GL_TEXTURE1);
+						}
+					}
+					if (mesh->normalMap)
+					{
+						ImGui::SameLine();
+						if (ImGui::Button("Remove"))
+						{
+							mesh->normalMap = nullptr;
 						}
 					}
 				}

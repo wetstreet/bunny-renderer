@@ -2,7 +2,7 @@
 
 Scene::Scene(Camera &camera) : camera(camera)
 {
-	white_tex = std::make_shared<Texture>("res/obj/white_texture.png");
+	white_tex = std::make_shared<Texture>("res/obj/white_texture.png", GL_TEXTURE0);
 }
 
 Scene::~Scene()
@@ -26,7 +26,7 @@ std::shared_ptr<Light> Scene::GetMainLight()
     return mainLight;
 }
 
-void Scene::Draw(Shader *shader)
+void Scene::Draw()
 {
     std::shared_ptr<Light> mainLight = GetMainLight();
 
@@ -56,6 +56,8 @@ void Scene::Draw(Shader *shader)
             if (mesh->isEnabled)
             {
                 // todo: move to material
+                std::shared_ptr<Shader> shader = mesh->normalMap != NULL ? Shader::normalShader : Shader::defaultShader;
+
                 shader->Activate();
 
                 if (mesh->texture != NULL)
@@ -64,13 +66,18 @@ void Scene::Draw(Shader *shader)
                     mesh->texture->Bind();
                 }
 
+                if (mesh->normalMap != NULL)
+                {
+                    mesh->normalMap->texUnit(*shader, "normalMap", 1);
+                    mesh->normalMap->Bind();
+                }
+
                 glUniform1i(glGetUniformLocation(shader->ID, "_ObjectID"), i);
                 glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
                 glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);
 
                 glUniformMatrix4fv(glGetUniformLocation(shader->ID, "br_ObjectToClip"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * mesh->objectToWorld));
                 glUniformMatrix4fv(glGetUniformLocation(shader->ID, "br_ObjectToWorld"), 1, GL_FALSE, glm::value_ptr(mesh->objectToWorld));
-                // todo end
 
                 mesh->Draw();
             }
