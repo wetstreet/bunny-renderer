@@ -52,8 +52,9 @@ int main(int argc, char* argv[]) {
 
 	OpenGLRenderer openglRenderer;
 	RasterizerRenderer rasterizerRenderer;
+	RayTracerRenderer raytracer;
 
-	Application app(*camera, scene, io, openglRenderer, rasterizerRenderer);
+	Application app(*camera, scene, openglRenderer, rasterizerRenderer, raytracer);
 
 	double lastTime = glfwGetTime();
 

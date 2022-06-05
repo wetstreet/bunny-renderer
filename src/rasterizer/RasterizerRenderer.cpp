@@ -48,36 +48,6 @@ void RasterizerRenderer::Clear(uint8_t* pixels, glm::vec3 &clearColor)
     }
 }
 
-void flip_vertically(uint8_t* pixels, int width, int height)
-{
-    unsigned long bytes_per_line = width * 4;
-    unsigned char* line = new unsigned char[bytes_per_line];
-    int half = height >> 1;
-    for (int j = 0; j < half; j++) {
-        unsigned long l1 = j * bytes_per_line;
-        unsigned long l2 = (height - 1 - j) * bytes_per_line;
-        memmove((void*)line, (void*)(pixels + l1), bytes_per_line);
-        memmove((void*)(pixels + l1), (void*)(pixels + l2), bytes_per_line);
-        memmove((void*)(pixels + l2), (void*)line, bytes_per_line);
-    }
-    delete[] line;
-}
-
-void flip_vertically(float* pixels, int width, int height)
-{
-    unsigned long bytes_per_line = width * 4;
-    float* line = new float[width];
-    int half = height >> 1;
-    for (int j = 0; j < half; j++) {
-        unsigned long l1 = j * width;
-        unsigned long l2 = (height - 1 - j) * width;
-        memmove((void*)line, (void*)(pixels + l1), bytes_per_line);
-        memmove((void*)(pixels + l1), (void*)(pixels + l2), bytes_per_line);
-        memmove((void*)(pixels + l2), (void*)line, bytes_per_line);
-    }
-    delete[] line;
-}
-
 void RemapZBuffer(float* zbuffer, int width, int height)
 {
     int length = width * height;

@@ -1,11 +1,11 @@
-#ifndef __CAMERA_H__
-#define __CAMERA_H__
+#ifndef __RAYTRACER_CAMERA_H__
+#define __RAYTRACER_CAMERA_H__
 
 #include "rtweekend.h"
 
-class camera {
+class raytracer_camera {
     public:
-        camera(point3 lookfrom, point3 lookat, vec3 vup, double vfov, double aspect_ratio, double aperture, double focus_dist, double _time0 = 0, double _time1 = 0) {
+        raytracer_camera(point3 lookfrom, point3 lookat, vec3 vup, double vfov, double aspect_ratio, double aperture, double focus_dist, double _time0 = 0, double _time1 = 0) {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta / 2);
             auto viewport_height = 2.0 * h;
@@ -42,4 +42,4 @@ class camera {
         double time0, time1; // shutter open/close times
 };
 
-#endif //__CAMERA_H__
+#endif //__RAYTRACER_CAMERA_H__

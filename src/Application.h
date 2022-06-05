@@ -15,15 +15,15 @@
 #include "common/Utils.h"
 #include "common/Dialog.h"
 
-#include "OpenGLRenderer.h"
-#include "RasterizerRenderer.h"
-
+#include "opengl/OpenGLRenderer.h"
+#include "rasterizer/RasterizerRenderer.h"
+#include "raytracer/RayTracerRenderer.h"
 
 class Application
 {
 public:
-	Application(Camera &camera, Scene &scene, ImGuiIO &io, OpenGLRenderer &openglRenderer, RasterizerRenderer &rasterizerRenderer)
-		: camera(camera), scene(scene), io(io), openglRenderer(openglRenderer), rasterizerRenderer(rasterizerRenderer)
+	Application(Camera &camera, Scene &scene, OpenGLRenderer &openglRenderer, RasterizerRenderer &rasterizerRenderer, RayTracerRenderer& raytracer)
+		: camera(camera), scene(scene), openglRenderer(openglRenderer), rasterizerRenderer(rasterizerRenderer), raytracer(raytracer)
 	{
 		strcpy(customMeshName, "");
 	}
@@ -406,7 +406,7 @@ public:
 			ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
 			ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE); ImGui::SameLine();
 
-			if (ImGui::Button("rasterizer render"))
+			if (ImGui::Button("Rasterize"))
 			{
 				rasterizerRenderer.viewport.x = viewport.x;
 				rasterizerRenderer.viewport.y = viewport.y;
@@ -424,6 +424,21 @@ public:
 				showImage = true;
 
 				ImGui::SetWindowFocus("Render Result");
+			}
+			ImGui::SameLine();
+
+			if (ImGui::Button("RayTrace"))
+			{
+
+				raytracer.viewport.x = viewport.x;
+				raytracer.viewport.y = viewport.y;
+
+				window_size = ImVec2(raytracer.viewport.x + 20, raytracer.viewport.y + 35);
+				content_size = ImVec2(raytracer.viewport.x, raytracer.viewport.y);
+
+				raytracer.Render(scene);
+
+				showRaytraceResult = true;
 			}
 
 			ImGui::SameLine(ImGui::GetWindowWidth() - 200);
@@ -443,14 +458,21 @@ public:
 			ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size);
 			ImGui::End();
 		}
+		if (showRaytraceResult)
+		{
+			ImGui::SetNextWindowSize(window_size);
+			ImGui::Begin("Raytracer", &showRaytraceResult);
+			ImGui::Image((ImTextureID)(intptr_t)raytracer.renderTexture, content_size);
+			ImGui::End();
+		}
 	}
 
 private:
 	Camera &camera;
 	Scene &scene;
-	ImGuiIO &io;
 	OpenGLRenderer &openglRenderer;
 	RasterizerRenderer &rasterizerRenderer;
+	RayTracerRenderer &raytracer;
 
 	ImVec2 viewport = ImVec2(800, 800);
 	ImVec2 windowPos;
@@ -470,6 +492,7 @@ private:
 
 	// special window
 	bool showImage = false;
+	bool showRaytraceResult = false;
 	bool showCustomMeshPopup = false;
 	char customMeshName[32];
 };

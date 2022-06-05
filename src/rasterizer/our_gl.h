@@ -1,7 +1,6 @@
 #ifndef __OUR_GL_H__
 #define __OUR_GL_H__
 
-#include "tgaimage.h"
 #include "glm/glm.hpp"
 #include "../common/Vertex.h"
 #include "../common/Texture.h"
