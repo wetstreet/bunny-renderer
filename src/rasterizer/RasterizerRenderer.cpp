@@ -114,7 +114,4 @@ void RasterizerRenderer::Rasterize(Scene &scene, uint8_t *pixels, float* zbuffer
     }
 
     RemapZBuffer(zbuffer, viewport.x, viewport.y);
-    flip_vertically(zbuffer, viewport.x, viewport.y);
-
-    flip_vertically(pixels, viewport.x, viewport.y);
 }

@@ -10,9 +10,40 @@
 #include "raytracer/raytracer_camera.h"
 #include "raytracer/material.h"
 #include "raytracer/moving_sphere.h"
+#include "ThreadPool.h"
 
 class RayTracerRenderer : public Renderer {
 public:
+    std::unique_ptr<ThreadPool> pool;
+    hittable_list world;
+    std::unique_ptr<raytracer_camera> cam;
+
+    // image buffer
+    uint8_t* pixels = nullptr;
+    std::mutex tile_mutex;
+
+    std::function<void()> m_callback = nullptr;
+
+    const int samples_per_pixel = 32;
+    const int max_depth = 8;
+    int tileSize = 16;
+    int finishedTileCount = 0;
+    int totalTileCount = 0;
+    double startTime = 0;
+
+    RayTracerRenderer()
+    {
+        pool = std::make_unique<ThreadPool>(std::thread::hardware_concurrency());
+        world = random_scene();
+
+        glGenTextures(1, &renderTexture);
+        glBindTexture(GL_TEXTURE_2D, renderTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+    }
+
     color ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
 
@@ -77,14 +108,13 @@ public:
         return world;
     }
 
-    uint8_t* RayTrace(Scene& scene)
+    void RayTrace(Scene& scene)
     {
-        //Iamge
-        const int samples_per_pixel = 1;
-        const int max_depth = 4;
-
-        // World
-        auto world = random_scene();
+        if (pixels != nullptr)
+        {
+            delete[] pixels;
+        }
+        pixels = new uint8_t[viewport.x * viewport.y * 4];
 
         // Camera
         point3 lookfrom(13, 2, 3);
@@ -94,61 +124,81 @@ public:
         auto aperture = 0.1;
         const float aspect_ratio = viewport.x / viewport.y;
 
-        raytracer_camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+        cam = std::make_unique<raytracer_camera>(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
-        // Render
-        uint8_t* pixels = new uint8_t[viewport.x * viewport.y * 4];
+        int xTiles = (viewport.x + tileSize - 1) / tileSize;
+        int yTiles = (viewport.y + tileSize - 1) / tileSize;
 
-        for (int j = viewport.y - 1; j >= 0; j--)
-        {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < viewport.x; i++)
+        totalTileCount = xTiles * yTiles;
+        finishedTileCount = 0;
+
+        std::cout << "nTiles(" << xTiles << "," << yTiles << "), Tile Count=" << xTiles * yTiles << std::endl;
+
+        auto renderTile = [this](int xTile, int yTile) {
+            int xStart = xTile * tileSize;
+            int yStart = yTile * tileSize;
+            for (int j = yStart; j < yStart + tileSize; j++)
             {
-                color pixel_color(0, 0, 0);
-                for (int s = 0; s < samples_per_pixel; s++) {
-                    auto u = (i + random_double()) / (viewport.x - 1);
-                    auto v = (j + random_double()) / (viewport.y - 1);
-                    ray r = cam.get_ray(u, v);
-                    pixel_color += ray_color(r, world, max_depth);
+                for (int i = xStart; i < xStart + tileSize; i++)
+                {
+                    // bounds check
+                    if (i >= viewport.x || j >= viewport.y)
+                        continue;
+
+                    color pixel_color(0, 0, 0);
+                    for (int s = 0; s < samples_per_pixel; s++) {
+                        auto u = (i + random_double()) / (viewport.x - 1);
+                        auto v = (j + random_double()) / (viewport.y - 1);
+                        ray r = cam->get_ray(u, v);
+                        pixel_color += ray_color(r, world, max_depth);
+                    }
+
+                    auto scale = 1.0 / samples_per_pixel;
+                    auto r = sqrt(scale * pixel_color.x());
+                    auto g = sqrt(scale * pixel_color.y());
+                    auto b = sqrt(scale * pixel_color.z());
+
+                    int index = i + j * viewport.x;
+                    pixels[index * 4] = static_cast<int>(256 * clamp(r, 0.0, 0.999));
+                    pixels[index * 4 + 1] = static_cast<int>(256 * clamp(g, 0.0, 0.999));
+                    pixels[index * 4 + 2] = static_cast<int>(256 * clamp(b, 0.0, 0.999));
+                    pixels[index * 4 + 3] = 255;
                 }
+            }
+            {
+                std::lock_guard<std::mutex> lock(tile_mutex);
+                finishedTileCount++;
+                if (finishedTileCount == totalTileCount)
+                {
+                    if (m_callback != nullptr)
+                    {
+                        m_callback();
+                    }
+                }
+            }
+        };
 
-                int index = i + j * viewport.x;
-
-                auto r = pixel_color.x();
-                auto g = pixel_color.y();
-                auto b = pixel_color.z();
-
-                auto scale = 1.0 / samples_per_pixel;
-                r = sqrt(scale * r);
-                g = sqrt(scale * g);
-                b = sqrt(scale * b);
-
-                pixels[index * 4] = static_cast<int>(256 * clamp(r, 0.0, 0.999));
-                pixels[index * 4 + 1] = static_cast<int>(256 * clamp(g, 0.0, 0.999));
-                pixels[index * 4 + 2] = static_cast<int>(256 * clamp(b, 0.0, 0.999));
-                pixels[index * 4 + 3] = 255;
+        for (int i = 0; i < xTiles; i++)
+        {
+            for (int j = 0; j < yTiles; j++)
+            {
+                pool->enqueue(renderTile, i, j);
             }
         }
-
-        std::cerr << "\nDone.\n";
-
-        flip_vertically(pixels, viewport.x, viewport.y);
-        return pixels;
     }
 
-    virtual void RayTracerRenderer::Render(Scene& scene)
+    void RayTracerRenderer::RenderAsync(Scene& scene, std::function<void()> callback)
     {
-        uint8_t* pixels = RayTrace(scene);
+        m_callback = callback;
 
-        // Create a OpenGL texture identifier
-        glGenTextures(1, &renderTexture);
-        glBindTexture(GL_TEXTURE_2D, renderTexture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        RayTrace(scene);
+    }
 
+    // empty implementation, only supprt async render
+    virtual void RayTracerRenderer::Render(Scene& scene){}
+
+    ~RayTracerRenderer()
+    {
         delete[] pixels;
     }
 };

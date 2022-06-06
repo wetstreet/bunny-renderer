@@ -436,7 +436,11 @@ public:
 				window_size = ImVec2(raytracer.viewport.x + 20, raytracer.viewport.y + 35);
 				content_size = ImVec2(raytracer.viewport.x, raytracer.viewport.y);
 
-				raytracer.Render(scene);
+				raytracer.startTime = glfwGetTime();
+
+				raytracer.RenderAsync(scene, [this] {
+					std::cout << "Rendering Finished, took " << glfwGetTime() - raytracer.startTime << "s" << std::endl;
+				});
 
 				showRaytraceResult = true;
 			}
@@ -454,15 +458,19 @@ public:
 		{
 			ImGui::SetNextWindowSize(window_size);
 			ImGui::Begin("Render Result", &showImage);
-			//ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.depthTexture, content_size); // visualize depth buffer
-			ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size);
+			//ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.depthTexture, content_size, ImVec2(0, 1), ImVec2(1, 0)); // visualize depth buffer
+			ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size, ImVec2(0, 1), ImVec2(1, 0));
 			ImGui::End();
 		}
 		if (showRaytraceResult)
 		{
 			ImGui::SetNextWindowSize(window_size);
 			ImGui::Begin("Raytracer", &showRaytraceResult);
-			ImGui::Image((ImTextureID)(intptr_t)raytracer.renderTexture, content_size);
+
+			glBindTexture(GL_TEXTURE_2D, raytracer.renderTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, raytracer.pixels);
+
+			ImGui::Image((ImTextureID)(intptr_t)raytracer.renderTexture, content_size, ImVec2(0, 1), ImVec2(1, 0));
 			ImGui::End();
 		}
 	}

@@ -8,10 +8,6 @@
 
 std::string GetFileNameFromPath(std::string s);
 
-void flip_vertically(uint8_t* pixels, int width, int height);
-
-void flip_vertically(float* pixels, int width, int height);
-
 void ScreenPosToWorldRay(
 	int mouseX, int mouseY,             // Mouse position, in pixels, from bottom-left corner of the window
 	int screenWidth, int screenHeight,  // Window size, in pixels
