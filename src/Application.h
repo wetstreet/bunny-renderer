@@ -180,6 +180,8 @@ public:
 
 						ImGui::Separator();
 
+						ImGui::ColorEdit4("Color", (float*)&mesh->color);
+
 						Texture& tex = *mesh->texture;
 						ss << GetFileNameFromPath(tex.path) << std::endl << "Size: " << tex.width << "x" << tex.height;
 						ImGui::Text(ss.str().c_str());
@@ -392,6 +394,12 @@ public:
 
 			ImGui::Checkbox("Post Process", &postprocess);
 
+			ImGui::Separator();
+			ImGui::Text("Raytracer");
+			ImGui::InputInt("Samples Per Pixel", &raytracer.samples_per_pixel);
+			ImGui::InputInt("Max Depth", &raytracer.max_depth);
+			ImGui::InputInt2("Viewport", (int*)&raytracer_viewport);
+
 			ImGui::End();
 		}
 	}
@@ -429,9 +437,8 @@ public:
 
 			if (ImGui::Button("RayTrace"))
 			{
-
-				raytracer.viewport.x = viewport.x;
-				raytracer.viewport.y = viewport.y;
+				raytracer.viewport.x = raytracer_viewport.x;
+				raytracer.viewport.y = raytracer_viewport.y;
 
 				window_size = ImVec2(raytracer.viewport.x + 20, raytracer.viewport.y + 35);
 				content_size = ImVec2(raytracer.viewport.x, raytracer.viewport.y);
@@ -468,7 +475,7 @@ public:
 			ImGui::Begin("Raytracer", &showRaytraceResult);
 
 			glBindTexture(GL_TEXTURE_2D, raytracer.renderTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, raytracer.pixels);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, raytracer.viewport.x, raytracer.viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, raytracer.pixels);
 
 			ImGui::Image((ImTextureID)(intptr_t)raytracer.renderTexture, content_size, ImVec2(0, 1), ImVec2(1, 0));
 			ImGui::End();
@@ -484,6 +491,8 @@ private:
 
 	ImVec2 viewport = ImVec2(800, 800);
 	ImVec2 windowPos;
+
+	glm::ivec2 raytracer_viewport = glm::ivec2(1200, 600);
 
 	ImVec2 window_size;
 	ImVec2 content_size;

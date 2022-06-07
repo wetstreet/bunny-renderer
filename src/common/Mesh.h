@@ -17,6 +17,7 @@ class Mesh : public Object
 
         std::vector<glm::vec3> verts;
         std::vector<glm::vec3> normals;
+        std::vector<glm::vec3> tangents;
         std::vector<glm::vec2> uvs;
         
         VAO vao;
@@ -24,6 +25,7 @@ class Mesh : public Object
         glm::vec3 minPos = glm::vec3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
         glm::vec3 maxPos = glm::vec3(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
 
+        glm::vec4 color = glm::vec4(1, 1, 1, 1);
         std::shared_ptr<Texture> texture;
         std::shared_ptr<Texture> normalMap;
 

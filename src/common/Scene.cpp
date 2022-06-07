@@ -72,6 +72,8 @@ void Scene::Draw()
                     mesh->normalMap->Bind();
                 }
 
+                glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&mesh->color);
+
                 glUniform1i(glGetUniformLocation(shader->ID, "_ObjectID"), i);
                 glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
                 glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);

@@ -10,6 +10,7 @@ class vec3
 {
     public:
     vec3() : e{0,0,0} {}
+    vec3(glm::vec3 v) : e{ v.x, v.y, v.z } {}
     vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
 
     double x() const { return e[0]; }
@@ -152,6 +153,18 @@ vec3 random_in_unit_disk() {
         if (p.length_squared() >= 1) continue;
         return p;
     }
+}
+
+vec3 abs(const vec3& v) {
+    return vec3(std::abs(v[0]), std::abs(v[1]), std::abs(v[2]));
+}
+
+int max_dimension(const vec3& v) {
+    return (v[0] > v[1]) ? ((v[0] > v[2]) ? 0 : 2) : ((v[1] > v[2]) ? 1 : 2);
+}
+
+vec3 permute(const vec3& v, int x, int y, int z) {
+    return vec3(v[x], v[y], v[z]);
 }
 
 #endif //__VEC3_H__

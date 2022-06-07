@@ -32,6 +32,11 @@ bool Mesh::LoadMesh(const std::string& pFile) {
                     glm::vec2(pTexCoord->x, pTexCoord->y),
                     glm::vec3(pTangent->x, pTangent->y, pTangent->z) };
 
+        verts.push_back(glm::vec3(pPos->x, pPos->y, pPos->z));
+        uvs.push_back(glm::vec2(pTexCoord->x, pTexCoord->y));
+        normals.push_back(glm::vec3(pNormal->x, pNormal->y, pNormal->z));
+        tangents.push_back(glm::vec3(pTangent->x, pTangent->y, pTangent->z));
+
         vertices.push_back(vert);
     }
 

@@ -7,6 +7,7 @@
 
 #include "raytracer/hittable_list.h"
 #include "raytracer/sphere.h"
+#include "raytracer/triangle.h"
 #include "raytracer/raytracer_camera.h"
 #include "raytracer/material.h"
 #include "raytracer/moving_sphere.h"
@@ -15,7 +16,7 @@
 class RayTracerRenderer : public Renderer {
 public:
     std::unique_ptr<ThreadPool> pool;
-    hittable_list world;
+    std::unique_ptr<hittable_list> world;
     std::unique_ptr<raytracer_camera> cam;
 
     // image buffer
@@ -24,8 +25,9 @@ public:
 
     std::function<void()> m_callback = nullptr;
 
-    const int samples_per_pixel = 32;
-    const int max_depth = 8;
+    int samples_per_pixel = 4;
+    int max_depth = 8;
+
     int tileSize = 16;
     int finishedTileCount = 0;
     int totalTileCount = 0;
@@ -34,7 +36,9 @@ public:
     RayTracerRenderer()
     {
         pool = std::make_unique<ThreadPool>(std::thread::hardware_concurrency());
-        world = random_scene();
+
+        viewport.x = 1200;
+        viewport.y = 600;
 
         glGenTextures(1, &renderTexture);
         glBindTexture(GL_TEXTURE_2D, renderTexture);
@@ -62,52 +66,6 @@ public:
         return (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
     }
 
-    hittable_list random_scene() {
-        hittable_list world;
-
-        auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-        world.add(make_shared<sphere>(point3(0, -1000, 0), 1000, ground_material));
-
-        for (int a = -11; a < 11; a++) {
-            for (int b = -11; b < 11; b++) {
-                auto choose_mat = random_double();
-                point3 center(a + 0.9 * random_double(), 0.2, b + 0.9 * random_double());
-
-                if ((center - point3(4, 0.2, 0)).length() > 0.9) {
-                    shared_ptr<material> sphere_material;
-
-                    if (choose_mat < 0.8) {
-                        auto albedo = color::random() * color::random();
-                        sphere_material = make_shared<lambertian>(albedo);
-                        auto center2 = center + vec3(0, random_double(0, 0.5), 0);
-                        world.add(make_shared<moving_sphere>(center, center2, 0.0, 1.0, 0.2, sphere_material));
-                    }
-                    else if (choose_mat < 0.95) {
-                        auto albedo = color::random(0.5, 1);
-                        auto fuzz = random_double(0, 0.5);
-                        sphere_material = make_shared<metal>(albedo, fuzz);
-                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
-                    }
-                    else {
-                        sphere_material = make_shared<dielectric>(1.5);
-                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
-                    }
-                }
-            }
-        }
-
-        auto material1 = make_shared<dielectric>(1.5);
-        world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
-
-        auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
-        world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
-
-        auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
-        world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
-
-        return world;
-    }
-
     void RayTrace(Scene& scene)
     {
         if (pixels != nullptr)
@@ -124,15 +82,13 @@ public:
         auto aperture = 0.1;
         const float aspect_ratio = viewport.x / viewport.y;
 
-        cam = std::make_unique<raytracer_camera>(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+        cam = std::make_unique<raytracer_camera>(scene.camera.Position, scene.camera.Position + scene.camera.Orientation, vup, scene.camera.FOVdeg, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
         int xTiles = (viewport.x + tileSize - 1) / tileSize;
         int yTiles = (viewport.y + tileSize - 1) / tileSize;
 
         totalTileCount = xTiles * yTiles;
         finishedTileCount = 0;
-
-        std::cout << "nTiles(" << xTiles << "," << yTiles << "), Tile Count=" << xTiles * yTiles << std::endl;
 
         auto renderTile = [this](int xTile, int yTile) {
             int xStart = xTile * tileSize;
@@ -150,7 +106,7 @@ public:
                         auto u = (i + random_double()) / (viewport.x - 1);
                         auto v = (j + random_double()) / (viewport.y - 1);
                         ray r = cam->get_ray(u, v);
-                        pixel_color += ray_color(r, world, max_depth);
+                        pixel_color += ray_color(r, *world, max_depth);
                     }
 
                     auto scale = 1.0 / samples_per_pixel;
@@ -190,6 +146,21 @@ public:
     void RayTracerRenderer::RenderAsync(Scene& scene, std::function<void()> callback)
     {
         m_callback = callback;
+
+        // create world
+        world = std::make_unique<hittable_list>();
+
+        for (std::shared_ptr<Object> obj : scene.objects)
+        {
+            if (obj->GetType() == Type_Mesh)
+            {
+                std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(obj);
+                auto mat = make_shared<lambertian>(color(mesh->color.r, mesh->color.g, mesh->color.b));
+                auto triangles = CreateTriangleMesh(&mesh->objectToWorld, mesh->indices.size() / 3, mesh->indices.data(), mesh->vertices.size(), &mesh->verts[0], &mesh->tangents[0], &mesh->normals[0], &mesh->uvs[0], mat);
+                for (auto triangle : triangles)
+                    world->add(triangle);
+            }
+        }
 
         RayTrace(scene);
     }

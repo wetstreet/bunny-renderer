@@ -15,6 +15,7 @@ struct Varying
 
 struct IShader
 {
+    glm::vec4 color;
     glm::vec3 lightDir;
     glm::mat4 MVP;
     glm::mat4 objectToWorld;
@@ -39,15 +40,15 @@ struct GouraudShader : public IShader
 
     virtual glm::vec4 fragment(Varying& varying)
     {
-        glm::vec4 color = texture->tex2D(varying.uv);
+        glm::vec4 albedo = texture->tex2D(varying.uv);
 
         float nl = std::max(0.0f, glm::dot(varying.normal, lightDir));
 
-        color.r *= nl;
-        color.g *= nl;
-        color.b *= nl;
+        albedo.r *= nl * color.r;
+        albedo.g *= nl * color.g;
+        albedo.b *= nl * color.b;
 
-        return color;
+        return albedo;
     }
 };
 
@@ -74,7 +75,7 @@ struct NormalShader : public IShader
     {
         using namespace glm;
 
-        vec4 color = texture->tex2D(varying.uv);
+        vec4 albedo = texture->tex2D(varying.uv);
 
         vec3 normal = normalMap->tex2D(varying.uv);
         normal = normal * 2.0f - 1.0f;
@@ -82,11 +83,11 @@ struct NormalShader : public IShader
 
         float nl = std::max(0.0f, glm::dot(normal, lightDir));
 
-        color.r *= nl;
-        color.g *= nl;
-        color.b *= nl;
+        albedo.r *= nl * color.r;
+        albedo.g *= nl * color.g;
+        albedo.b *= nl * color.b;
 
-        return color;
+        return albedo;
     }
 };
 
@@ -115,7 +116,7 @@ glm::vec3 barycentric(glm::vec3& A, glm::vec3& B, glm::vec3& C, glm::ivec2& P)
     return glm::vec3(1.0f - (u.x + u.y) / u.z, u.x / u.z, u.y / u.z);
 }
 
-void triangle(Varying* varys, IShader& shader, uint8_t* pixels, float* zbuffer, int width, int height)
+void rasterize_triangle(Varying* varys, IShader& shader, uint8_t* pixels, float* zbuffer, int width, int height)
 {
     glm::vec2 bboxmin = glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     glm::vec2 bboxmax = glm::vec2(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
