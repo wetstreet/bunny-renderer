@@ -1,88 +1,7 @@
 #ifndef __OUR_GL_H__
 #define __OUR_GL_H__
 
-#include "glm/glm.hpp"
 #include "../common/Vertex.h"
-#include "../common/Texture.h"
-
-struct IShader
-{
-    glm::vec4 color;
-    glm::vec3 lightDir;
-    glm::mat4 MVP;
-    glm::mat4 objectToWorld;
-    glm::mat4 worldToObject;
-    std::shared_ptr<Texture> texture;
-    std::shared_ptr<Texture> normalMap;
-
-    virtual Varying vertex(Vertex i) = 0;
-    virtual glm::vec4 fragment(Varying &varying) = 0;
-};
-
-struct GouraudShader : public IShader
-{
-    virtual Varying vertex(Vertex i)
-    {
-        Varying o;
-        o.uv = i.texcoord;
-        o.normal = i.normal * (glm::mat3)worldToObject;
-        o.position = MVP * glm::vec4(i.position, 1);
-        return o;
-    }
-
-    virtual glm::vec4 fragment(Varying& varying)
-    {
-        glm::vec4 albedo = texture->tex2D(varying.uv);
-
-        float nl = std::max(0.0f, glm::dot(varying.normal, lightDir));
-
-        albedo.r *= nl * color.r;
-        albedo.g *= nl * color.g;
-        albedo.b *= nl * color.b;
-
-        return albedo;
-    }
-};
-
-struct NormalShader : public IShader
-{
-    virtual Varying vertex(Vertex i)
-    {
-        using namespace glm;
-        using vec3 = glm::vec3;
-
-        Varying o;
-        o.uv = i.texcoord;
-        o.position = MVP * vec4(i.position, 1);
-
-        vec3 worldNormal = normalize(i.normal * (mat3)worldToObject);
-        vec3 worldTangent = normalize((mat3)objectToWorld * i.tangent);
-        vec3 worldBitangent = cross(i.normal, i.tangent);
-        o.TBN = mat3(worldTangent, worldBitangent, worldNormal);
-
-        return o;
-    }
-
-    virtual glm::vec4 fragment(Varying& varying)
-    {
-        using namespace glm;
-        using vec3 = glm::vec3;
-
-        vec4 albedo = texture->tex2D(varying.uv);
-
-        vec3 normal = normalMap->tex2D(varying.uv);
-        normal = normal * 2.0f - 1.0f;
-        normal = normalize(varying.TBN * normal);
-
-        float nl = std::max(0.0f, glm::dot(normal, lightDir));
-
-        albedo.r *= nl * color.r;
-        albedo.g *= nl * color.g;
-        albedo.b *= nl * color.b;
-
-        return albedo;
-    }
-};
 
 glm::mat4 viewportMat(int x, int y, int w, int h)
 {
@@ -109,7 +28,7 @@ glm::vec3 barycentric(glm::vec3& A, glm::vec3& B, glm::vec3& C, glm::ivec2& P)
     return glm::vec3(1.0f - (u.x + u.y) / u.z, u.x / u.z, u.y / u.z);
 }
 
-void rasterize_triangle(Varying* varys, IShader& shader, uint8_t* pixels, float* zbuffer, int width, int height)
+void rasterize_triangle(Varying* varys, Material& material, uint8_t* pixels, float* zbuffer, int width, int height)
 {
     glm::vec2 bboxmin = glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     glm::vec2 bboxmax = glm::vec2(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -165,7 +84,7 @@ void rasterize_triangle(Varying* varys, IShader& shader, uint8_t* pixels, float*
                 floats_o[i] = (floats_i0[i] * weight0 + floats_i1[i] * weight1 + floats_i2[i] * weight2) * denom;
             }
 
-            glm::vec4 color = shader.fragment(o);
+            glm::vec4 color = material.fragment(o);
 
             pixels[index * 4] = uint8_t(color.r * 255);
             pixels[index * 4 + 1] = uint8_t(color.g * 255);

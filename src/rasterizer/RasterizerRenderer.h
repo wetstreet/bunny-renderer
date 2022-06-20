@@ -88,15 +88,14 @@ class RasterizerRenderer : public Renderer
         {
             Clear(pixels, scene.camera.clearColor);
 
-            GouraudShader defaultShader;
-            NormalShader normalShader;
-            IShader* pDefault = &defaultShader;
-            IShader* pNormal = &normalShader;
-
             Camera& camera = scene.camera;
 
             glm::vec3 center = camera.Position + camera.Orientation;
             glm::mat4 Viewport = viewportMat(0, 0, viewport.x, viewport.y);
+
+            glm::vec3 lightPos;
+            glm::vec3 lightColor;
+            scene.GetMainLightProperties(lightPos, lightColor);
 
             for (int i = 0; i < scene.objects.size(); i++)
             {
@@ -105,15 +104,11 @@ class RasterizerRenderer : public Renderer
                 {
                     std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
 
-                    IShader* shader = mesh->material->normalMap ? pNormal : pDefault;
-
-                    shader->color = mesh->material->color;
-                    shader->lightDir = -scene.camera.Orientation;
-                    shader->MVP = camera.cameraMatrix * mesh->objectToWorld;
-                    shader->texture = mesh->material->texture;
-                    shader->normalMap = mesh->material->normalMap;
-                    shader->objectToWorld = mesh->objectToWorld;
-                    shader->worldToObject = mesh->worldToObject;
+                    mesh->material->MVP = camera.cameraMatrix * mesh->objectToWorld;
+                    mesh->material->objectToWorld = mesh->objectToWorld;
+                    mesh->material->worldToObject = mesh->worldToObject;
+                    mesh->material->lightDir = lightPos;
+                    mesh->material->lightColor = lightColor;
 
                     for (int j = 0; j < mesh->indices.size() / 3; j++)
                     {
@@ -123,12 +118,12 @@ class RasterizerRenderer : public Renderer
                         {
                             int index = j * 3 + k;
                             Vertex vert = mesh->vertices[mesh->indices[index]];
-                            varys[k] = shader->vertex(vert);
+                            varys[k] = mesh->material->vertex(vert);
                             varys[k].position = Viewport * varys[k].position;
                         }
 
                         // todo : cull back face
-                        rasterize_triangle(varys, *shader, pixels, zbuffer, viewport.x, viewport.y);
+                        rasterize_triangle(varys, *mesh->material, pixels, zbuffer, viewport.x, viewport.y);
                     }
                 }
             }

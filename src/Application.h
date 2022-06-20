@@ -256,60 +256,30 @@ public:
 					}
 					if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
 					{
+						int item_current_idx = mesh->material->MaterialIndex;
+						static char* items[] = { "Unlit", "Diffuse", "Normal" };
+						ImGui::Combo("shader", &item_current_idx, items, IM_ARRAYSIZE(items));
+						if (item_current_idx != mesh->material->MaterialIndex)
+						{
+							std::shared_ptr<Material> oldMat = mesh->material;
+							switch (item_current_idx)
+							{
+							case 0:
+								mesh->material = std::make_shared<UnlitMaterial>();
+								break;
+							case 1:
+								mesh->material = std::make_shared<DiffuseMaterial>();
+								break;
+							case 2:
+								mesh->material = std::make_shared<NormalMaterial>();
+								break;
+							}
+							mesh->material->color = oldMat->color;
+							mesh->material->texture = oldMat->texture;
+							mesh->material->normalMap = oldMat->normalMap;
+						}
+
 						mesh->material->OnGUI();
-						/*
-						ImGui::ColorEdit4("Color", (float*)&mesh->material->color);
-
-						Texture& tex = *mesh->material->texture;
-						ss << GetFileNameFromPath(tex.path) << std::endl << "Size: " << tex.width << "x" << tex.height;
-						ImGui::Text(ss.str().c_str());
-						ss.clear(); ss.str("");
-						if (ImGui::ImageButton((ImTextureID)(intptr_t)tex.ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
-						{
-							std::string s = OpenFileDialog(1);
-							if (s.size() > 0)
-							{
-								mesh->material->texture = std::make_shared<Texture>(s.c_str(), GL_TEXTURE0);
-							}
-						}
-
-						ImGui::Separator();
-						GLuint ID = 0;
-						if (mesh->material->normalMap)
-						{
-							Texture& normalMap = *mesh->material->normalMap;
-							ss << GetFileNameFromPath(normalMap.path) << std::endl << "Size: " << normalMap.width << "x" << normalMap.height;
-							ImGui::Text(ss.str().c_str());
-							ss.clear(); ss.str("");
-							ID = normalMap.ID;
-						}
-						else
-						{
-							ImGui::Text("no texture");
-						}
-						if (ImGui::ImageButton((ImTextureID)(intptr_t)ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
-						{
-							std::string s = OpenFileDialog(1);
-							if (s.size() > 0)
-							{
-								mesh->material->normalMap = std::make_shared<Texture>(s.c_str(), GL_TEXTURE1);
-							}
-						}
-						if (mesh->material->normalMap)
-						{
-							ImGui::SameLine();
-
-							ImGui::PushID(0);
-							ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-							ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-							if (ImGui::Button("Clear"))
-							{
-								mesh->material->normalMap = nullptr;
-							}
-							ImGui::PopStyleColor(3);
-							ImGui::PopID();
-						}*/
 					}
 				}
 			}

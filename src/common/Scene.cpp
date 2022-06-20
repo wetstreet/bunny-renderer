@@ -25,22 +25,27 @@ std::shared_ptr<Light> Scene::GetMainLight()
     return mainLight;
 }
 
-void Scene::Draw()
+void Scene::GetMainLightProperties(glm::vec3& dir, glm::vec3& color)
 {
     std::shared_ptr<Light> mainLight = GetMainLight();
-
-    glm::vec3 lightPos;
-    glm::vec3 lightColor;
     if (mainLight)
     {
-        lightPos = mainLight->GetLightPosition();
-        lightColor = mainLight->color * mainLight->intensity;
+        dir = mainLight->GetLightPosition();
+        color = mainLight->color * mainLight->intensity;
     }
     else
     {
-        lightPos = -camera.Orientation;
-        lightColor = glm::vec3(1);
+        dir = -camera.Orientation;
+        color = glm::vec3(1);
     }
+
+}
+
+void Scene::Draw()
+{
+    glm::vec3 lightPos;
+    glm::vec3 lightColor;
+    GetMainLightProperties(lightPos, lightColor);
 
     for (int i = 0; i < objects.size(); i++)
     {

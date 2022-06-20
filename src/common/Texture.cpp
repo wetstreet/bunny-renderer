@@ -10,7 +10,7 @@ std::shared_ptr<Texture> Texture::normal_tex;
 void Texture::Init()
 {
 	white_tex = std::make_shared<Texture>("res/obj/white_texture.png", GL_TEXTURE0);
-	normal_tex = std::make_shared<Texture>("res/obj/normal_texture.png", GL_TEXTURE0);
+	normal_tex = std::make_shared<Texture>("res/obj/normal_texture.png", GL_TEXTURE1);
 }
 
 Texture::Texture(const char* image, GLenum slot)
