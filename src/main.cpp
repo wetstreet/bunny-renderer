@@ -1,7 +1,7 @@
 #include "Application.h"
 
-const unsigned int width = 1200;
-const unsigned int height = 800;
+const unsigned int width = 1400;
+const unsigned int height = 900;
 
 std::unique_ptr<Camera> camera;
 
@@ -48,13 +48,9 @@ int main(int argc, char* argv[]) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-	camera = std::make_unique<Camera>(width, height, glm::vec3(0.0f, 0.0f, 5.0f));
+	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 5.0f));
 
-	glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset)
-	{
-		camera->ScrollCallback(window, xoffset, yoffset);
-	});
-	Scene scene(*camera);
+	Scene scene(camera);
 
 	Shader::Init();
 	Texture::Init();
@@ -63,7 +59,7 @@ int main(int argc, char* argv[]) {
 	RasterizerRenderer rasterizerRenderer;
 	RayTracerRenderer raytracer;
 
-	Application app(*camera, scene, openglRenderer, rasterizerRenderer, raytracer);
+	Application app(camera, scene, openglRenderer, rasterizerRenderer, raytracer);
 
 	double lastTime = glfwGetTime();
 
@@ -73,7 +69,7 @@ int main(int argc, char* argv[]) {
 		double deltaTime = nowTime - lastTime;
 		lastTime = nowTime;
 
-    	camera->SceneInputs(window, (float)deltaTime);
+    	camera.SceneInputs(window, (float)deltaTime);
 		openglRenderer.Render(scene);
 
         ImGui_ImplOpenGL3_NewFrame();

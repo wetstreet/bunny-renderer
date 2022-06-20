@@ -132,11 +132,11 @@ public:
 
 		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
+		DrawSettings();
+
 		DrawInspector();
 
 		DrawImage();
-
-		DrawSceneCamera();
 
 		DrawHierarchy();
 
@@ -196,7 +196,7 @@ public:
 			{
 				if (ImGui::MenuItem("Inspector")) showInspector = true;
 				if (ImGui::MenuItem("Scene")) showScene = true;
-				if (ImGui::MenuItem("Scene Camera")) showSceneCamera = true;
+				if (ImGui::MenuItem("Settings")) showSettings = true;
 				if (ImGui::MenuItem("Render Result")) showImage = true;
 				if (ImGui::MenuItem("Hierarchy")) showHierarchy = true;
 				if (ImGui::MenuItem("Tool Bar")) showToolBar = true;
@@ -210,135 +210,129 @@ public:
 	int gizmoType = (int)ImGuizmo::OPERATION::TRANSLATE;
 	void Application::DrawInspector()
 	{
-		if (showInspector)
+		if (!ImGui::Begin("Inspector", &showInspector))
 		{
-			ImGui::Begin("Inspector", &showInspector);
+			ImGui::End();
+			return;
+		}
 
-			if (node_clicked != -1)
+		if (node_clicked != -1)
+		{
+			std::shared_ptr<Object> object = scene.objects[node_clicked];
+
+			ImGui::Checkbox("##isEnabled", &object->isEnabled);
+			ImGui::SameLine();
+			ImGui::InputText("##name", object->name, IM_ARRAYSIZE(object->name));
+
+			if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				std::shared_ptr<Object> object = scene.objects[node_clicked];
-
-				ImGui::Checkbox("##isEnabled", &object->isEnabled);
-				ImGui::SameLine();
-				ImGui::InputText("##name", object->name, IM_ARRAYSIZE(object->name));
-
-				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					DrawVec3Control("Position", object->position);
-					glm::vec3 rotation = glm::degrees(object->rotation);
-					DrawVec3Control("Rotation", rotation);
-					object->rotation = glm::radians(rotation);
-					DrawVec3Control("Scale", object->scale, 1.0f);
-					ImGui::Spacing();
-				}
-
-				if (object->GetType() == Type_Light)
-				{
-					if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
-					{
-						std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(object);
-						ImGui::ColorEdit3("Color", (float*)&light->color);
-						ImGui::InputFloat("Intensity", &light->intensity);
-					}
-				}
-				else if (object->GetType() == Type_Mesh)
-				{
-					std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
-					std::stringstream ss;
-
-					if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
-					{
-						ss << "Vertices: " << mesh->vertices.size() << std::endl
-							<< "Triangles: " << (mesh->indices.size() / 3) << std::endl
-							<< "Path: " << mesh->path;
-						ImGui::Text(ss.str().c_str());
-						ss.clear(); ss.str("");
-					}
-					if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
-					{
-						int item_current_idx = mesh->material->MaterialIndex;
-						static char* items[] = { "Unlit", "Diffuse", "Normal" };
-						ImGui::Combo("shader", &item_current_idx, items, IM_ARRAYSIZE(items));
-						if (item_current_idx != mesh->material->MaterialIndex)
-						{
-							std::shared_ptr<Material> oldMat = mesh->material;
-							switch (item_current_idx)
-							{
-							case 0:
-								mesh->material = std::make_shared<UnlitMaterial>();
-								break;
-							case 1:
-								mesh->material = std::make_shared<DiffuseMaterial>();
-								break;
-							case 2:
-								mesh->material = std::make_shared<NormalMaterial>();
-								break;
-							}
-							mesh->material->color = oldMat->color;
-							mesh->material->texture = oldMat->texture;
-							mesh->material->normalMap = oldMat->normalMap;
-						}
-
-						mesh->material->OnGUI();
-					}
-				}
+				DrawVec3Control("Position", object->position);
+				glm::vec3 rotation = glm::degrees(object->rotation);
+				DrawVec3Control("Rotation", rotation);
+				object->rotation = glm::radians(rotation);
+				DrawVec3Control("Scale", object->scale, 1.0f);
+				ImGui::Spacing();
 			}
 
-			ImGui::End();
+			if (object->GetType() == Type_Light)
+			{
+				if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(object);
+					ImGui::ColorEdit3("Color", (float*)&light->color);
+					ImGui::InputFloat("Intensity", &light->intensity);
+				}
+			}
+			else if (object->GetType() == Type_Mesh)
+			{
+				std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
+
+				if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					ImGui::Text("Vertices: %i", mesh->vertices.size());
+					ImGui::Text("Triangles: %i", mesh->indices.size());
+					ImGui::Text("Path: %s", mesh->path.c_str());
+				}
+				if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					int item_current_idx = mesh->material->MaterialIndex;
+					static char* items[] = { "Unlit", "Diffuse", "Normal" };
+					ImGui::Combo("Shader", &item_current_idx, items, IM_ARRAYSIZE(items));
+					if (item_current_idx != mesh->material->MaterialIndex)
+					{
+						std::shared_ptr<Material> oldMat = mesh->material;
+						switch (item_current_idx)
+						{
+						case 0:
+							mesh->material = std::make_shared<UnlitMaterial>();
+							break;
+						case 1:
+							mesh->material = std::make_shared<DiffuseMaterial>();
+							break;
+						case 2:
+							mesh->material = std::make_shared<NormalMaterial>();
+							break;
+						}
+						mesh->material->color = oldMat->color;
+						mesh->material->texture = oldMat->texture;
+						mesh->material->normalMap = oldMat->normalMap;
+					}
+
+					mesh->material->OnGUI();
+				}
+			}
 		}
+
+		ImGui::End();
 	}
 
 	void Application::DrawHierarchy()
 	{
-		if (showHierarchy)
+		if (!ImGui::Begin("Hierarchy", &showHierarchy))
 		{
-			ImGui::Begin("Hierarchy", &showHierarchy);
-
-			static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
-
-			static int selection_mask = 0;
-			for (int i = 0; i < scene.objects.size(); i++)
-			{
-				std::shared_ptr<Object> object = scene.objects[i];
-				ImGuiTreeNodeFlags node_flags = base_flags;
-				const bool is_selected = (selection_mask & (1 << i)) != 0;
-				if (is_selected)
-					node_flags |= ImGuiTreeNodeFlags_Selected;
-
-				node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
-
-				if (object->isEnabled)
-					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-				else
-					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 100));
-
-				ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, object->name);
-				if (ImGui::IsItemClicked())
-					node_clicked = i;
-
-				ImGui::PopStyleColor();
-			}
-			if (node_clicked != -1)
-			{
-				// Update selection state
-				// (process outside of tree loop to avoid visual inconsistencies during the clicking frame)
-				if (ImGui::GetIO().KeyCtrl)
-					selection_mask ^= (1 << node_clicked);          // CTRL+click to toggle
-				else //if (!(selection_mask & (1 << node_clicked))) // Depending on selection behavior you want, may want to preserve selection when clicking on item that is part of the selection
-					selection_mask = (1 << node_clicked);           // Click to single-select
-
-				if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
-				{
-					scene.RemoveObject(node_clicked);
-					node_clicked = -1;
-				}
-			}
-			else {
-				selection_mask = 0;
-			}
-
 			ImGui::End();
+			return;
 		}
+
+		static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+		static int selection_mask = 0;
+		for (int i = 0; i < scene.objects.size(); i++)
+		{
+			std::shared_ptr<Object> object = scene.objects[i];
+			ImGuiTreeNodeFlags node_flags = base_flags;
+			const bool is_selected = (selection_mask & (1 << i)) != 0;
+			if (is_selected)
+				node_flags |= ImGuiTreeNodeFlags_Selected;
+
+			node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; // ImGuiTreeNodeFlags_Bullet
+
+			if (object->isEnabled)
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
+			else
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 100));
+
+			ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, object->name);
+			if (ImGui::IsItemClicked())
+				node_clicked = i;
+
+			ImGui::PopStyleColor();
+		}
+		if (node_clicked != -1)
+		{
+			selection_mask = (1 << node_clicked);
+
+			if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
+			{
+				scene.RemoveObject(node_clicked);
+				node_clicked = -1;
+			}
+		}
+		else {
+			selection_mask = 0;
+		}
+
+		ImGui::End();
 	}
 
 	void Application::DrawGizmo()
@@ -370,7 +364,11 @@ public:
 
 	void Application::ClickToSelect()
 	{
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver())
+		// when sth is already selected and mouse is over gizmo, skip selection
+		if (ImGuizmo::IsOver() && node_clicked != -1)
+			return;
+
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			ImVec2 mousePos = ImGui::GetMousePos();
 			mousePos -= windowPos;
@@ -392,120 +390,128 @@ public:
 
 	void Application::DrawScene()
 	{
-		if (showScene)
+		ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
+		if (!ImGui::Begin("Scene", &showScene))
 		{
-			ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
-			bool visible = ImGui::Begin("Scene", &showScene);
-			if (!visible)
-			{
-				ImGui::End();
-				return;
-			}
-			// todo: skip scene camera manipulation when scene is not visible
+			ImGui::End();
+			return;
+		}
+		// todo: skip scene camera manipulation when scene is not visible
 
-			ImGui::BeginChild("GameRender");
-			viewport = ImGui::GetWindowSize();
-			windowPos = ImGui::GetWindowPos();
+		ImGui::BeginChild("GameRender");
+		viewport = ImGui::GetWindowSize();
+		windowPos = ImGui::GetWindowPos();
 
-			scene.camera.windowPos = glm::ivec2(windowPos.x, windowPos.y);
-			scene.camera.viewport = glm::ivec2(viewport.x, viewport.y);
-			openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
-
-			GLuint rtID = postprocess ? openglRenderer.postprocessRT : openglRenderer.renderTexture;
-
-			// Because I use the texture from OpenGL, I need to invert the V from the UV.
-			ImGui::Image((ImTextureID)(intptr_t)rtID, viewport, ImVec2(0, 1), ImVec2(1, 0));
+		// scroll and click when hovered
+		if (ImGui::IsWindowHovered())
+		{
+			if (ImGui::GetIO().MouseWheel != 0)
+				scene.camera.Scroll(ImGui::GetIO().MouseWheel);
 
 			ClickToSelect();
-
-			DrawGizmo();
-
-			ImGui::EndChild();
-
-			ImGui::End();
 		}
+
+		scene.camera.windowPos = glm::ivec2(windowPos.x, windowPos.y);
+		scene.camera.viewport = glm::ivec2(viewport.x, viewport.y);
+		openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
+
+		GLuint rtID = postprocess ? openglRenderer.postprocessRT : openglRenderer.renderTexture;
+
+		// Because I use the texture from OpenGL, I need to invert the V from the UV.
+		ImGui::Image((ImTextureID)(intptr_t)rtID, viewport, ImVec2(0, 1), ImVec2(1, 0));
+
+		DrawGizmo();
+
+		ImGui::EndChild();
+
+		ImGui::End();
 	}
 
-	void Application::DrawSceneCamera()
+	void Application::DrawSettings()
 	{
-		if (showSceneCamera)
+		if (!ImGui::Begin("Settings", &showSettings))
 		{
-			ImGui::Begin("Scene Camera", &showSceneCamera);
+			ImGui::End();
+			return;
+		}
 
+		//ImGui::Checkbox("Post Process", &postprocess);
+
+		if (ImGui::CollapsingHeader("Scene Camera", ImGuiTreeNodeFlags_DefaultOpen))
+		{
 			ImGui::InputFloat3("Position", (float*)&camera.Position);
 			ImGui::InputFloat("Move Speed", (float*)&camera.speed);
 			ImGui::InputFloat("Sensitivity", (float*)&camera.sensitivity);
 			ImGui::InputFloat("Pan Speed", (float*)&camera.scenePanSpeed);
 			ImGui::InputFloat("Scroll Speed", (float*)&camera.sceneScrollSpeed);
-
 			ImGui::ColorEdit3("Background", (float*)&camera.clearColor);
+		}
 
-			ImGui::Checkbox("Post Process", &postprocess);
-
-			ImGui::Separator();
-			ImGui::Text("Raytracer");
+		if (ImGui::CollapsingHeader("Raytracer", ImGuiTreeNodeFlags_DefaultOpen))
+		{
 			ImGui::InputInt("Samples Per Pixel", &raytracer.samples_per_pixel);
 			ImGui::InputInt("Max Depth", &raytracer.max_depth);
 			ImGui::InputInt2("Viewport", (int*)&raytracer_viewport);
-
-			ImGui::End();
 		}
+
+		ImGui::End();
 	}
 
 	void Application::DrawToolBar()
 	{
-		if (showToolBar)
+		ImGuiWindowClass window_class;
+		window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
+		ImGui::SetNextWindowClass(&window_class);
+		if (!ImGui::Begin("Tool Bar", &showToolBar, ImGuiWindowFlags_NoDecoration))
 		{
-			ImGuiWindowClass window_class;
-			window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
-			ImGui::SetNextWindowClass(&window_class);
-			ImGui::Begin("Tool Bar", &showToolBar, ImGuiWindowFlags_NoDecoration);
-
-			ImGui::RadioButton("Move", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
-			ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
-			ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE); ImGui::SameLine();
-
-			if (ImGui::Button("Rasterize"))
-			{
-				rasterizerRenderer.viewport.x = (int)viewport.x;
-				rasterizerRenderer.viewport.y = (int)viewport.y;
-
-				content_size = ImVec2((float)rasterizerRenderer.viewport.x, (float)rasterizerRenderer.viewport.y);
-
-				double startTime = glfwGetTime();
-
-				rasterizerRenderer.Render(scene);
-
-				double deltaTime = glfwGetTime() - startTime;
-				std::cout << "Render finished, took " << deltaTime << " seconds." << std::endl;
-
-				showImage = true;
-
-				ImGui::SetWindowFocus("Render Result");
-			}
-			ImGui::SameLine();
-
-			if (ImGui::Button("RayTrace"))
-			{
-				raytracer.viewport.x = raytracer_viewport.x;
-				raytracer.viewport.y = raytracer_viewport.y;
-
-				content_size = ImVec2((float)raytracer.viewport.x, (float)raytracer.viewport.y);
-
-				raytracer.startTime = glfwGetTime();
-
-				raytracer.RenderAsync(scene, [this] {
-					std::cout << "Rendering Finished, took " << glfwGetTime() - raytracer.startTime << "s" << std::endl;
-				});
-
-				showRaytraceResult = true;
-			}
-
-			ImGui::SameLine(ImGui::GetWindowWidth() - 200);
-			ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
 			ImGui::End();
+			return;
 		}
+
+		ImGui::RadioButton("Move", &gizmoType, (int)ImGuizmo::OPERATION::TRANSLATE); ImGui::SameLine();
+		ImGui::RadioButton("Rotate", &gizmoType, (int)ImGuizmo::OPERATION::ROTATE); ImGui::SameLine();
+		ImGui::RadioButton("Scale", &gizmoType, (int)ImGuizmo::OPERATION::SCALE); ImGui::SameLine();
+
+		if (ImGui::Button("Rasterize"))
+		{
+			rasterizerRenderer.viewport.x = (int)viewport.x;
+			rasterizerRenderer.viewport.y = (int)viewport.y;
+
+			content_size = ImVec2((float)rasterizerRenderer.viewport.x, (float)rasterizerRenderer.viewport.y);
+
+			double startTime = glfwGetTime();
+
+			rasterizerRenderer.Render(scene);
+
+			double deltaTime = glfwGetTime() - startTime;
+			std::cout << "Render finished, took " << deltaTime << " seconds." << std::endl;
+
+			showImage = true;
+
+			ImGui::SetWindowFocus("Render Result");
+		}
+		ImGui::SameLine();
+
+		if (ImGui::Button("RayTrace"))
+		{
+			raytracer.viewport.x = raytracer_viewport.x;
+			raytracer.viewport.y = raytracer_viewport.y;
+
+			content_size = ImVec2((float)raytracer.viewport.x, (float)raytracer.viewport.y);
+
+			raytracer.startTime = glfwGetTime();
+
+			raytracer.RenderAsync(scene, [this] {
+				std::cout << "Rendering Finished, took " << glfwGetTime() - raytracer.startTime << "s" << std::endl;
+			});
+
+			showRaytraceResult = true;
+		}
+
+		ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+		ImGui::End();
 	}
 
 	void Application::DrawImage()
@@ -549,7 +555,7 @@ private:
 	// regular window
 	bool showInspector = true;
 	bool showScene = true;
-	bool showSceneCamera = true;
+	bool showSettings = true;
 	bool showHierarchy = true;
 	bool showRasterizer = true;
 	bool showToolBar = true;

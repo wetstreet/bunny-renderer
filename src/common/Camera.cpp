@@ -28,16 +28,9 @@ bool Camera::MouseInScene(GLFWwindow* window, double mouseX, double mouseY)
         return false;
 }
 
-void Camera::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+void Camera::Scroll(float wheel)
 {
-    double mouseX;
-    double mouseY;
-    glfwGetCursorPos(window, &mouseX, &mouseY);
-    bool mouseInScene = MouseInScene(window, mouseX, mouseY);
-    if (mouseInScene)
-    {
-        Position += Orientation * sceneScrollSpeed * (float)yoffset;
-    }
+    Position += Orientation * sceneScrollSpeed * wheel;
 }
 
 double lastMouseX;

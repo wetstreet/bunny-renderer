@@ -59,24 +59,24 @@ public:
         glUniformMatrix4fv(glGetUniformLocation(shader->ID, name), 1, GL_FALSE, glm::value_ptr(m));
     }
 protected:
-    std::stringstream ss;
 	std::shared_ptr<Shader> shader;
 
     template<typename CreateFunc, typename ClearFunc>
-    void DrawTextureUI(std::shared_ptr<Texture> texture, CreateFunc createFunc, ClearFunc clearFunc)
+    void DrawTextureUI(std::shared_ptr<Texture> texture, CreateFunc createFunc, ClearFunc clearFunc, int index = 0)
     {
         GLuint ID = 0;
         if (texture)
         {
-            ss << GetFileNameFromPath(texture->path) << std::endl << "Size: " << texture->width << "x" << texture->height;
-            ImGui::Text(ss.str().c_str());
-            ss.clear(); ss.str("");
+            ImGui::Text(GetFileNameFromPath(texture->path).c_str());
+            ImGui::Text("Size: %ix%i", texture->width, texture->height);
             ID = texture->ID;
         }
         else
         {
             ImGui::Text("no texture");
+            ImGui::Text("Size: 0x0");
         }
+        ImGui::PushID(index);
         if (ImGui::ImageButton((ImTextureID)(intptr_t)ID, ImVec2(100, 100), ImVec2(0, 1), ImVec2(1, 0)))
         {
             std::string s = OpenFileDialog(1);
@@ -89,7 +89,6 @@ protected:
         {
             ImGui::SameLine();
 
-            ImGui::PushID(0);
             ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
@@ -98,8 +97,8 @@ protected:
                 clearFunc();
             }
             ImGui::PopStyleColor(3);
-            ImGui::PopID();
         }
+        ImGui::PopID();
     }
 };
 
@@ -254,7 +253,7 @@ public:
 
         ImGui::Separator();
 
-        DrawTextureUI(normalMap, [this](const char* path) { normalMap = std::make_shared<Texture>(path, GL_TEXTURE1); }, [this]() { normalMap = nullptr; });
+        DrawTextureUI(normalMap, [this](const char* path) { normalMap = std::make_shared<Texture>(path, GL_TEXTURE1); }, [this]() { normalMap = nullptr; }, 1);
     }
 };
 

@@ -45,7 +45,7 @@ class Camera
         // input handling
         void SceneInputs(GLFWwindow* window, float deltaTime);
         bool MouseInScene(GLFWwindow* window, double mouseX, double mouseY);
-        void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+        void Scroll(float wheel);
 };
 
 #endif //__CAMERA_H__
