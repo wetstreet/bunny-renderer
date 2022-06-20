@@ -5,24 +5,16 @@
 #include "../common/Vertex.h"
 #include "../common/Texture.h"
 
-struct Varying
-{
-    glm::vec4 position;
-    glm::vec2 uv;
-    glm::vec3 normal;
-    glm::mat3 TBN;
-};
-
 struct IShader
 {
     glm::vec4 color;
     glm::vec3 lightDir;
     glm::mat4 MVP;
     glm::mat4 objectToWorld;
+    glm::mat4 worldToObject;
     std::shared_ptr<Texture> texture;
     std::shared_ptr<Texture> normalMap;
 
-    virtual ~IShader() {}
     virtual Varying vertex(Vertex i) = 0;
     virtual glm::vec4 fragment(Varying &varying) = 0;
 };
@@ -33,7 +25,7 @@ struct GouraudShader : public IShader
     {
         Varying o;
         o.uv = i.texcoord;
-        o.normal = objectToWorld * glm::vec4(i.normal, 0);
+        o.normal = i.normal * (glm::mat3)worldToObject;
         o.position = MVP * glm::vec4(i.position, 1);
         return o;
     }
@@ -57,16 +49,16 @@ struct NormalShader : public IShader
     virtual Varying vertex(Vertex i)
     {
         using namespace glm;
+        using vec3 = glm::vec3;
 
         Varying o;
         o.uv = i.texcoord;
         o.position = MVP * vec4(i.position, 1);
 
-        vec3 aBitangent = cross(i.normal, i.tangent);
-        vec3 T = normalize(vec3(objectToWorld * vec4(i.tangent, 0.0)));
-        vec3 B = normalize(vec3(objectToWorld * vec4(aBitangent, 0.0)));
-        vec3 N = normalize(vec3(objectToWorld * vec4(i.normal, 0.0)));
-        o.TBN = mat3(T, B, N);
+        vec3 worldNormal = normalize(i.normal * (mat3)worldToObject);
+        vec3 worldTangent = normalize((mat3)objectToWorld * i.tangent);
+        vec3 worldBitangent = cross(i.normal, i.tangent);
+        o.TBN = mat3(worldTangent, worldBitangent, worldNormal);
 
         return o;
     }
@@ -74,6 +66,7 @@ struct NormalShader : public IShader
     virtual glm::vec4 fragment(Varying& varying)
     {
         using namespace glm;
+        using vec3 = glm::vec3;
 
         vec4 albedo = texture->tex2D(varying.uv);
 

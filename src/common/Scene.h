@@ -11,7 +11,6 @@ class Scene
     public:
         Camera &camera;
         std::vector<std::shared_ptr<Object>> objects;
-        std::shared_ptr<Texture> white_tex;
 
     public:
         Scene(Camera &camera);

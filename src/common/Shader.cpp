@@ -1,11 +1,13 @@
 #include "Shader.h"
 #include "common/Utils.h"
 
+std::shared_ptr<Shader> Shader::unlitShader;
 std::shared_ptr<Shader> Shader::defaultShader;
 std::shared_ptr<Shader> Shader::normalShader;
 
 void Shader::Init()
 {
+    unlitShader = std::make_shared<Shader>("res/shaders/unlit.vert", "res/shaders/unlit.frag");
     defaultShader = std::make_shared<Shader>("res/shaders/default.vert", "res/shaders/default.frag");
     normalShader = std::make_shared<Shader>("res/shaders/normal.vert", "res/shaders/normal.frag");
 }

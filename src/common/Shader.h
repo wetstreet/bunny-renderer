@@ -18,6 +18,7 @@ class Shader
         ~Shader();
 
         static void Init();
+        static std::shared_ptr<Shader> unlitShader;
         static std::shared_ptr<Shader> defaultShader;
         static std::shared_ptr<Shader> normalShader;
 

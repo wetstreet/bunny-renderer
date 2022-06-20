@@ -15,8 +15,6 @@ float rectangleVertices[] =
 
 OpenGLRenderer::OpenGLRenderer()
 {
-	Shader::Init();
-
 	postprocessShader = std::make_shared<Shader>("res/shaders/postprocess.vert", "res/shaders/postprocess.frag");
 	outlineShader = std::make_shared<Shader>("res/shaders/outline.vert", "res/shaders/outline.frag");
 	outlineCompareShader = std::make_shared<Shader>("res/shaders/outlineCompareIds.vert", "res/shaders/outlineCompareIds.frag");

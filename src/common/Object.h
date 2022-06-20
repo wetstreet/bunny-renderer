@@ -21,6 +21,7 @@ class Object
         glm::vec3 scale = glm::vec3(1);
 
         glm::mat4 objectToWorld = glm::mat4(1);
+        glm::mat4 worldToObject = glm::mat4(1);
 
     public:
         virtual Type GetType() = 0;

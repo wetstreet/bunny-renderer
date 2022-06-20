@@ -105,14 +105,15 @@ class RasterizerRenderer : public Renderer
                 {
                     std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
 
-                    IShader* shader = mesh->normalMap ? pNormal : pDefault;
+                    IShader* shader = mesh->material->normalMap ? pNormal : pDefault;
 
-                    shader->color = mesh->color;
+                    shader->color = mesh->material->color;
                     shader->lightDir = -scene.camera.Orientation;
                     shader->MVP = camera.cameraMatrix * mesh->objectToWorld;
-                    shader->texture = mesh->texture;
-                    shader->normalMap = mesh->normalMap;
+                    shader->texture = mesh->material->texture;
+                    shader->normalMap = mesh->material->normalMap;
                     shader->objectToWorld = mesh->objectToWorld;
+                    shader->worldToObject = mesh->worldToObject;
 
                     for (int j = 0; j < mesh->indices.size() / 3; j++)
                     {

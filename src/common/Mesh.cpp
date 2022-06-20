@@ -55,6 +55,8 @@ bool Mesh::LoadMesh(const std::string& pFile) {
 Mesh::Mesh(const char *path)
     : path(path)
 {
+    material = std::make_shared<DiffuseMaterial>();
+
     LoadMesh(path);
     CalcBounds();
     Bind();

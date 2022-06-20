@@ -23,6 +23,11 @@ class Texture
         void texUnit(Shader& shader, const char* uniform, GLuint unit);
         void Bind();
         void Unbind();
+
+        static void Init();
+        static std::shared_ptr<Texture> white_tex;
+        static std::shared_ptr<Texture> normal_tex;
+
     private:
         static glm::vec2 vec2_zero;
         static glm::vec2 vec2_one;

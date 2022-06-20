@@ -2,7 +2,6 @@
 
 Scene::Scene(Camera &camera) : camera(camera)
 {
-	white_tex = std::make_shared<Texture>("res/obj/white_texture.png", GL_TEXTURE0);
 }
 
 Scene::~Scene()
@@ -55,31 +54,16 @@ void Scene::Draw()
 
             if (mesh->isEnabled)
             {
-                // todo: move to material
-                std::shared_ptr<Shader> shader = mesh->normalMap != NULL ? Shader::normalShader : Shader::defaultShader;
+                // per material setup
+                mesh->material->Setup();
 
-                shader->Activate();
-
-                if (mesh->texture != NULL)
-                {
-                    mesh->texture->texUnit(*shader, "tex0", 0);
-                    mesh->texture->Bind();
-                }
-
-                if (mesh->normalMap != NULL)
-                {
-                    mesh->normalMap->texUnit(*shader, "normalMap", 1);
-                    mesh->normalMap->Bind();
-                }
-
-                glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&mesh->color);
-
-                glUniform1i(glGetUniformLocation(shader->ID, "_ObjectID"), i);
-                glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightPosition"), 1, (float*)&lightPos);
-                glUniform3fv(glGetUniformLocation(shader->ID, "_MainLightColor"), 1, (float*)&lightColor);
-
-                glUniformMatrix4fv(glGetUniformLocation(shader->ID, "br_ObjectToClip"), 1, GL_FALSE, glm::value_ptr(camera.cameraMatrix * mesh->objectToWorld));
-                glUniformMatrix4fv(glGetUniformLocation(shader->ID, "br_ObjectToWorld"), 1, GL_FALSE, glm::value_ptr(mesh->objectToWorld));
+                // common setup
+                mesh->material->SetUniform("_ObjectID", i);
+                mesh->material->SetUniform("_MainLightPosition", lightPos);
+                mesh->material->SetUniform("_MainLightColor", lightColor);
+                mesh->material->SetUniform("br_ObjectToClip", camera.cameraMatrix * mesh->objectToWorld);
+                mesh->material->SetUniform("br_ObjectToWorld", mesh->objectToWorld);
+                mesh->material->SetUniform("br_WorldToObject", mesh->worldToObject);
 
                 mesh->Draw();
             }
@@ -87,11 +71,9 @@ void Scene::Draw()
     }
 }
 
-
 int Scene::AddPrimitive(std::string name)
 {
 	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(("res/obj/" + name + ".obj").c_str());
-	mesh->texture = white_tex;
     strcpy_s(mesh->name, 32, name.c_str());
 	return AddObject(mesh);
 }

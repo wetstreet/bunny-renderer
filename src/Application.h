@@ -58,7 +58,6 @@ public:
 	Application(Camera &camera, Scene &scene, OpenGLRenderer &openglRenderer, RasterizerRenderer &rasterizerRenderer, RayTracerRenderer& raytracer)
 		: camera(camera), scene(scene), openglRenderer(openglRenderer), rasterizerRenderer(rasterizerRenderer), raytracer(raytracer)
 	{
-		strcpy_s(customMeshName, 32, "");
 	}
 
 	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
@@ -175,7 +174,6 @@ public:
 					{
 						std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(path.c_str());
 						mesh->SetName(GetFileNameFromPath(path).c_str());
-						mesh->texture = scene.white_tex;
 						node_clicked = scene.AddObject(mesh);
 					}
 
@@ -245,21 +243,24 @@ public:
 				}
 				else if (object->GetType() == Type_Mesh)
 				{
+					std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
+					std::stringstream ss;
+
 					if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
 					{
-						std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
-						std::stringstream ss;
 						ss << "Vertices: " << mesh->vertices.size() << std::endl
 							<< "Triangles: " << (mesh->indices.size() / 3) << std::endl
 							<< "Path: " << mesh->path;
 						ImGui::Text(ss.str().c_str());
 						ss.clear(); ss.str("");
+					}
+					if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						mesh->material->OnGUI();
+						/*
+						ImGui::ColorEdit4("Color", (float*)&mesh->material->color);
 
-						ImGui::Separator();
-
-						ImGui::ColorEdit4("Color", (float*)&mesh->color);
-
-						Texture& tex = *mesh->texture;
+						Texture& tex = *mesh->material->texture;
 						ss << GetFileNameFromPath(tex.path) << std::endl << "Size: " << tex.width << "x" << tex.height;
 						ImGui::Text(ss.str().c_str());
 						ss.clear(); ss.str("");
@@ -268,15 +269,15 @@ public:
 							std::string s = OpenFileDialog(1);
 							if (s.size() > 0)
 							{
-								mesh->texture = std::make_shared<Texture>(s.c_str(), GL_TEXTURE0);
+								mesh->material->texture = std::make_shared<Texture>(s.c_str(), GL_TEXTURE0);
 							}
 						}
 
 						ImGui::Separator();
 						GLuint ID = 0;
-						if (mesh->normalMap)
+						if (mesh->material->normalMap)
 						{
-							Texture& normalMap = *mesh->normalMap;
+							Texture& normalMap = *mesh->material->normalMap;
 							ss << GetFileNameFromPath(normalMap.path) << std::endl << "Size: " << normalMap.width << "x" << normalMap.height;
 							ImGui::Text(ss.str().c_str());
 							ss.clear(); ss.str("");
@@ -291,10 +292,10 @@ public:
 							std::string s = OpenFileDialog(1);
 							if (s.size() > 0)
 							{
-								mesh->normalMap = std::make_shared<Texture>(s.c_str(), GL_TEXTURE1);
+								mesh->material->normalMap = std::make_shared<Texture>(s.c_str(), GL_TEXTURE1);
 							}
 						}
-						if (mesh->normalMap)
+						if (mesh->material->normalMap)
 						{
 							ImGui::SameLine();
 
@@ -304,11 +305,11 @@ public:
 							ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 							if (ImGui::Button("Clear"))
 							{
-								mesh->normalMap = nullptr;
+								mesh->material->normalMap = nullptr;
 							}
 							ImGui::PopStyleColor(3);
 							ImGui::PopID();
-						}
+						}*/
 					}
 				}
 			}
@@ -588,6 +589,4 @@ private:
 	// special window
 	bool showImage = false;
 	bool showRaytraceResult = false;
-	bool showCustomMeshPopup = false;
-	char customMeshName[32];
 };

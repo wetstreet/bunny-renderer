@@ -4,6 +4,15 @@
 glm::vec2 Texture::vec2_zero = glm::vec2(0, 0); 
 glm::vec2 Texture::vec2_one = glm::vec2(1, 1);
 
+std::shared_ptr<Texture> Texture::white_tex;
+std::shared_ptr<Texture> Texture::normal_tex;
+
+void Texture::Init()
+{
+	white_tex = std::make_shared<Texture>("res/obj/white_texture.png", GL_TEXTURE0);
+	normal_tex = std::make_shared<Texture>("res/obj/normal_texture.png", GL_TEXTURE0);
+}
+
 Texture::Texture(const char* image, GLenum slot)
 	: path(image), slot(slot)
 {

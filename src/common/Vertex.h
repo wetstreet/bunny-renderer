@@ -11,4 +11,12 @@ struct Vertex
     glm::vec3 tangent;
 };
 
+struct Varying
+{
+    glm::vec4 position;
+    glm::vec2 uv;
+    glm::vec3 normal;
+    glm::mat3 TBN;
+};
+
 #endif // __VERTEX_H__

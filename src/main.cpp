@@ -56,6 +56,9 @@ int main(int argc, char* argv[]) {
 	});
 	Scene scene(*camera);
 
+	Shader::Init();
+	Texture::Init();
+
 	OpenGLRenderer openglRenderer;
 	RasterizerRenderer rasterizerRenderer;
 	RayTracerRenderer raytracer;

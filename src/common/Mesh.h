@@ -8,6 +8,7 @@
 #include "../opengl/EBO.h"
 #include "Texture.h"
 #include "Object.h"
+#include "Material.h"
 
 class Mesh : public Object
 {
@@ -25,11 +26,9 @@ class Mesh : public Object
         glm::vec3 minPos = glm::vec3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
         glm::vec3 maxPos = glm::vec3(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
 
-        glm::vec4 color = glm::vec4(1, 1, 1, 1);
-        std::shared_ptr<Texture> texture;
-        std::shared_ptr<Texture> normalMap;
-
         std::string path;
+
+        std::shared_ptr<Material> material;
 
     public:
         Mesh(const char *filename);

@@ -9,10 +9,11 @@ out vec2 texCoord;
 
 uniform mat4 br_ObjectToClip;
 uniform mat4 br_ObjectToWorld;
+uniform mat4 br_WorldToObject;
 
 void main()
 {
 	gl_Position = br_ObjectToClip * vec4(aPos, 1.0);
-	normal = mat3(br_ObjectToWorld) * aNormal;
+	normal = normalize(aNormal * mat3(br_WorldToObject));
 	texCoord = aTex;
 }

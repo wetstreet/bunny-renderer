@@ -155,7 +155,7 @@ public:
             if (obj->GetType() == Type_Mesh)
             {
                 std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(obj);
-                auto mat = make_shared<lambertian>(color(mesh->color.r, mesh->color.g, mesh->color.b));
+                auto mat = make_shared<lambertian>(color(mesh->material->color.r, mesh->material->color.g, mesh->material->color.b));
                 auto triangles = CreateTriangleMesh(&mesh->objectToWorld, int(mesh->indices.size()) / 3, mesh->indices.data(), int(mesh->vertices.size()), &mesh->verts[0], &mesh->tangents[0], &mesh->normals[0], &mesh->uvs[0], mat);
                 for (auto triangle : triangles)
                     world->add(triangle);
