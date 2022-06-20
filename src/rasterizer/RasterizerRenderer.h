@@ -59,9 +59,9 @@ class RasterizerRenderer : public Renderer
                 for (int i = 0; i < viewport.x; i++)
                 {
                     int index = i + j * viewport.x;
-                    pixels[index * 4] = clearColor[0] * 255;
-                    pixels[index * 4 + 1] = clearColor[1] * 255;
-                    pixels[index * 4 + 2] = clearColor[2] * 255;
+                    pixels[index * 4] = uint8_t(clearColor[0] * 255);
+                    pixels[index * 4 + 1] = uint8_t(clearColor[1] * 255);
+                    pixels[index * 4 + 2] = uint8_t(clearColor[2] * 255);
                     pixels[index * 4 + 3] = 255;
                 }
             }

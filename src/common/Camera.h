@@ -19,8 +19,8 @@ class Camera
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
 
-        glm::vec2 windowPos;
-        glm::vec2 viewport;
+        glm::ivec2 windowPos;
+        glm::ivec2 viewport;
 
         glm::vec3 clearColor = glm::vec3(0.2f, 0.2f, 0.2f);
 
@@ -40,7 +40,7 @@ class Camera
 
         Camera(int width, int height, glm::vec3 position);
 
-        void updateMatrix(float width, float height);
+        void updateMatrix(int width, int height);
 
         // input handling
         void SceneInputs(GLFWwindow* window, float deltaTime);

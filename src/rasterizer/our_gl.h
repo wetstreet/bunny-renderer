@@ -129,9 +129,9 @@ void rasterize_triangle(Varying* varys, IShader& shader, uint8_t* pixels, float*
         }
     }
     glm::ivec2 P;
-    for (P.x = bboxmin.x; P.x < bboxmax.x; P.x++)
+    for (P.x = (int)bboxmin.x; P.x < bboxmax.x; P.x++)
     {
-        for (P.y = bboxmin.y; P.y < bboxmax.y; P.y++)
+        for (P.y = (int)bboxmin.y; P.y < bboxmax.y; P.y++)
         {
             if (P.x < 0 || P.y < 0 || P.x >= width || P.y >= height) continue;
 
@@ -174,9 +174,9 @@ void rasterize_triangle(Varying* varys, IShader& shader, uint8_t* pixels, float*
 
             glm::vec4 color = shader.fragment(o);
 
-            pixels[index * 4] = color.r * 255;
-            pixels[index * 4 + 1] = color.g * 255;
-            pixels[index * 4 + 2] = color.b * 255;
+            pixels[index * 4] = uint8_t(color.r * 255);
+            pixels[index * 4 + 1] = uint8_t(color.g * 255);
+            pixels[index * 4 + 2] = uint8_t(color.b * 255);
             pixels[index * 4 + 3] = 255;
 
             zbuffer[index] = depth;

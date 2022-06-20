@@ -5,10 +5,10 @@
 
 std::string GetFileNameFromPath(std::string s)
 {
-	int slash = s.find_last_of('/');
+	auto slash = s.find_last_of('/');
 	if (slash == -1)
 		slash = s.find_last_of('\\');
-	int dot = s.find_last_of('.');
+	auto dot = s.find_last_of('.');
 	return s.substr(slash + 1, dot - slash - 1);
 }
 
@@ -250,7 +250,7 @@ bool DecomposeTransform(const glm::mat4& ModelMatrix, glm::vec3& Translation, gl
 	Translation = vec3(LocalMatrix[3]);
 	LocalMatrix[3] = vec4(0, 0, 0, LocalMatrix[3].w);
 
-	vec3 Row[3], Pdum3;
+	vec3 Row[3];
 
 	// Now get scale and shear.
 	for (length_t i = 0; i < 3; ++i)

@@ -15,11 +15,11 @@ const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 std::string wstring2string(std::wstring wstr)
 {
     std::string result;
-    int len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.size(), NULL, 0, NULL, NULL);
+    int len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
     if (len <= 0)return result;
     char* buffer = new char[len + 1];
     if (buffer == NULL)return result;
-    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.size(), buffer, len, NULL, NULL);
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), (int)wstr.size(), buffer, len, NULL, NULL);
     buffer[len] = '\0';
     result.append(buffer);
     delete[] buffer;

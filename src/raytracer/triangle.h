@@ -107,9 +107,9 @@ bool triangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
     p2t = permute(p2t, kx, ky, kz);
 
     // Apply shear transformation to translated vertex positions
-    float Sx = -d[0] / d[2];
-    float Sy = -d[1] / d[2];
-    float Sz = 1.f / d[2];
+    double Sx = -d[0] / d[2];
+    double Sy = -d[1] / d[2];
+    double Sz = 1.f / d[2];
     p0t[0] += Sx * p0t[2];
     p0t[1] += Sy * p0t[2];
     p1t[0] += Sx * p1t[2];
@@ -118,32 +118,32 @@ bool triangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
     p2t[1] += Sy * p2t[2];
 
     // Compute edge function coefficients _e0_, _e1_, and _e2_
-    float e0 = p1t[0] * p2t[1] - p1t[1] * p2t[0];
-    float e1 = p2t[0] * p0t[1] - p2t[1] * p0t[0];
-    float e2 = p0t[0] * p1t[1] - p0t[1] * p1t[0];
+    double e0 = p1t[0] * p2t[1] - p1t[1] * p2t[0];
+    double e1 = p2t[0] * p0t[1] - p2t[1] * p0t[0];
+    double e2 = p0t[0] * p1t[1] - p0t[1] * p1t[0];
 
     // Perform triangle edge and determinant tests
     if ((e0 < 0 || e1 < 0 || e2 < 0) && (e0 > 0 || e1 > 0 || e2 > 0))
         return false;
-    float det = e0 + e1 + e2;
+    double det = e0 + e1 + e2;
     if (det == 0) return false;
 
     // Compute scaled hit distance to triangle and test against ray $t$ range
     p0t[2] *= Sz;
     p1t[2] *= Sz;
     p2t[2] *= Sz;
-    float tScaled = e0 * p0t[2] + e1 * p1t[2] + e2 * p2t[2];
+    double tScaled = e0 * p0t[2] + e1 * p1t[2] + e2 * p2t[2];
     if (det < 0 && (tScaled >= 0 || tScaled < t_max * det))
         return false;
     else if (det > 0 && (tScaled <= 0 || tScaled > t_max * det))
         return false;
 
     // Compute barycentric coordinates and $t$ value for triangle intersection
-    float invDet = 1 / det;
-    float b0 = e0 * invDet;
-    float b1 = e1 * invDet;
-    float b2 = e2 * invDet;
-    float t = tScaled * invDet;
+    double invDet = 1 / det;
+    double b0 = e0 * invDet;
+    double b1 = e1 * invDet;
+    double b2 = e2 * invDet;
+    double t = tScaled * invDet;
 
     // Interpolate $(u,v)$ parametric coordinates and hit point
     point3 pHit = b0 * p0 + b1 * p1 + b2 * p2;

@@ -92,14 +92,14 @@ int Scene::AddPrimitive(std::string name)
 {
 	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(("res/obj/" + name + ".obj").c_str());
 	mesh->texture = white_tex;
-    strcpy(mesh->name, name.c_str());
+    strcpy_s(mesh->name, 32, name.c_str());
 	return AddObject(mesh);
 }
 
 int Scene::AddObject(std::shared_ptr<Object> object)
 {
     objects.push_back(object);
-    return objects.size() - 1;
+    return (int)objects.size() - 1;
 }
 
 void Scene::RemoveObject(int index)

@@ -80,7 +80,7 @@ public:
         vec3 vup(0, 1, 0);
         auto dist_to_focus = 10.0;
         auto aperture = 0.1;
-        const float aspect_ratio = viewport.x / viewport.y;
+        const float aspect_ratio = (float)viewport.x / viewport.y;
 
         cam = std::make_unique<raytracer_camera>(scene.camera.Position, scene.camera.Position + scene.camera.Orientation, vup, scene.camera.FOVdeg, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
@@ -156,7 +156,7 @@ public:
             {
                 std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(obj);
                 auto mat = make_shared<lambertian>(color(mesh->color.r, mesh->color.g, mesh->color.b));
-                auto triangles = CreateTriangleMesh(&mesh->objectToWorld, mesh->indices.size() / 3, mesh->indices.data(), mesh->vertices.size(), &mesh->verts[0], &mesh->tangents[0], &mesh->normals[0], &mesh->uvs[0], mat);
+                auto triangles = CreateTriangleMesh(&mesh->objectToWorld, int(mesh->indices.size()) / 3, mesh->indices.data(), int(mesh->vertices.size()), &mesh->verts[0], &mesh->tangents[0], &mesh->normals[0], &mesh->uvs[0], mat);
                 for (auto triangle : triangles)
                     world->add(triangle);
             }

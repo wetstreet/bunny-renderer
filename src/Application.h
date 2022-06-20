@@ -58,7 +58,7 @@ public:
 	Application(Camera &camera, Scene &scene, OpenGLRenderer &openglRenderer, RasterizerRenderer &rasterizerRenderer, RayTracerRenderer& raytracer)
 		: camera(camera), scene(scene), openglRenderer(openglRenderer), rasterizerRenderer(rasterizerRenderer), raytracer(raytracer)
 	{
-		strcpy(customMeshName, "");
+		strcpy_s(customMeshName, 32, "");
 	}
 
 	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
@@ -258,7 +258,6 @@ public:
 						ImGui::Separator();
 
 						ImGui::ColorEdit4("Color", (float*)&mesh->color);
-						ImGui::Checkbox("Emissive", &mesh->isEmissive);
 
 						Texture& tex = *mesh->texture;
 						ss << GetFileNameFromPath(tex.path) << std::endl << "Size: " << tex.width << "x" << tex.height;
@@ -437,8 +436,8 @@ public:
 			viewport = ImGui::GetWindowSize();
 			windowPos = ImGui::GetWindowPos();
 
-			scene.camera.windowPos = glm::vec2(windowPos.x, windowPos.y);
-			scene.camera.viewport = glm::vec2(viewport.x, viewport.y);
+			scene.camera.windowPos = glm::ivec2(windowPos.x, windowPos.y);
+			scene.camera.viewport = glm::ivec2(viewport.x, viewport.y);
 			openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
 
 			GLuint rtID = postprocess ? openglRenderer.postprocessRT : openglRenderer.renderTexture;
@@ -497,11 +496,10 @@ public:
 
 			if (ImGui::Button("Rasterize"))
 			{
-				rasterizerRenderer.viewport.x = viewport.x;
-				rasterizerRenderer.viewport.y = viewport.y;
+				rasterizerRenderer.viewport.x = (int)viewport.x;
+				rasterizerRenderer.viewport.y = (int)viewport.y;
 
-				window_size = ImVec2(rasterizerRenderer.viewport.x + 20, rasterizerRenderer.viewport.y + 35);
-				content_size = ImVec2(rasterizerRenderer.viewport.x, rasterizerRenderer.viewport.y);
+				content_size = ImVec2((float)rasterizerRenderer.viewport.x, (float)rasterizerRenderer.viewport.y);
 
 				double startTime = glfwGetTime();
 
@@ -521,8 +519,7 @@ public:
 				raytracer.viewport.x = raytracer_viewport.x;
 				raytracer.viewport.y = raytracer_viewport.y;
 
-				window_size = ImVec2(raytracer.viewport.x + 20, raytracer.viewport.y + 35);
-				content_size = ImVec2(raytracer.viewport.x, raytracer.viewport.y);
+				content_size = ImVec2((float)raytracer.viewport.x, (float)raytracer.viewport.y);
 
 				raytracer.startTime = glfwGetTime();
 
@@ -544,7 +541,7 @@ public:
 	{
 		if (showImage)
 		{
-			ImGui::SetNextWindowSize(window_size);
+			ImGui::SetNextWindowSize(content_size + ImVec2(20, 35));
 			ImGui::Begin("Render Result", &showImage);
 			//ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.depthTexture, content_size, ImVec2(0, 1), ImVec2(1, 0)); // visualize depth buffer
 			ImGui::Image((ImTextureID)(intptr_t)rasterizerRenderer.renderTexture, content_size, ImVec2(0, 1), ImVec2(1, 0));
@@ -552,7 +549,7 @@ public:
 		}
 		if (showRaytraceResult)
 		{
-			ImGui::SetNextWindowSize(window_size);
+			ImGui::SetNextWindowSize(content_size + ImVec2(20, 35));
 			ImGui::Begin("Raytracer", &showRaytraceResult);
 
 			glBindTexture(GL_TEXTURE_2D, raytracer.renderTexture);

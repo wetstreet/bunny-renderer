@@ -5,10 +5,10 @@ Camera::Camera(int width, int height, glm::vec3 position)
 {
 }
 
-void Camera::updateMatrix(float width, float height)
+void Camera::updateMatrix(int width, int height)
 {
     view = glm::lookAt(Position, Position + Orientation, Up);
-    projection = glm::perspective(glm::radians(FOVdeg), (float)(width / height), nearPlane, farPlane);
+    projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
 
     cameraMatrix = projection * view;
 }
@@ -67,10 +67,10 @@ void Camera::SceneInputs(GLFWwindow* window, float deltaTime)
         }
         else if (middleFirstClickInScene)
         {
-            float offsetX = mouseX - lastMouseX;
+            float offsetX = float(mouseX - lastMouseX);
             Position -= offsetX * scenePanSpeed * glm::normalize(glm::cross(Orientation, Up));
             
-            float offsetY = mouseY - lastMouseY;
+            float offsetY = float(mouseY - lastMouseY);
             Position += offsetY * scenePanSpeed * Up;
 
             lastMouseX = mouseX;

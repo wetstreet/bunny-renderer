@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
 		double deltaTime = nowTime - lastTime;
 		lastTime = nowTime;
 
-    	camera->SceneInputs(window, deltaTime);
+    	camera->SceneInputs(window, (float)deltaTime);
 		openglRenderer.Render(scene);
 
         ImGui_ImplOpenGL3_NewFrame();
