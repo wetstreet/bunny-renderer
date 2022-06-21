@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include <map>
 
 Scene::Scene(Camera &camera) : camera(camera)
 {
@@ -7,6 +8,67 @@ Scene::Scene(Camera &camera) : camera(camera)
 Scene::~Scene()
 {
     objects.clear();
+}
+
+std::string getBasePath(const std::string& path)
+{
+    size_t pos = path.find_last_of("\\/");
+    return (std::string::npos == pos) ? "" : path.substr(0, pos + 1);
+}
+
+void Scene::LoadScene(const std::string& pFile)
+{
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFile(pFile,
+        aiProcess_CalcTangentSpace |
+        aiProcess_Triangulate |
+        aiProcess_JoinIdenticalVertices);
+
+    if (nullptr == scene) {
+        std::cout << "Scene load failed!: " << pFile << std::endl << importer.GetErrorString() << std::endl;
+        return;
+    }
+    std::cout << "Loading Scene: " << pFile << std::endl;
+
+    aiVector3D position, rotation, scale;
+    scene->mRootNode->mTransformation.Decompose(scale, rotation, position);
+
+    std::string folder = getBasePath(pFile);
+
+    std::map<std::string, std::shared_ptr<Texture>> textureMap;
+    std::vector<std::shared_ptr<Material>> materials;
+
+    std::cout << "mNumMaterials=" << scene->mNumMaterials << std::endl;
+    for (int i = 0; i < scene->mNumMaterials; i++)
+    {
+        aiMaterial* aimaterial = scene->mMaterials[i];
+
+        auto mat = std::make_shared<DiffuseMaterial>();
+
+        aiString path;
+        aiReturn success = scene->mMaterials[i]->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+        if (success == AI_SUCCESS)
+        {
+            std::string fileName(path.data);
+            std::string filePath = folder + fileName;
+            mat->texture = std::make_shared<Texture>(filePath.c_str(), GL_TEXTURE0);
+            materials.push_back(mat);
+        }
+    }
+
+    std::cout << "mNumMeshes=" << scene->mNumMeshes << std::endl;
+    for (int i = 0; i < scene->mNumMeshes; i++)
+    {
+        std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(scene->mMeshes[i]);
+        mesh->material = materials[scene->mMeshes[i]->mMaterialIndex];
+        AddObject(mesh);
+        mesh->scale.x = scale.x;
+        mesh->scale.y = scale.y;
+        mesh->scale.z = scale.z;
+    }
+
+    std::cout << "Scene Load Finished." << std::endl;
 }
 
 std::shared_ptr<Light> Scene::GetMainLight()

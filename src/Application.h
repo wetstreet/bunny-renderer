@@ -88,7 +88,7 @@ public:
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+		ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.3f");
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -102,7 +102,7 @@ public:
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+		ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.3f");
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -116,7 +116,7 @@ public:
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+		ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.3f");
 		ImGui::PopItemWidth();
 
 		ImGui::PopStyleVar();
@@ -149,6 +149,18 @@ public:
 	{
 		if (ImGui::BeginMainMenuBar())
 		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("Load Scene"))
+				{
+					std::string path = OpenFileDialog(3);
+					if (path.size() != 0)
+					{
+						scene.LoadScene(path);
+					}
+				}
+				ImGui::EndMenu();
+			}
 			if (ImGui::BeginMenu("Primitives"))
 			{
 				if (ImGui::MenuItem("Plane"))
@@ -173,10 +185,8 @@ public:
 					if (path.size() != 0)
 					{
 						std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(path.c_str());
-						mesh->SetName(GetFileNameFromPath(path).c_str());
 						node_clicked = scene.AddObject(mesh);
 					}
-
 				}
 				ImGui::EndMenu();
 			}
@@ -444,6 +454,8 @@ public:
 			ImGui::InputFloat("Sensitivity", (float*)&camera.sensitivity);
 			ImGui::InputFloat("Pan Speed", (float*)&camera.scenePanSpeed);
 			ImGui::InputFloat("Scroll Speed", (float*)&camera.sceneScrollSpeed);
+			ImGui::InputFloat("Near Plane", (float*)&camera.nearPlane);
+			ImGui::InputFloat("Far Plane", (float*)&camera.farPlane);
 			ImGui::ColorEdit3("Background", (float*)&camera.clearColor);
 		}
 

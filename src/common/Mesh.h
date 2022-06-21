@@ -10,6 +10,10 @@
 #include "Object.h"
 #include "Material.h"
 
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+
 class Mesh : public Object
 {
     public:
@@ -32,6 +36,7 @@ class Mesh : public Object
 
     public:
         Mesh(const char *filename);
+        Mesh(const aiMesh* model);
 
         virtual Type GetType() { return Type_Mesh; };
 
@@ -40,6 +45,7 @@ class Mesh : public Object
     private:
         void CalcBounds();
         void Bind();
+        void InitMesh(const aiMesh* model);
         bool LoadMesh(const std::string& pFile);
 };
 

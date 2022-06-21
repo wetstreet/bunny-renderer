@@ -15,8 +15,12 @@ class Scene
     public:
         Scene(Camera &camera);
         ~Scene();
+
+        void Scene::LoadScene(const std::string& pFile);
+
         std::shared_ptr<Light> GetMainLight();
         void GetMainLightProperties(glm::vec3& dir, glm::vec3& color);
+
         void Draw();
         int AddObject(std::shared_ptr<Object>);
         void RemoveObject(int index);
