@@ -6,7 +6,7 @@ glm::vec3 DirectionalLight::GetLightPosition()
 
 	for (int i = 0; i < 3; i++)
 	{
-		rotationMatrix = glm::rotate(rotationMatrix, rotation[i] * DEG2RAD, directionUnary[i]);
+		rotationMatrix = glm::rotate(rotationMatrix, rotation[i], directionUnary[i]);
 	}
 
     return rotationMatrix * glm::vec4(0, 0, -1, 0);

@@ -54,6 +54,10 @@ public:
     {
         glUniform3fv(glGetUniformLocation(shader->ID, name), 1, (float*)&v);
     }
+    void SetUniform(const GLchar* name, glm::vec4& v)
+    {
+        glUniform3fv(glGetUniformLocation(shader->ID, name), 1, (float*)&v);
+    }
     void SetUniform(const GLchar* name, glm::mat4& m)
     {
         glUniformMatrix4fv(glGetUniformLocation(shader->ID, name), 1, GL_FALSE, glm::value_ptr(m));
@@ -116,7 +120,7 @@ public:
 
         std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
         tex->texUnit(*shader, "tex0", 0);
-        tex->Bind();
+        tex->Bind(GL_TEXTURE0);
 
         glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
     }
@@ -140,7 +144,7 @@ public:
     {
         ImGui::ColorEdit4("Color", (float*)&color);
 
-        DrawTextureUI(texture, [this](const char* path) {texture = std::make_shared<Texture>(path, GL_TEXTURE0); }, [this]() {texture = nullptr; });
+        DrawTextureUI(texture, [this](const char* path) {texture = std::make_shared<Texture>(path); }, [this]() {texture = nullptr; });
     }
 };
 
@@ -158,7 +162,7 @@ public:
 
         std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
         tex->texUnit(*shader, "tex0", 0);
-        tex->Bind();
+        tex->Bind(GL_TEXTURE0);
 
         glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
 	}
@@ -186,7 +190,7 @@ public:
     {
         ImGui::ColorEdit4("Color", (float*)&color);
 
-        DrawTextureUI(texture, [this](const char* path) {texture = std::make_shared<Texture>(path, GL_TEXTURE0); }, [this]() {texture = nullptr; });
+        DrawTextureUI(texture, [this](const char* path) {texture = std::make_shared<Texture>(path); }, [this]() {texture = nullptr; });
     }
 };
 
@@ -204,11 +208,11 @@ public:
 
         std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
         tex->texUnit(*shader, "tex0", 0);
-        tex->Bind();
+        tex->Bind(GL_TEXTURE0);
 
         std::shared_ptr<Texture> normal = normalMap != nullptr ? normalMap : Texture::normal_tex;
         normal->texUnit(*shader, "normalMap", 1);
-        normal->Bind();
+        normal->Bind(GL_TEXTURE1);
 
         glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
     }
@@ -249,11 +253,11 @@ public:
     {
         ImGui::ColorEdit4("Color", (float*)&color);
 
-        DrawTextureUI(texture, [this](const char* path) { texture = std::make_shared<Texture>(path, GL_TEXTURE0); }, [this]() { texture = nullptr; });
+        DrawTextureUI(texture, [this](const char* path) { texture = std::make_shared<Texture>(path); }, [this]() { texture = nullptr; });
 
         ImGui::Separator();
 
-        DrawTextureUI(normalMap, [this](const char* path) { normalMap = std::make_shared<Texture>(path, GL_TEXTURE1); }, [this]() { normalMap = nullptr; }, 1);
+        DrawTextureUI(normalMap, [this](const char* path) { normalMap = std::make_shared<Texture>(path); }, [this]() { normalMap = nullptr; }, 1);
     }
 };
 

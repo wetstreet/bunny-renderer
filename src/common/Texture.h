@@ -16,12 +16,12 @@ class Texture
 
         unsigned char* bytes;
         int width, height, numColCh;
-        Texture(const char* image, GLenum slot);
+        Texture(const char* image);
         ~Texture();
 
         glm::vec4 tex2D(glm::vec2& uv);
         void texUnit(Shader& shader, const char* uniform, GLuint unit);
-        void Bind();
+        void Bind(GLenum slot);
         void Unbind();
 
         static void Init();

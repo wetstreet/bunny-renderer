@@ -10,6 +10,7 @@ class Scene
 {
     public:
         Camera &camera;
+        glm::vec3 ambientColor = glm::vec3(0.4f, 0.4f, 0.4f);
         std::vector<std::shared_ptr<Object>> objects;
 
     public:

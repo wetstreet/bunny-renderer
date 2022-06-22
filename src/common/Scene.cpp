@@ -1,8 +1,10 @@
 #include "Scene.h"
+#include "DirectionalLight.h"
 #include <map>
 
 Scene::Scene(Camera &camera) : camera(camera)
 {
+    AddObject(std::make_shared<DirectionalLight>());
 }
 
 Scene::~Scene()
@@ -44,28 +46,35 @@ void Scene::LoadScene(const std::string& pFile)
     {
         aiMaterial* aimaterial = scene->mMaterials[i];
 
-        auto mat = std::make_shared<DiffuseMaterial>();
+        auto mat = std::make_shared<NormalMaterial>();
 
         aiString path;
-        aiReturn success = scene->mMaterials[i]->GetTexture(aiTextureType_DIFFUSE, 0, &path);
-        if (success == AI_SUCCESS)
+        aiColor4D diffuse;
+
+        if (AI_SUCCESS == aimaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path))
         {
-            std::string fileName(path.data);
-            std::string filePath = folder + fileName;
-            mat->texture = std::make_shared<Texture>(filePath.c_str(), GL_TEXTURE0);
-            materials.push_back(mat);
+            mat->texture = std::make_shared<Texture>((folder + path.data).c_str());
         }
+
+        if (AI_SUCCESS == aimaterial->GetTexture(aiTextureType_NORMALS, 0, &path))
+        {
+            mat->normalMap = std::make_shared<Texture>((folder + path.data).c_str());
+        }
+
+        if (AI_SUCCESS == aiGetMaterialColor(aimaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuse))
+        {
+            mat->color = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
+        }
+        materials.push_back(mat);
     }
 
     std::cout << "mNumMeshes=" << scene->mNumMeshes << std::endl;
     for (int i = 0; i < scene->mNumMeshes; i++)
     {
         std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(scene->mMeshes[i]);
+        mesh->scale = glm::vec3(scale.x, scale.y, scale.z);
         mesh->material = materials[scene->mMeshes[i]->mMaterialIndex];
         AddObject(mesh);
-        mesh->scale.x = scale.x;
-        mesh->scale.y = scale.y;
-        mesh->scale.z = scale.z;
     }
 
     std::cout << "Scene Load Finished." << std::endl;
@@ -128,6 +137,8 @@ void Scene::Draw()
                 mesh->material->SetUniform("_ObjectID", i);
                 mesh->material->SetUniform("_MainLightPosition", lightPos);
                 mesh->material->SetUniform("_MainLightColor", lightColor);
+                mesh->material->SetUniform("_AmbientColor", ambientColor);
+
                 mesh->material->SetUniform("br_ObjectToClip", camera.cameraMatrix * mesh->objectToWorld);
                 mesh->material->SetUniform("br_ObjectToWorld", mesh->objectToWorld);
                 mesh->material->SetUniform("br_WorldToObject", mesh->worldToObject);

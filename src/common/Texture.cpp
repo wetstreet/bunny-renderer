@@ -9,12 +9,12 @@ std::shared_ptr<Texture> Texture::normal_tex;
 
 void Texture::Init()
 {
-	white_tex = std::make_shared<Texture>("res/obj/white_texture.png", GL_TEXTURE0);
-	normal_tex = std::make_shared<Texture>("res/obj/normal_texture.png", GL_TEXTURE1);
+	white_tex = std::make_shared<Texture>("res/obj/white_texture.png");
+	normal_tex = std::make_shared<Texture>("res/obj/normal_texture.png");
 }
 
-Texture::Texture(const char* image, GLenum slot)
-	: path(image), slot(slot)
+Texture::Texture(const char* image)
+	: path(image)
 {
 	name = GetFileNameFromPath(path);
 
@@ -27,12 +27,11 @@ Texture::Texture(const char* image, GLenum slot)
 		format = GL_RGBA;
 
 	glGenTextures(1, &ID);
-	glActiveTexture(slot);
 	glBindTexture(GL_TEXTURE_2D, ID);
 
 	glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(path).c_str());
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -61,16 +60,10 @@ glm::vec4 Texture::tex2D(glm::vec2& uv)
 		numColCh == 4 ? bytes[index * numColCh + 3] / 255.0f : 1);
 }
 
-void Texture::Bind()
+void Texture::Bind(GLenum slot)
 {
 	glActiveTexture(slot);
     glBindTexture(GL_TEXTURE_2D, ID);
-}
-
-void Texture::Unbind()
-{
-	glActiveTexture(slot);
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 Texture::~Texture()

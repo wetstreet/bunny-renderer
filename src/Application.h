@@ -88,7 +88,7 @@ public:
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.3f");
+		ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%g");
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -102,7 +102,7 @@ public:
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.3f");
+		ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%g");
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -116,7 +116,7 @@ public:
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.3f");
+		ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%g");
 		ImGui::PopItemWidth();
 
 		ImGui::PopStyleVar();
@@ -196,7 +196,6 @@ public:
 				if (ImGui::MenuItem("Directional Light"))
 				{
 					std::shared_ptr<DirectionalLight> dirLight = std::make_shared<DirectionalLight>();
-					dirLight->SetName("directional light");
 					node_clicked = scene.AddObject(dirLight);
 				}
 				ImGui::EndMenu();
@@ -250,7 +249,7 @@ public:
 				{
 					std::shared_ptr<Light> light = std::dynamic_pointer_cast<Light>(object);
 					ImGui::ColorEdit3("Color", (float*)&light->color);
-					ImGui::InputFloat("Intensity", &light->intensity);
+					ImGui::DragFloat("Intensity", &light->intensity, 0.1f);
 				}
 			}
 			else if (object->GetType() == Type_Mesh)
@@ -270,6 +269,7 @@ public:
 					ImGui::Combo("Shader", &item_current_idx, items, IM_ARRAYSIZE(items));
 					if (item_current_idx != mesh->material->MaterialIndex)
 					{
+						// change material
 						std::shared_ptr<Material> oldMat = mesh->material;
 						switch (item_current_idx)
 						{
@@ -446,6 +446,9 @@ public:
 		}
 
 		//ImGui::Checkbox("Post Process", &postprocess);
+
+		ImGui::ColorEdit3("Ambient", (float*)&scene.ambientColor);
+
 
 		if (ImGui::CollapsingHeader("Scene Camera", ImGuiTreeNodeFlags_DefaultOpen))
 		{
