@@ -15,6 +15,7 @@ float rectangleVertices[] =
 
 OpenGLRenderer::OpenGLRenderer()
 {
+	shadowMapShader = std::make_shared<Shader>("res/shaders/shadowMap.vert", "res/shaders/shadowMap.frag");
 	postprocessShader = std::make_shared<Shader>("res/shaders/postprocess.vert", "res/shaders/postprocess.frag");
 	outlineShader = std::make_shared<Shader>("res/shaders/outline.vert", "res/shaders/outline.frag");
 	outlineCompareShader = std::make_shared<Shader>("res/shaders/outlineCompareIds.vert", "res/shaders/outlineCompareIds.frag");
@@ -22,6 +23,26 @@ OpenGLRenderer::OpenGLRenderer()
 	outlineMergeShader = std::make_shared<Shader>("res/shaders/outlineMerge.vert", "res/shaders/outlineMerge.frag");
 
 	glEnable(GL_DEPTH_TEST);
+
+	// initialize shadow map
+	glGenFramebuffers(1, &shadowMapFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+
+	glGenTextures(1, &shadowMap);
+	glBindTexture(GL_TEXTURE_2D, shadowMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	float clampColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, clampColor);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Prepare framebuffer rectangle VBO and VAO
 	glGenVertexArrays(1, &rectVAO);
@@ -117,6 +138,36 @@ int OpenGLRenderer::GetObjectID(int x, int y)
 
 void OpenGLRenderer::Render(Scene &scene)
 {
+	scene.UpdateMatrices();
+
+	// render shadow map
+	shadowMapShader->Activate();
+	glUniformMatrix4fv(glGetUniformLocation(shadowMapShader->ID, "lightProjection"), 1, GL_FALSE, glm::value_ptr(scene.GetLightMatrix()));
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+
+	glViewport(0, 0, shadowMapWidth, shadowMapHeight);
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	for (int i = 0; i < scene.objects.size(); i++)
+	{
+		std::shared_ptr<Object> object = scene.objects[i];
+		if (object->GetType() == Type_Mesh)
+		{
+			std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
+			if (mesh->isEnabled)
+			{
+				glUniformMatrix4fv(glGetUniformLocation(shadowMapShader->ID, "br_ObjectToWorld"), 1, GL_FALSE, glm::value_ptr(mesh->objectToWorld));
+
+				mesh->Draw();
+			}
+		}
+	}
+
+	scene.shadowMap = shadowMap;
+
 	// update rt size
     glBindTexture(GL_TEXTURE_2D, renderTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport.x, viewport.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -230,7 +281,6 @@ void OpenGLRenderer::Render(Scene &scene)
 		glBindVertexArray(rectVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-
 		// blur vertically (use outline rt to ping pong)
 		glBindFramebuffer(GL_FRAMEBUFFER, postprocessFBO);
 		outlineBlurShader->Activate();
@@ -243,7 +293,6 @@ void OpenGLRenderer::Render(Scene &scene)
 		glUniform2fv(glGetUniformLocation(outlineBlurShader->ID, "_BlurDirection"), 1, (float*)&blurDirection);
 		glBindVertexArray(rectVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

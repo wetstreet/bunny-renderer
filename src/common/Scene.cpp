@@ -112,11 +112,38 @@ void Scene::GetMainLightProperties(glm::vec3& dir, glm::vec3& color)
 
 }
 
+glm::mat4 Scene::GetLightMatrix()
+{
+    glm::vec3 lightPos, color;
+    GetMainLightProperties(lightPos, color);
+
+    float size = 10.0f;
+    glm::mat4 orthogonalProjection = glm::ortho(-size, size, -size, size, 0.1f, 75.0f);
+    glm::mat4 lightView = glm::lookAt(10.0f * lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0, 1, 0));
+    glm::mat4 lightProjection = orthogonalProjection * lightView;
+    return lightProjection;
+}
+
+void Scene::UpdateMatrices()
+{
+    for (int i = 0; i < objects.size(); i++)
+    {
+        std::shared_ptr<Object> object = objects[i];
+        if (object->GetType() == Type_Mesh)
+        {
+            std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
+            mesh->UpdateMatrix(); // always update, even for invisible ones (for outline)
+        }
+    }
+}
+
 void Scene::Draw()
 {
     glm::vec3 lightPos;
     glm::vec3 lightColor;
     GetMainLightProperties(lightPos, lightColor);
+
+    glm::mat4 lightProjection = GetLightMatrix();
 
     for (int i = 0; i < objects.size(); i++)
     {
@@ -124,10 +151,6 @@ void Scene::Draw()
         if (object->GetType() == Type_Mesh)
         {
             std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
-
-            // draw outline when invisible, so always needs to update transform matrix
-            mesh->UpdateMatrix();
-
             if (mesh->isEnabled)
             {
                 // per material setup
@@ -138,10 +161,15 @@ void Scene::Draw()
                 mesh->material->SetUniform("_MainLightPosition", lightPos);
                 mesh->material->SetUniform("_MainLightColor", lightColor);
                 mesh->material->SetUniform("_AmbientColor", ambientColor);
-
                 mesh->material->SetUniform("br_ObjectToClip", camera.cameraMatrix * mesh->objectToWorld);
                 mesh->material->SetUniform("br_ObjectToWorld", mesh->objectToWorld);
                 mesh->material->SetUniform("br_WorldToObject", mesh->worldToObject);
+
+                mesh->material->SetUniform("lightProjection", lightProjection);
+
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, shadowMap);
+                mesh->material->SetUniform("shadowMap", 2);
 
                 mesh->Draw();
             }

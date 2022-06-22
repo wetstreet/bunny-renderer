@@ -16,11 +16,20 @@ class OpenGLRenderer : public Renderer
 
     private:
         GLuint objectIdRT;
+        GLuint rectVAO, rectVBO;
+
         GLuint rbo;
         GLuint FBO;
+
         GLuint postprocessFBO;
         GLuint outlineFBO;
-	    GLuint rectVAO, rectVBO;
+
+        unsigned int shadowMapWidth = 2048, shadowMapHeight = 2048;
+
+        GLuint shadowMap;
+        GLuint shadowMapFBO;
+
+        std::shared_ptr<Shader> shadowMapShader;
 
         std::shared_ptr<Shader> postprocessShader;
 

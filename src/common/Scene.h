@@ -21,6 +21,11 @@ class Scene
 
         std::shared_ptr<Light> GetMainLight();
         void GetMainLightProperties(glm::vec3& dir, glm::vec3& color);
+        glm::mat4 GetLightMatrix();
+
+        void UpdateMatrices();
+
+        GLuint shadowMap;
 
         void Draw();
         int AddObject(std::shared_ptr<Object>);
