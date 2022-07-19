@@ -37,7 +37,7 @@ unsigned int skyboxIndices[] =
 
 Skybox::Skybox()
 {
-    skyboxShader = new Shader("res/shaders/skybox.vert", "res/shaders/skybox.frag");
+    skyboxShader = new Shader("skybox");
 
 	// Create VAO, VBO, and EBO for the skybox
 	glGenVertexArrays(1, &skyboxVAO);

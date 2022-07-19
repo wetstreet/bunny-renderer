@@ -1,12 +1,16 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+#include <string>
+#include <memory>
 #include <iostream>
-#include "imgui/imgui.h"
 
+#include "imgui/imgui.h"
 #include "glm/glm.hpp"
 
 std::string GetFileNameFromPath(std::string s);
+
+std::string GetFileContents(std::string filename);
 
 void ScreenPosToWorldRay(
 	int mouseX, int mouseY,             // Mouse position, in pixels, from bottom-left corner of the window

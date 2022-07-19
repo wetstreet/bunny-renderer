@@ -15,12 +15,12 @@ float rectangleVertices[] =
 
 OpenGLRenderer::OpenGLRenderer()
 {
-	shadowMapShader = std::make_shared<Shader>("res/shaders/shadowMap.vert", "res/shaders/shadowMap.frag");
-	postprocessShader = std::make_shared<Shader>("res/shaders/postprocess.vert", "res/shaders/postprocess.frag");
-	outlineShader = std::make_shared<Shader>("res/shaders/outline.vert", "res/shaders/outline.frag");
-	outlineCompareShader = std::make_shared<Shader>("res/shaders/outlineCompareIds.vert", "res/shaders/outlineCompareIds.frag");
-	outlineBlurShader = std::make_shared<Shader>("res/shaders/outlineBlur.vert", "res/shaders/outlineBlur.frag");
-	outlineMergeShader = std::make_shared<Shader>("res/shaders/outlineMerge.vert", "res/shaders/outlineMerge.frag");
+	shadowMapShader = std::make_shared<Shader>("editor/shadowMap");
+	postprocessShader = std::make_shared<Shader>("editor/postprocess");
+	outlineShader = std::make_shared<Shader>("editor/outline");
+	outlineCompareShader = std::make_shared<Shader>("editor/outlineCompareIds");
+	outlineBlurShader = std::make_shared<Shader>("editor/outlineBlur");
+	outlineMergeShader = std::make_shared<Shader>("editor/outlineMerge");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -31,12 +31,13 @@ OpenGLRenderer::OpenGLRenderer()
 	glGenTextures(1, &shadowMap);
 	glBindTexture(GL_TEXTURE_2D, shadowMap);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	float clampColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, clampColor);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, clampColor);                                      
 
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);

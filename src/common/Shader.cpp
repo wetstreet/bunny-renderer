@@ -1,5 +1,4 @@
 #include "Shader.h"
-#include "common/Utils.h"
 
 std::shared_ptr<Shader> Shader::unlitShader;
 std::shared_ptr<Shader> Shader::defaultShader;
@@ -7,55 +6,66 @@ std::shared_ptr<Shader> Shader::normalShader;
 
 void Shader::Init()
 {
-    unlitShader = std::make_shared<Shader>("res/shaders/unlit.vert", "res/shaders/unlit.frag");
-    defaultShader = std::make_shared<Shader>("res/shaders/default.vert", "res/shaders/default.frag");
-    normalShader = std::make_shared<Shader>("res/shaders/normal.vert", "res/shaders/normal.frag");
+    unlitShader = std::make_shared<Shader>("unlit");
+    defaultShader = std::make_shared<Shader>("default");
+    normalShader = std::make_shared<Shader>("normal");
 }
 
-std::string get_file_contents(const char* filename)
+void CompileErrors(unsigned int shader, const char* type, std::string path)
 {
-	std::ifstream in(filename, std::ios::binary);
-	if (in)
-	{
-		std::string contents;
-		in.seekg(0, std::ios::end);
-		contents.resize(in.tellg());
-		in.seekg(0, std::ios::beg);
-		in.read(&contents[0], contents.size());
-		in.close();
-		return(contents);
-	}
-    std::cout << "no file, name=" << filename << std::endl;
-	throw(errno);
+    GLint hasCompiled;
+    char infoLog[1024];
+    if (type != "PROGRAM")
+    {
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &hasCompiled);
+        if (hasCompiled == GL_FALSE)
+        {
+            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+            std::cout << "SHADER_COMPILAATION_ERROR for: " << type << std::endl
+                << path << std::endl
+                << infoLog << "\n" << std::endl;
+        }
+    }
+    else
+    {
+        glGetProgramiv(shader, GL_COMPILE_STATUS, &hasCompiled);
+        if (hasCompiled == GL_FALSE)
+        {
+            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+            std::cout << "SHADER_LINKING_ERROR for:" << type << std::endl
+                << path << std::endl
+                << infoLog << "\n" << std::endl;
+        }
+    }
 }
 
-Shader::Shader(const char* vertexFile, const char* fragmentFile)
+Shader::Shader(std::string shaderName)
 {
-    std::string vertexCode = get_file_contents(vertexFile);
-    std::string fragmentCode = get_file_contents(fragmentFile);
+    std::string vertexCode = GetFileContents("res/shaders/" + shaderName + ".vert");
+    std::string fragmentCode = GetFileContents("res/shaders/" + shaderName + ".frag");
 
     const char* vertexSource = vertexCode.c_str();
     const char* fragmentSource = fragmentCode.c_str();
 
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexSource, NULL);
-	glCompileShader(vertexShader);
-    compileErrors(vertexShader, "VERTEX");
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexSource, NULL);
+    glCompileShader(vertexShader);
+    CompileErrors(vertexShader, "VERTEX", shaderName);
 
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-	glCompileShader(fragmentShader);
-    compileErrors(fragmentShader, "FRAGMENT");
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+    glCompileShader(fragmentShader);
+    CompileErrors(fragmentShader, "FRAGMENT", shaderName);
 
-	ID = glCreateProgram();
-	glObjectLabel(GL_PROGRAM, ID, -1, GetFileNameFromPath(vertexFile).c_str());
-	glAttachShader(ID, vertexShader);
-	glAttachShader(ID, fragmentShader);
-	glLinkProgram(ID);
-    compileErrors(ID, "PROGRAM");
+    ID = glCreateProgram();
+    glObjectLabel(GL_PROGRAM, ID, -1, shaderName.c_str());
+    glAttachShader(ID, vertexShader);
+    glAttachShader(ID, fragmentShader);
+    glLinkProgram(ID);
+    CompileErrors(ID, "PROGRAM", shaderName);
 
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 }
 
 void Shader::Activate()
@@ -66,28 +76,4 @@ void Shader::Activate()
 Shader::~Shader()
 {
     glDeleteProgram(ID);
-}
-
-void Shader::compileErrors(unsigned int shader, const char* type)
-{
-    GLint hasCompiled;
-    char infoLog[1024];
-    if (type != "PROGRAM")
-    {
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &hasCompiled);
-        if (hasCompiled == GL_FALSE)
-        {
-            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "SHADER_COMPILAATION_ERROR for:" << type << ",log=" << infoLog << "\n" << std::endl;
-        }
-    }
-    else
-    {
-        glGetProgramiv(shader, GL_COMPILE_STATUS, &hasCompiled);
-        if (hasCompiled == GL_FALSE)
-        {
-            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "SHADER_LINKING_ERROR for:" << type << "\n" << std::endl;
-        }
-    }
 }

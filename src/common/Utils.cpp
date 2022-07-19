@@ -1,4 +1,5 @@
 #include "Utils.h"
+#include <fstream>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/matrix_decompose.hpp"
@@ -10,6 +11,23 @@ std::string GetFileNameFromPath(std::string s)
 		slash = s.find_last_of('\\');
 	auto dot = s.find_last_of('.');
 	return s.substr(slash + 1, dot - slash - 1);
+}
+
+std::string GetFileContents(std::string filename)
+{
+	std::ifstream in(filename, std::ios::binary);
+	if (in)
+	{
+		std::string contents;
+		in.seekg(0, std::ios::end);
+		contents.resize(in.tellg());
+		in.seekg(0, std::ios::beg);
+		in.read(&contents[0], contents.size());
+		in.close();
+		return(contents);
+	}
+	std::cout << "no file, name=" << filename << std::endl;
+	throw(errno);
 }
 
 void ScreenPosToWorldRay(
