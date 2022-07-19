@@ -42,7 +42,7 @@ void Scene::LoadScene(const std::string& pFile)
     std::vector<std::shared_ptr<Material>> materials;
 
     std::cout << "mNumMaterials=" << scene->mNumMaterials << std::endl;
-    for (int i = 0; i < scene->mNumMaterials; i++)
+    for (unsigned int i = 0; i < scene->mNumMaterials; i++)
     {
         aiMaterial* aimaterial = scene->mMaterials[i];
 
@@ -56,6 +56,11 @@ void Scene::LoadScene(const std::string& pFile)
             mat->texture = std::make_shared<Texture>((folder + path.data).c_str());
         }
 
+        if (AI_SUCCESS == aimaterial->GetTexture(aiTextureType_METALNESS, 0, &path))
+        {
+            mat->metallicMap = std::make_shared<Texture>((folder + path.data).c_str());
+        }
+
         if (AI_SUCCESS == aimaterial->GetTexture(aiTextureType_NORMALS, 0, &path))
         {
             mat->normalMap = std::make_shared<Texture>((folder + path.data).c_str());
@@ -65,11 +70,31 @@ void Scene::LoadScene(const std::string& pFile)
         {
             mat->color = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
         }
+
+        float metallic = 1.0f;
+        aiGetMaterialFloat(aimaterial, AI_MATKEY_METALLIC_FACTOR, &metallic);
+        mat->metallic = metallic;
+
+        float roughness = 1.0f;
+        aiGetMaterialFloat(aimaterial, AI_MATKEY_ROUGHNESS_FACTOR, &roughness);
+        mat->roughness = roughness;
+
+        float alphaCutoff = 0.0f;
+        aiGetMaterialFloat(aimaterial, "$mat.gltf.alphaCutoff", 0, 0, &alphaCutoff);
+        mat->cutoff = alphaCutoff;
+
+        unsigned int max = 1;
+        int doubleSided = 0;
+        aiGetMaterialIntegerArray(aimaterial, AI_MATKEY_TWOSIDED, &doubleSided, &max);
+        std::cout << "twosided = " << doubleSided << std::endl;
+        mat->doubleSided = doubleSided == 1 ? true : false;
+
+
         materials.push_back(mat);
     }
 
     std::cout << "mNumMeshes=" << scene->mNumMeshes << std::endl;
-    for (int i = 0; i < scene->mNumMeshes; i++)
+    for (unsigned int i = 0; i < scene->mNumMeshes; i++)
     {
         std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(scene->mMeshes[i]);
         mesh->scale = glm::vec3(scale.x, scale.y, scale.z);
@@ -153,9 +178,16 @@ void Scene::Draw()
             std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
             if (mesh->isEnabled)
             {
+                if (mesh->material->doubleSided)
+                    glDisable(GL_CULL_FACE);
+                else
+                {
+                    glEnable(GL_CULL_FACE);
+                    glCullFace(GL_BACK);
+                }
+
                 // per material setup
                 mesh->material->Setup();
-
 
                 // common setup
                 mesh->material->SetUniform("_ObjectID", i);
@@ -168,9 +200,9 @@ void Scene::Draw()
                 mesh->material->SetUniform("br_WorldToObject", mesh->worldToObject);
                 mesh->material->SetUniform("lightProjection", lightProjection);
 
-                glActiveTexture(GL_TEXTURE2);
+                mesh->material->SetUniform("shadowMap", 3);
+                glActiveTexture(GL_TEXTURE3);
                 glBindTexture(GL_TEXTURE_2D, shadowMap);
-                mesh->material->SetUniform("shadowMap", 2);
 
                 mesh->Draw();
             }

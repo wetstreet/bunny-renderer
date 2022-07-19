@@ -29,7 +29,12 @@ public:
     glm::vec4 color = glm::vec4(1, 1, 1, 1);
     float metallic = 0.0f;
     float roughness = 0.5f;
+    float cutoff = 0.5f;
+
+    bool doubleSided = false;
+
 	std::shared_ptr<Texture> texture;
+    std::shared_ptr<Texture> metallicMap;
     std::shared_ptr<Texture> normalMap;
 
     const int MaterialIndex = -1;
@@ -209,16 +214,21 @@ public:
         shader->Activate();
 
         std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
-        tex->texUnit(*shader, "tex0", 0);
+        tex->texUnit(*shader, "albedoMap", 0);
         tex->Bind(GL_TEXTURE0);
 
         std::shared_ptr<Texture> normal = normalMap != nullptr ? normalMap : Texture::normal_tex;
         normal->texUnit(*shader, "normalMap", 1);
         normal->Bind(GL_TEXTURE1);
 
+        std::shared_ptr<Texture> metal = metallicMap != nullptr ? metallicMap : Texture::white_tex;
+        metal->texUnit(*shader, "metalMap", 2);
+        metal->Bind(GL_TEXTURE2);
+
         glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
         glUniform1f(glGetUniformLocation(shader->ID, "_Metallic"), metallic);
         glUniform1f(glGetUniformLocation(shader->ID, "_Roughness"), roughness);
+        glUniform1f(glGetUniformLocation(shader->ID, "_Cutoff"), cutoff);
     }
 
     virtual Varying vertex(Vertex i)
@@ -260,11 +270,17 @@ public:
         ImGui::SliderFloat("Metallic", &metallic, 0, 1);
         ImGui::SliderFloat("Roughness", &roughness, 0, 1);
 
+        ImGui::Checkbox("Double Sided", &doubleSided);
+
         DrawTextureUI(texture, [this](const char* path) { texture = std::make_shared<Texture>(path); }, [this]() { texture = nullptr; });
 
         ImGui::Separator();
 
-        DrawTextureUI(normalMap, [this](const char* path) { normalMap = std::make_shared<Texture>(path); }, [this]() { normalMap = nullptr; }, 1);
+        DrawTextureUI(metallicMap, [this](const char* path) { metallicMap = std::make_shared<Texture>(path); }, [this]() { metallicMap = nullptr; }, 1);
+
+        ImGui::Separator();
+
+        DrawTextureUI(normalMap, [this](const char* path) { normalMap = std::make_shared<Texture>(path); }, [this]() { normalMap = nullptr; }, 2);
     }
 };
 

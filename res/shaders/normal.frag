@@ -11,6 +11,7 @@ in vec4 posLight;
 uniform vec4 _Color;
 uniform float _Metallic;
 uniform float _Roughness;
+uniform float _Cutoff;
 
 uniform vec3 _AmbientColor;
 uniform int _ObjectID;
@@ -18,8 +19,9 @@ uniform vec3 _WorldSpaceCameraPos;
 uniform vec3 _MainLightPosition;
 uniform vec3 _MainLightColor;
 
-uniform sampler2D tex0;
+uniform sampler2D albedoMap;
 uniform sampler2D normalMap;
+uniform sampler2D metalMap;
 uniform sampler2D shadowMap;
 
 float calcSoftShadow(vec3 normal)
@@ -93,8 +95,12 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 vec3 LightingPhysicallyBased(vec3 N, vec3 V, vec3 albedo, vec3 lightColor, vec3 lightDirectionWS, float lightAttenuation)
 {
+	vec4 metalMapColor = texture(metalMap, texCoord);
+	float metallic = metalMapColor.b * _Metallic;
+	float roughness = metalMapColor.g * _Roughness;
+
     vec3 F0 = vec3(0.04);
-    F0 = mix(F0, albedo, _Metallic);
+    F0 = mix(F0, albedo, metallic);
 
 	// calculate radiance
 	vec3 L = lightDirectionWS;
@@ -103,30 +109,36 @@ vec3 LightingPhysicallyBased(vec3 N, vec3 V, vec3 albedo, vec3 lightColor, vec3 
 
 	// cook-torrance brdf
 	vec3 H = normalize(V + lightDirectionWS);
-	float NDF = DistributionGGX(N, H, _Roughness);
-	float G = GeometrySmith(N, V, L, _Roughness);
+	float NDF = DistributionGGX(N, H, roughness);
+	float G = GeometrySmith(N, V, L, roughness);
 	vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 	
 	vec3 kS = F;
 	vec3 kD = vec3(1.0) - kS;
-	kD *= 1.0 - _Metallic;
+	kD *= 1.0 - metallic;
 	
 	vec3 numerator = NDF * G * F;
 	float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
 	vec3 specular = numerator / denominator;
 
-	vec3 brdf = kD * albedo + specular;
+	vec3 brdf = kD * albedo / PI + max(specular, 0);
 	return brdf * radiance;
 }
 
 void main()
 {
+	vec4 albedo = texture(albedoMap, texCoord);
+	albedo.rgb *= _Color.rgb;
+	
+    if(albedo.a < _Cutoff)
+        discard;
+
 	vec3 normal = texture(normalMap, texCoord).rgb;
 	normal = normal * 2.0 - 1.0;
 	normal = normalize(TBN * normal);
 
-	vec4 albedo = texture(tex0, texCoord);
-	albedo.rgb *= _Color.rgb;
+	if (!gl_FrontFacing)
+		normal = -normal;
 	
 	float shadow = calcSoftShadow(normal);
 
@@ -136,6 +148,9 @@ void main()
 	vec3 color = LightingPhysicallyBased(normal, V, albedo.rgb, _MainLightColor, _MainLightPosition, 1.0 - shadow);
 
     color += _AmbientColor.rgb * albedo.rgb;
+	
+    // color = color / (color + vec3(1.0)); // Reinhard tonemapping
+    // color = pow(color, vec3(1.0/2.2)); // gamma correction
 
 	FragColor = vec4(color, albedo.a);
 	FragColor2 = _ObjectID;
