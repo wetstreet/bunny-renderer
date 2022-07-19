@@ -8,6 +8,8 @@
 #include "imgui/imgui.h"
 #include "glm/glm.hpp"
 
+#define __DEVELOPMENT__ // use local resource path in development mode
+
 std::string GetFileNameFromPath(std::string s);
 
 std::string GetFileContents(std::string filename);

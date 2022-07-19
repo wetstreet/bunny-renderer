@@ -523,6 +523,13 @@ public:
 			showRaytraceResult = true;
 		}
 
+		ImGui::SameLine();
+		if (ImGui::Button("Reload Shader"))
+		{
+			Shader::normalShader->ReloadShader();
+			std::cout << "Reloaded Shaders." << std::endl;
+		}
+
 		ImGui::SameLine(ImGui::GetWindowWidth() - 200);
 		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 

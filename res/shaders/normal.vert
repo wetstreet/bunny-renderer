@@ -6,7 +6,8 @@ layout (location = 3) in vec3 aTangent;
 
 out vec2 texCoord;
 out mat3 TBN;
-out vec4 fragPosLight;
+out vec3 posWorld;
+out vec4 posLight;
 
 uniform mat4 br_ObjectToClip;
 uniform mat4 br_ObjectToWorld;
@@ -24,5 +25,9 @@ void main()
 
 	TBN = mat3(tangent, bitangent, normal);
 
-	fragPosLight = lightProjection * br_ObjectToWorld * vec4(aPos, 1.0);
+	vec4 worldPos = br_ObjectToWorld * vec4(aPos, 1.0);
+
+	posWorld = worldPos.xyz;
+
+	posLight = lightProjection * worldPos;
 }

@@ -11,12 +11,16 @@ class Shader
         Shader(std::string shaderName);
         ~Shader();
 
+        void ReloadShader();
+        void Activate();
+
         static void Init();
         static std::shared_ptr<Shader> unlitShader;
         static std::shared_ptr<Shader> defaultShader;
         static std::shared_ptr<Shader> normalShader;
-
-        void Activate();
+    private:
+        void LoadShader();
+        std::string shaderName;
 };
 
 #endif //__SHADER_H__

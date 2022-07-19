@@ -27,6 +27,8 @@ public:
     char name[32];
 
     glm::vec4 color = glm::vec4(1, 1, 1, 1);
+    float metallic = 0.0f;
+    float roughness = 0.5f;
 	std::shared_ptr<Texture> texture;
     std::shared_ptr<Texture> normalMap;
 
@@ -215,6 +217,8 @@ public:
         normal->Bind(GL_TEXTURE1);
 
         glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
+        glUniform1f(glGetUniformLocation(shader->ID, "_Metallic"), metallic);
+        glUniform1f(glGetUniformLocation(shader->ID, "_Roughness"), roughness);
     }
 
     virtual Varying vertex(Vertex i)
@@ -252,6 +256,9 @@ public:
     virtual void OnGUI()
     {
         ImGui::ColorEdit4("Color", (float*)&color);
+
+        ImGui::SliderFloat("Metallic", &metallic, 0, 1);
+        ImGui::SliderFloat("Roughness", &roughness, 0, 1);
 
         DrawTextureUI(texture, [this](const char* path) { texture = std::make_shared<Texture>(path); }, [this]() { texture = nullptr; });
 

@@ -156,15 +156,16 @@ void Scene::Draw()
                 // per material setup
                 mesh->material->Setup();
 
+
                 // common setup
                 mesh->material->SetUniform("_ObjectID", i);
                 mesh->material->SetUniform("_MainLightPosition", lightPos);
                 mesh->material->SetUniform("_MainLightColor", lightColor);
+                mesh->material->SetUniform("_WorldSpaceCameraPos", camera.Position);
                 mesh->material->SetUniform("_AmbientColor", ambientColor);
                 mesh->material->SetUniform("br_ObjectToClip", camera.cameraMatrix * mesh->objectToWorld);
                 mesh->material->SetUniform("br_ObjectToWorld", mesh->objectToWorld);
                 mesh->material->SetUniform("br_WorldToObject", mesh->worldToObject);
-
                 mesh->material->SetUniform("lightProjection", lightProjection);
 
                 glActiveTexture(GL_TEXTURE2);

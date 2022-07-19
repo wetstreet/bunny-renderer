@@ -1,5 +1,11 @@
 #include "Shader.h"
 
+#ifdef __DEVELOPMENT__
+std::string RESOURCE_PATH("D:/bunny-renderer/"); // local resource path
+#else
+std::string RESOURCE_PATH(""); // relative resource path
+#endif
+
 std::shared_ptr<Shader> Shader::unlitShader;
 std::shared_ptr<Shader> Shader::defaultShader;
 std::shared_ptr<Shader> Shader::normalShader;
@@ -39,10 +45,10 @@ void CompileErrors(unsigned int shader, const char* type, std::string path)
     }
 }
 
-Shader::Shader(std::string shaderName)
+void Shader::LoadShader()
 {
-    std::string vertexCode = GetFileContents("res/shaders/" + shaderName + ".vert");
-    std::string fragmentCode = GetFileContents("res/shaders/" + shaderName + ".frag");
+    std::string vertexCode = GetFileContents(RESOURCE_PATH + "res/shaders/" + shaderName + ".vert");
+    std::string fragmentCode = GetFileContents(RESOURCE_PATH + "res/shaders/" + shaderName + ".frag");
 
     const char* vertexSource = vertexCode.c_str();
     const char* fragmentSource = fragmentCode.c_str();
@@ -68,9 +74,20 @@ Shader::Shader(std::string shaderName)
     glDeleteShader(fragmentShader);
 }
 
+Shader::Shader(std::string shaderName) : shaderName(shaderName)
+{
+    LoadShader();
+}
+
 void Shader::Activate()
 {
     glUseProgram(ID);
+}
+
+void Shader::ReloadShader()
+{
+    glDeleteProgram(ID);
+    LoadShader();
 }
 
 Shader::~Shader()
