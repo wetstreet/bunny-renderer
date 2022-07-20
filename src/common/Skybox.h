@@ -1,9 +1,10 @@
 #ifndef __SKYBOX_H__
 #define __SKYBOX_H__
 
-#include "Mesh.h"
-#include "Shader.h"
 #include "Camera.h"
+
+extern float skyboxVertices[];
+extern unsigned int skyboxIndices[];
 
 class Skybox
 {
@@ -11,9 +12,12 @@ class Skybox
         Skybox();
         ~Skybox();
         void Draw(Camera &camera);
+        glm::vec4 texCube(glm::vec3 direction);
+
+        unsigned char** textures;
+        int width, height, nrChannels;
 
     private:
-        Shader *skyboxShader;
         unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
         unsigned int cubemapTexture;
 };

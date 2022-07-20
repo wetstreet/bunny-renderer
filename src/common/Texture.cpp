@@ -51,7 +51,7 @@ void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
 
 glm::vec4 Texture::tex2D(glm::vec2& uv)
 {
-	// clamp
+	// todo: clamp or repeat
 	glm::vec2 uvModified = glm::clamp(uv, vec2_zero, vec2_one);
 
 	glm::ivec2 intuv(uvModified.x * width, uvModified.y * height);

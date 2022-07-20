@@ -86,9 +86,7 @@ void Scene::LoadScene(const std::string& pFile)
         unsigned int max = 1;
         int doubleSided = 0;
         aiGetMaterialIntegerArray(aimaterial, AI_MATKEY_TWOSIDED, &doubleSided, &max);
-        std::cout << "twosided = " << doubleSided << std::endl;
         mat->doubleSided = doubleSided == 1 ? true : false;
-
 
         materials.push_back(mat);
     }

@@ -208,7 +208,7 @@ void OpenGLRenderer::Render(Scene &scene)
 
     scene.Draw();
 
-    skybox.Draw(scene.camera);
+    scene.skybox.Draw(scene.camera);
 
 	if (node_clicked != -1)
 	{

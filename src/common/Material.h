@@ -20,6 +20,7 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "Vertex.h"
+#include "Skybox.h"
 
 class Material
 {
@@ -45,12 +46,13 @@ public:
     glm::mat4 worldToObject;
     glm::vec3 lightDir;
     glm::vec3 lightColor;
+    glm::vec3 ambientColor;
 
     Material(int index) : MaterialIndex(index){}
 
     virtual void Setup() = 0;
-    virtual Varying vertex(Vertex i) = 0;
-    virtual glm::vec4 fragment(Varying& varying) = 0;
+    virtual void vertex(Vertex i, float* o) = 0;
+    virtual glm::vec4 fragment(float* o) = 0;
     virtual void OnGUI() = 0;
 
     void SetUniform(const GLchar* name, int i)
@@ -132,18 +134,18 @@ public:
         glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
     }
 
-    virtual Varying vertex(Vertex i)
+    virtual void vertex(Vertex i, float* o)
     {
-        Varying o;
-        o.uv = i.texcoord;
-        o.position = MVP * glm::vec4(i.position, 1);
-        return o;
+        Varying* varying = (Varying*)o;
+        varying->uv = i.texcoord;
+        varying->position = MVP * glm::vec4(i.position, 1);
     }
 
-    virtual glm::vec4 fragment(Varying& varying)
+    virtual glm::vec4 fragment(float* o)
     {
+        Varying* varying = (Varying*)o;
         std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
-        glm::vec4 albedo = tex->tex2D(varying.uv);
+        glm::vec4 albedo = tex->tex2D(varying->uv);
         return albedo * color;
     }
 
@@ -174,23 +176,25 @@ public:
         glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
 	}
 
-    virtual Varying vertex(Vertex i)
+    virtual void vertex(Vertex i, float* o)
     {
-        Varying o;
-        o.uv = i.texcoord;
-        o.normal = normalize(i.normal * (glm::mat3)worldToObject);
-        o.position = MVP * glm::vec4(i.position, 1);
-        return o;
+        Varying* varying = (Varying*)o;
+        varying->uv = i.texcoord;
+        varying->normal = normalize(i.normal * (glm::mat3)worldToObject);
+        varying->position = MVP * glm::vec4(i.position, 1);
     }
 
-    virtual glm::vec4 fragment(Varying& varying)
+    virtual glm::vec4 fragment(float* o)
     {
+        Varying* varying = (Varying*)o;
         std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
-        glm::vec4 albedo = tex->tex2D(varying.uv);
+        glm::vec4 albedo = tex->tex2D(varying->uv);
 
-        float nl = std::max(0.0f, glm::dot(varying.normal, lightDir));
+        float nl = std::max(0.0f, glm::dot(varying->normal, lightDir));
 
-        return albedo * color * nl;
+        glm::vec3 finalcolor = glm::vec3(albedo) * glm::vec3(color) * (lightColor * nl + ambientColor);
+
+        return glm::vec4(finalcolor, albedo.a);
     }
 
     virtual void OnGUI()
@@ -231,32 +235,31 @@ public:
         glUniform1f(glGetUniformLocation(shader->ID, "_Cutoff"), cutoff);
     }
 
-    virtual Varying vertex(Vertex i)
+    virtual void vertex(Vertex i, float* o)
     {
         using namespace glm;
         using vec3 = glm::vec3;
 
-        Varying o;
-        o.uv = i.texcoord;
-        o.position = MVP * vec4(i.position, 1);
+        Varying* varying = (Varying*)o;
+        varying->uv = i.texcoord;
+        varying->position = MVP * vec4(i.position, 1);
 
         vec3 worldNormal = normalize(i.normal * (mat3)worldToObject);
         vec3 worldTangent = normalize((mat3)objectToWorld * i.tangent);
         vec3 worldBitangent = cross(i.normal, i.tangent);
-        o.TBN = mat3(worldTangent, worldBitangent, worldNormal);
-
-        return o;
+        varying->TBN = mat3(worldTangent, worldBitangent, worldNormal);
     }
 
-    virtual glm::vec4 fragment(Varying& varying)
+    virtual glm::vec4 fragment(float* o)
     {
+        Varying* varying = (Varying*)o;
         std::shared_ptr<Texture> colorTex = texture != nullptr ? texture : Texture::white_tex;
-        glm::vec4 albedo = colorTex->tex2D(varying.uv);
+        glm::vec4 albedo = colorTex->tex2D(varying->uv);
 
         std::shared_ptr<Texture> normalTex = normalMap != nullptr ? normalMap : Texture::normal_tex;
-        glm::vec3 normal = normalTex->tex2D(varying.uv);
+        glm::vec3 normal = normalTex->tex2D(varying->uv);
         normal = normal * 2.0f - 1.0f;
-        normal = normalize(varying.TBN * normal);
+        normal = normalize(varying->TBN * normal);
 
         float nl = std::max(0.0f, glm::dot(normal, lightDir));
 
@@ -281,6 +284,44 @@ public:
         ImGui::Separator();
 
         DrawTextureUI(normalMap, [this](const char* path) { normalMap = std::make_shared<Texture>(path); }, [this]() { normalMap = nullptr; }, 2);
+    }
+};
+
+class SkyboxMaterial : public Material
+{
+public:
+    Skybox* skybox;
+
+    SkyboxMaterial() : Material(3)
+    {
+        shader = Shader::skyboxShader;
+    }
+
+    virtual void Setup()
+    {
+    }
+
+    virtual void vertex(Vertex i, float* o)
+    {
+        using namespace glm;
+        using vec3 = glm::vec3;
+
+        SkyboxVarying* varying = (SkyboxVarying*)o;
+        vec4 pos = MVP * vec4(i.position, 1);
+        varying->position = vec4(pos.x, pos.y, pos.w, pos.w);
+        varying->uv = vec3(i.position.x, i.position.y, -i.position.z);
+    }
+
+    virtual glm::vec4 fragment(float* o)
+    {
+        SkyboxVarying* varying = (SkyboxVarying*)o;
+        glm::vec3 uv = glm::normalize(varying->uv);
+        return skybox->texCube(uv);
+    }
+
+    virtual void OnGUI()
+    {
+
     }
 };
 

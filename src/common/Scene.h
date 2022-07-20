@@ -5,6 +5,7 @@
 #include "Texture.h"
 #include "Light.h"
 #include "Camera.h"
+#include "Skybox.h"
 
 class Scene
 {
@@ -12,6 +13,8 @@ class Scene
         Camera &camera;
         glm::vec3 ambientColor = glm::vec3(0.4f, 0.4f, 0.4f);
         std::vector<std::shared_ptr<Object>> objects;
+
+        Skybox skybox;
 
     public:
         Scene(Camera &camera);

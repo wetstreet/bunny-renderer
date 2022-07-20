@@ -18,6 +18,7 @@ class Shader
         static std::shared_ptr<Shader> unlitShader;
         static std::shared_ptr<Shader> defaultShader;
         static std::shared_ptr<Shader> normalShader;
+        static std::shared_ptr<Shader> skyboxShader;
     private:
         void LoadShader();
         std::string shaderName;

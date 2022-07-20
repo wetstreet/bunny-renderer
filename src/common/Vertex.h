@@ -19,4 +19,10 @@ struct Varying
     glm::mat3 TBN;
 };
 
+struct SkyboxVarying
+{
+    glm::vec4 position;
+    glm::vec3 uv;
+};
+
 #endif // __VERTEX_H__

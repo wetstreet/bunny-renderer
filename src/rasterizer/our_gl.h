@@ -28,7 +28,7 @@ glm::vec3 barycentric(glm::vec3& A, glm::vec3& B, glm::vec3& C, glm::ivec2& P)
     return glm::vec3(1.0f - (u.x + u.y) / u.z, u.x / u.z, u.y / u.z);
 }
 
-void rasterize_triangle(Varying* varys, Material& material, uint8_t* pixels, float* zbuffer, int width, int height)
+void rasterize_triangle(float* varys[], unsigned int length, Material& material, uint8_t* pixels, float* zbuffer, int width, int height, bool zwrite = true)
 {
     glm::vec2 bboxmin = glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     glm::vec2 bboxmax = glm::vec2(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -36,8 +36,9 @@ void rasterize_triangle(Varying* varys, Material& material, uint8_t* pixels, flo
     {
         for (int j = 0; j < 2; j++)
         {
-            bboxmin[j] = std::min(varys[i].position[j] / varys[i].position[3], bboxmin[j]);
-            bboxmax[j] = std::max(varys[i].position[j] / varys[i].position[3], bboxmax[j]);
+            float posAxis = varys[i][j] / varys[i][3];
+            bboxmin[j] = std::min(posAxis, bboxmin[j]);
+            bboxmax[j] = std::max(posAxis, bboxmax[j]);
         }
     }
     glm::ivec2 P;
@@ -47,51 +48,55 @@ void rasterize_triangle(Varying* varys, Material& material, uint8_t* pixels, flo
         {
             if (P.x < 0 || P.y < 0 || P.x >= width || P.y >= height) continue;
 
-            glm::vec3 A(varys[0].position / varys[0].position[3]);
-            glm::vec3 B(varys[1].position / varys[1].position[3]);
-            glm::vec3 C(varys[2].position / varys[2].position[3]);
+            glm::vec3 A(varys[0][0] / varys[0][3], varys[0][1] / varys[0][3], varys[0][2] / varys[0][3]);
+            glm::vec3 B(varys[1][0] / varys[1][3], varys[1][1] / varys[1][3], varys[1][2] / varys[1][3]);
+            glm::vec3 C(varys[2][0] / varys[2][3], varys[2][1] / varys[2][3], varys[2][2] / varys[2][3]);
             glm::vec3 c = barycentric(A, B, C, P);
 
             if (c.x < 0 || c.y < 0 || c.z < 0) continue;
+
+            int index = P.x + P.y * width;
 
             // depth interpolation
             // ref:https://www.comp.nus.edu.sg/~lowkl/publications/lowk_persp_interp_techrep.pdf (equation 12)
             float depth = 1 / (c.x / A.z + c.y / B.z + c.z / C.z);
             //float depth = c.x * A.z + c.y * B.z + c.z * C.z;
 
-            if (depth < 0 || depth > 1) continue;
-
-            int index = P.x + P.y * width;
+            if (depth < 0 || depth > 1.0001f) continue;
+            depth = glm::clamp(depth, 0.0f, 1.0f);
 
             if (depth > zbuffer[index]) continue;
 
             // perspective correct attributes interpolation
             // ref:https://www.khronos.org/registry/OpenGL/specs/es/2.0/es_full_spec_2.0.pdf (page 58 equation 3.5)
-            float weight0 = c.x / varys[0].position[3];
-            float weight1 = c.y / varys[1].position[3];
-            float weight2 = c.z / varys[2].position[3];
+            float weight0 = c.x / varys[0][3];
+            float weight1 = c.y / varys[1][3];
+            float weight2 = c.z / varys[2][3];
+            if (weight0 + weight1 + weight2 == 0)
+            {
+                std::cout << "invalid denom, skip" << std::endl;
+                continue;
+            }
             float denom = 1 / (weight0 + weight1 + weight2);
 
-            Varying o;
-            float size = sizeof(Varying) / sizeof(float);
-            float* floats_o = (float*)&o;
-            float* floats_i0 = (float*)&varys[0];
-            float* floats_i1 = (float*)&varys[1];
-            float* floats_i2 = (float*)&varys[2];
+            float* o = new float[length];
             // 0~3 is position, so index starts from 4
-            for (int i = 4; i < size; i++)
+            for (int i = 4; i < length; i++)
             {
-                floats_o[i] = (floats_i0[i] * weight0 + floats_i1[i] * weight1 + floats_i2[i] * weight2) * denom;
+                o[i] = (varys[0][i] * weight0 + varys[1][i] * weight1 + varys[2][i] * weight2) * denom;
             }
 
             glm::vec4 color = material.fragment(o);
+
+            delete[] o;
 
             pixels[index * 4] = uint8_t(color.r * 255);
             pixels[index * 4 + 1] = uint8_t(color.g * 255);
             pixels[index * 4 + 2] = uint8_t(color.b * 255);
             pixels[index * 4 + 3] = 255;
 
-            zbuffer[index] = depth;
+            if (zwrite)
+                zbuffer[index] = depth;
         }
     }
 }

@@ -12,6 +12,7 @@ class RasterizerRenderer : public Renderer
 {
     public:
         GLuint depthTexture;
+        SkyboxMaterial skyboxMaterial;
 
         RasterizerRenderer()
         {
@@ -97,6 +98,7 @@ class RasterizerRenderer : public Renderer
             glm::vec3 lightColor;
             scene.GetMainLightProperties(lightPos, lightColor);
 
+            // render scene
             for (int i = 0; i < scene.objects.size(); i++)
             {
                 std::shared_ptr<Object> object = scene.objects[i];
@@ -109,23 +111,46 @@ class RasterizerRenderer : public Renderer
                     mesh->material->worldToObject = mesh->worldToObject;
                     mesh->material->lightDir = lightPos;
                     mesh->material->lightColor = lightColor;
+                    mesh->material->ambientColor = scene.ambientColor;
 
                     for (int j = 0; j < mesh->indices.size() / 3; j++)
                     {
                         Varying varys[3];
-
+                        float* p_varys[3];
                         for (int k = 0; k < 3; k++)
                         {
                             int index = j * 3 + k;
                             Vertex vert = mesh->vertices[mesh->indices[index]];
-                            varys[k] = mesh->material->vertex(vert);
+                            mesh->material->vertex(vert, (float*)&varys[k]);
                             varys[k].position = Viewport * varys[k].position;
+                            p_varys[k] = (float*)&varys[k];
                         }
 
                         // todo : cull back face
-                        rasterize_triangle(varys, *mesh->material, pixels, zbuffer, viewport.x, viewport.y);
+                        rasterize_triangle(p_varys, sizeof(Varying) / sizeof(float), *mesh->material, pixels, zbuffer, viewport.x, viewport.y);
                     }
                 }
+            }
+
+            // render skybox
+            glm::mat4 view = glm::mat4(glm::mat3(camera.view));
+            skyboxMaterial.MVP = camera.projection * view;
+            skyboxMaterial.skybox = &scene.skybox;
+            for (int j = 0; j < 12; j++)
+            {
+                SkyboxVarying varys[3];
+                float* p_varys[3];
+                for (int k = 0; k < 3; k++)
+                {
+                    int vertIndex = skyboxIndices[j * 3 + k];
+                    glm::vec3 pos(skyboxVertices[vertIndex * 3], skyboxVertices[vertIndex * 3 + 1], skyboxVertices[vertIndex * 3 + 2]);
+                    Vertex vert;
+                    vert.position = pos;
+                    skyboxMaterial.vertex(vert, (float*)&varys[k]);
+                    varys[k].position = Viewport * varys[k].position;
+                    p_varys[k] = (float*)&varys[k];
+                }
+                rasterize_triangle(p_varys, sizeof(SkyboxVarying) / sizeof(float), skyboxMaterial, pixels, zbuffer, viewport.x, viewport.y, false);
             }
 
             RemapZBuffer(zbuffer, viewport.x, viewport.y);
