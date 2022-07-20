@@ -24,6 +24,8 @@ uniform sampler2D normalMap;
 uniform sampler2D metalMap;
 uniform sampler2D shadowMap;
 
+uniform samplerCube irradianceMap;
+
 float calcSoftShadow(vec3 normal)
 {
 	float shadow = 0.0f;
@@ -93,15 +95,9 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 LightingPhysicallyBased(vec3 N, vec3 V, vec3 albedo, vec3 lightColor, vec3 lightDirectionWS, float lightAttenuation)
+vec3 LightingPhysicallyBased(vec3 N, vec3 V, vec3 albedo, vec3 F0, float metallic, float roughness
+					, vec3 lightColor, vec3 lightDirectionWS, float lightAttenuation)
 {
-	vec4 metalMapColor = texture(metalMap, texCoord);
-	float metallic = metalMapColor.b * _Metallic;
-	float roughness = metalMapColor.g * _Roughness;
-
-    vec3 F0 = vec3(0.04);
-    F0 = mix(F0, albedo, metallic);
-
 	// calculate radiance
 	vec3 L = lightDirectionWS;
 	float NdotL = max(dot(N, L), 0.0);
@@ -128,7 +124,8 @@ vec3 LightingPhysicallyBased(vec3 N, vec3 V, vec3 albedo, vec3 lightColor, vec3 
 void main()
 {
 	vec4 albedo = texture(albedoMap, texCoord);
-	albedo.rgb *= _Color.rgb;
+	albedo.rgb = pow(albedo.rgb, vec3(2.2)); // srgb to linear
+	albedo.rgb *= pow(_Color.rgb, vec3(2.2)); // srgb to linear
 	
     if(albedo.a < _Cutoff)
         discard;
@@ -144,13 +141,26 @@ void main()
 
     vec3 N = normal;
     vec3 V = normalize(_WorldSpaceCameraPos - posWorld);
-	
-	vec3 color = LightingPhysicallyBased(normal, V, albedo.rgb, _MainLightColor, _MainLightPosition, 1.0 - shadow);
 
-    color += _AmbientColor.rgb * albedo.rgb;
-	
-    // color = color / (color + vec3(1.0)); // Reinhard tonemapping
-    // color = pow(color, vec3(1.0/2.2)); // gamma correction
+	vec4 metalMapColor = texture(metalMap, texCoord);
+	float metallic = metalMapColor.b * _Metallic;
+	float roughness = metalMapColor.g * _Roughness;
+
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, albedo.rgb, metallic);
+
+	vec3 color = LightingPhysicallyBased(normal, V, albedo.rgb, F0, metallic, roughness, _MainLightColor, _MainLightPosition, 1.0 - shadow);
+
+	// ibl diffuse
+    vec3 kS = fresnelSchlick(max(dot(N, V), 0.0), F0);
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 ambient = kD * irradiance * albedo.rgb;
+    color += ambient;
+
+    color = color / (color + vec3(1.0)); // Reinhard tonemapping
+    color = pow(color, vec3(1.0/2.2)); // gamma correction
 
 	FragColor = vec4(color, albedo.a);
 	FragColor2 = _ObjectID;

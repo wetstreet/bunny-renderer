@@ -11,6 +11,9 @@ class OpenGLRenderer : public Renderer
 
         int GetObjectID(int x, int y);
         virtual void Render(Scene &scene);
+        void GenerateIrradianceMap(Scene& scene);
+
+    public:
 	    GLuint postprocessRT;
         GLuint outlineRT;
 
@@ -23,6 +26,7 @@ class OpenGLRenderer : public Renderer
 
         GLuint postprocessFBO;
         GLuint outlineFBO;
+        GLuint captureFBO, captureRBO;
 
         unsigned int shadowMapWidth = 2048, shadowMapHeight = 2048;
 

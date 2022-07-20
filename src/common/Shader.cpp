@@ -1,4 +1,5 @@
 #include "Shader.h"
+#include <glm/gtc/type_ptr.hpp>
 
 #ifdef __DEVELOPMENT__
 std::string RESOURCE_PATH("D:/bunny-renderer/"); // local resource path
@@ -79,6 +80,23 @@ void Shader::LoadShader()
 Shader::Shader(std::string shaderName) : shaderName(shaderName)
 {
     LoadShader();
+}
+
+void Shader::SetUniform(const GLchar* name, int i)
+{
+    glUniform1i(glGetUniformLocation(ID, name), i);
+}
+void Shader::SetUniform(const GLchar* name, glm::vec3& v)
+{
+    glUniform3fv(glGetUniformLocation(ID, name), 1, (float*)&v);
+}
+void Shader::SetUniform(const GLchar* name, glm::vec4& v)
+{
+    glUniform3fv(glGetUniformLocation(ID, name), 1, (float*)&v);
+}
+void Shader::SetUniform(const GLchar* name, glm::mat4& m)
+{
+    glUniformMatrix4fv(glGetUniformLocation(ID, name), 1, GL_FALSE, glm::value_ptr(m));
 }
 
 void Shader::Activate()

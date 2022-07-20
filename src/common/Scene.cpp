@@ -202,6 +202,10 @@ void Scene::Draw()
                 glActiveTexture(GL_TEXTURE3);
                 glBindTexture(GL_TEXTURE_2D, shadowMap);
 
+                mesh->material->SetUniform("irradianceMap", 4);
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.irradianceMap);
+
                 mesh->Draw();
             }
         }

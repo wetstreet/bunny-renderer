@@ -87,12 +87,13 @@ void rasterize_triangle(float* varys[], unsigned int length, Material& material,
             }
 
             glm::vec4 color = material.fragment(o);
+            glm::vec4 clampedColor = glm::clamp(color, 0.0f, 1.0f); // no hdr, clamp color to prevent overflow
 
             delete[] o;
 
-            pixels[index * 4] = uint8_t(color.r * 255);
-            pixels[index * 4 + 1] = uint8_t(color.g * 255);
-            pixels[index * 4 + 2] = uint8_t(color.b * 255);
+            pixels[index * 4] = uint8_t(clampedColor.r * 255);
+            pixels[index * 4 + 1] = uint8_t(clampedColor.g * 255);
+            pixels[index * 4 + 2] = uint8_t(clampedColor.b * 255);
             pixels[index * 4 + 3] = 255;
 
             if (zwrite)

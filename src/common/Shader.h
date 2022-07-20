@@ -14,6 +14,11 @@ class Shader
         void ReloadShader();
         void Activate();
 
+        void SetUniform(const GLchar* name, int i);
+        void SetUniform(const GLchar* name, glm::vec3& v);
+        void SetUniform(const GLchar* name, glm::vec4& v);
+        void SetUniform(const GLchar* name, glm::mat4& m);
+
         static void Init();
         static std::shared_ptr<Shader> unlitShader;
         static std::shared_ptr<Shader> defaultShader;

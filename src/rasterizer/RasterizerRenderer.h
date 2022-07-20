@@ -31,7 +31,7 @@ class RasterizerRenderer : public Renderer
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
 
-        virtual void RasterizerRenderer::Render(Scene& scene)
+        virtual void Render(Scene& scene)
         {
             int length = viewport.x * viewport.y;
 
@@ -50,10 +50,10 @@ class RasterizerRenderer : public Renderer
             delete[] zbuffer;
             delete[] pixels;
         }
-        
+
     private:
 
-        void RasterizerRenderer::Clear(uint8_t* pixels, glm::vec3& clearColor)
+        void Clear(uint8_t* pixels, glm::vec3& clearColor)
         {
             for (int j = 0; j < viewport.y; j++)
             {
@@ -85,7 +85,7 @@ class RasterizerRenderer : public Renderer
             }
         }
 
-        void RasterizerRenderer::Rasterize(Scene& scene, uint8_t* pixels, float* zbuffer)
+        void Rasterize(Scene& scene, uint8_t* pixels, float* zbuffer)
         {
             Clear(pixels, scene.camera.clearColor);
 

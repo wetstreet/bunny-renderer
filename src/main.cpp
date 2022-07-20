@@ -59,6 +59,8 @@ int main(int argc, char* argv[]) {
 	RasterizerRenderer rasterizerRenderer;
 	RayTracerRenderer raytracer;
 
+	openglRenderer.GenerateIrradianceMap(scene);
+
 	Application app(camera, scene, openglRenderer, rasterizerRenderer, raytracer);
 
 	double lastTime = glfwGetTime();
