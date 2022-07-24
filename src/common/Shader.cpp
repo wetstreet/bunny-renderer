@@ -82,6 +82,10 @@ Shader::Shader(std::string shaderName) : shaderName(shaderName)
     LoadShader();
 }
 
+void Shader::SetUniform(const GLchar* name, float f)
+{
+    glUniform1f(glGetUniformLocation(ID, name), f);
+}
 void Shader::SetUniform(const GLchar* name, int i)
 {
     glUniform1i(glGetUniformLocation(ID, name), i);

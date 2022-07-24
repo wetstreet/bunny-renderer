@@ -59,13 +59,17 @@ public:
     {
         glUniform1i(glGetUniformLocation(shader->ID, name), i);
     }
+    void SetUniform(const GLchar* name, float f)
+    {
+        glUniform1f(glGetUniformLocation(shader->ID, name), f);
+    }
     void SetUniform(const GLchar* name, glm::vec3& v)
     {
         glUniform3fv(glGetUniformLocation(shader->ID, name), 1, (float*)&v);
     }
     void SetUniform(const GLchar* name, glm::vec4& v)
     {
-        glUniform3fv(glGetUniformLocation(shader->ID, name), 1, (float*)&v);
+        glUniform4fv(glGetUniformLocation(shader->ID, name), 1, (float*)&v);
     }
     void SetUniform(const GLchar* name, glm::mat4& m)
     {
@@ -131,7 +135,7 @@ public:
         tex->texUnit(*shader, "tex0", 0);
         tex->Bind(GL_TEXTURE0);
 
-        glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
+        SetUniform("_Color", color);
     }
 
     virtual void vertex(Vertex i, float* o)
@@ -173,7 +177,7 @@ public:
         tex->texUnit(*shader, "tex0", 0);
         tex->Bind(GL_TEXTURE0);
 
-        glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
+        SetUniform("_Color", color);
 	}
 
     virtual void vertex(Vertex i, float* o)
@@ -229,10 +233,10 @@ public:
         metal->texUnit(*shader, "metalMap", 2);
         metal->Bind(GL_TEXTURE2);
 
-        glUniform4fv(glGetUniformLocation(shader->ID, "_Color"), 1, (float*)&color);
-        glUniform1f(glGetUniformLocation(shader->ID, "_Metallic"), metallic);
-        glUniform1f(glGetUniformLocation(shader->ID, "_Roughness"), roughness);
-        glUniform1f(glGetUniformLocation(shader->ID, "_Cutoff"), cutoff);
+        SetUniform("_Color", color);
+        SetUniform("_Metallic", metallic);
+        SetUniform("_Roughness", roughness);
+        SetUniform("_Cutoff", cutoff);
     }
 
     virtual void vertex(Vertex i, float* o)

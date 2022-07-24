@@ -206,6 +206,14 @@ void Scene::Draw()
                 glActiveTexture(GL_TEXTURE4);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.irradianceMap);
 
+                mesh->material->SetUniform("prefilterMap", 5);
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.prefilterMap);
+
+                mesh->material->SetUniform("brdfLUT", 6);
+                glActiveTexture(GL_TEXTURE6);
+                glBindTexture(GL_TEXTURE_2D, skybox.brdfLUT);
+
                 mesh->Draw();
             }
         }

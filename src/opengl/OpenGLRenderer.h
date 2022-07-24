@@ -12,6 +12,8 @@ class OpenGLRenderer : public Renderer
         int GetObjectID(int x, int y);
         virtual void Render(Scene &scene);
         void GenerateIrradianceMap(Scene& scene);
+        void GeneratePrefilterMap(Scene& scene);
+        void GenerateLUT(Scene& scene);
 
     public:
 	    GLuint postprocessRT;
@@ -26,7 +28,10 @@ class OpenGLRenderer : public Renderer
 
         GLuint postprocessFBO;
         GLuint outlineFBO;
+
         GLuint captureFBO, captureRBO;
+        GLuint prefilterMap;
+        GLuint brdfLUTTexture;
 
         unsigned int shadowMapWidth = 2048, shadowMapHeight = 2048;
 

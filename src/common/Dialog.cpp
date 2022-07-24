@@ -6,11 +6,10 @@
 
 const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 {
-    //{L"PNG Files (*.png)",          L"*.png"},
-    {L"Image (*.png; *.tga; *.jpg)",       L"*.png;*.tga;*.jpg"},
-    {L"OBJ Files (*.obj)",          L"*.obj"},
-    {L"glTF Files (*.gltf)",          L"*.gltf"},
-    {L"All Documents (*.*)",        L"*.*"}
+    { L"Image (*.png; *.tga; *.jpg)",   L"*.png;*.tga;*.jpg" },
+    { L"Model Files (*.obj; *.fbx)",    L"*.obj;*.fbx" },
+    { L"glTF Files (*.gltf)",           L"*.gltf" },
+    { L"All Documents (*.*)",           L"*.*" }
 };
 
 std::string wstring2string(std::wstring wstr)

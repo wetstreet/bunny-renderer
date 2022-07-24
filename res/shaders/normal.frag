@@ -24,7 +24,10 @@ uniform sampler2D normalMap;
 uniform sampler2D metalMap;
 uniform sampler2D shadowMap;
 
+// IBL
 uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+uniform sampler2D brdfLUT;
 
 float calcSoftShadow(vec3 normal)
 {
@@ -52,11 +55,6 @@ float calcSoftShadow(vec3 normal)
 		shadow /= pow((sampleRadius * 2 + 1), 2);
 	}
 	return shadow;
-}
-
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
-{
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 const float PI = 3.14159265359;
@@ -94,6 +92,16 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 	
     return ggx1 * ggx2;
 }
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}   
 
 vec3 LightingPhysicallyBased(vec3 N, vec3 V, vec3 albedo, vec3 F0, float metallic, float roughness
 					, vec3 lightColor, vec3 lightDirectionWS, float lightAttenuation)
@@ -141,6 +149,7 @@ void main()
 
     vec3 N = normal;
     vec3 V = normalize(_WorldSpaceCameraPos - posWorld);
+    vec3 R = reflect(-V, N); 
 
 	vec4 metalMapColor = texture(metalMap, texCoord);
 	float metallic = metalMapColor.b * _Metallic;
@@ -151,12 +160,20 @@ void main()
 
 	vec3 color = LightingPhysicallyBased(normal, V, albedo.rgb, F0, metallic, roughness, _MainLightColor, _MainLightPosition, 1.0 - shadow);
 
-	// ibl diffuse
-    vec3 kS = fresnelSchlick(max(dot(N, V), 0.0), F0);
-    vec3 kD = 1.0 - kS;
+    vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 kD = 1.0 - F;
     kD *= 1.0 - metallic;
     vec3 irradiance = texture(irradianceMap, N).rgb;
-    vec3 ambient = kD * irradiance * albedo.rgb;
+    vec3 diffuse = irradiance * albedo.rgb;
+    
+    // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;    
+    vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+
+    vec3 ambient = kD * diffuse + specular;
+
     color += ambient;
 
     color = color / (color + vec3(1.0)); // Reinhard tonemapping

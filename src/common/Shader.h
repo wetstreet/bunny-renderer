@@ -14,6 +14,7 @@ class Shader
         void ReloadShader();
         void Activate();
 
+        void SetUniform(const GLchar* name, float f);
         void SetUniform(const GLchar* name, int i);
         void SetUniform(const GLchar* name, glm::vec3& v);
         void SetUniform(const GLchar* name, glm::vec4& v);

@@ -60,6 +60,8 @@ int main(int argc, char* argv[]) {
 	RayTracerRenderer raytracer;
 
 	openglRenderer.GenerateIrradianceMap(scene);
+	openglRenderer.GeneratePrefilterMap(scene);
+	openglRenderer.GenerateLUT(scene);
 
 	Application app(camera, scene, openglRenderer, rasterizerRenderer, raytracer);
 

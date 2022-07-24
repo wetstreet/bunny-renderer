@@ -527,6 +527,7 @@ public:
 		if (ImGui::Button("Reload Shader"))
 		{
 			Shader::normalShader->ReloadShader();
+			Shader::skyboxShader->ReloadShader();
 			std::cout << "Reloaded Shaders." << std::endl;
 		}
 
