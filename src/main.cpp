@@ -59,11 +59,12 @@ int main(int argc, char* argv[]) {
 	RasterizerRenderer rasterizerRenderer;
 	RayTracerRenderer raytracer;
 
+	Application app(camera, scene, openglRenderer, rasterizerRenderer, raytracer);
+
+	openglRenderer.GenerateCubemapFromEquirectangular(scene);
 	openglRenderer.GenerateIrradianceMap(scene);
 	openglRenderer.GeneratePrefilterMap(scene);
-	openglRenderer.GenerateLUT(scene);
-
-	Application app(camera, scene, openglRenderer, rasterizerRenderer, raytracer);
+	openglRenderer.GenerateBrdfLUT(scene);
 
 	double lastTime = glfwGetTime();
 

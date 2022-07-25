@@ -6,9 +6,10 @@
 
 const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 {
-    { L"Image (*.png; *.tga; *.jpg)",   L"*.png;*.tga;*.jpg" },
+    { L"Image (*.png; *.tga; *.jpg; *.exr; *.hdr)",   L"*.png;*.tga;*.jpg;*.exr;*.hdr" },
     { L"Model Files (*.obj; *.fbx)",    L"*.obj;*.fbx" },
     { L"glTF Files (*.gltf)",           L"*.gltf" },
+    { L"HDRI (*.exr; *.hdr)",   L"*.exr;*.hdr" },
     { L"All Documents (*.*)",           L"*.*" }
 };
 

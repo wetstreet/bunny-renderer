@@ -4,6 +4,8 @@
 
 Scene::Scene(Camera &camera) : camera(camera)
 {
+    equirectangular = std::make_shared<Texture>(RESOURCE_PATH + "res/obj/Panorama.hdr", GL_FLOAT, GL_CLAMP_TO_EDGE, false);
+
     AddObject(std::make_shared<DirectionalLight>());
 }
 

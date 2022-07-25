@@ -11,9 +11,11 @@ class OpenGLRenderer : public Renderer
 
         int GetObjectID(int x, int y);
         virtual void Render(Scene &scene);
+
+        void GenerateCubemapFromEquirectangular(Scene& scene);
         void GenerateIrradianceMap(Scene& scene);
         void GeneratePrefilterMap(Scene& scene);
-        void GenerateLUT(Scene& scene);
+        void GenerateBrdfLUT(Scene& scene);
 
     public:
 	    GLuint postprocessRT;
@@ -30,6 +32,8 @@ class OpenGLRenderer : public Renderer
         GLuint outlineFBO;
 
         GLuint captureFBO, captureRBO;
+        GLuint envCubemap;
+        GLuint irradianceMap;
         GLuint prefilterMap;
         GLuint brdfLUTTexture;
 
@@ -37,6 +41,10 @@ class OpenGLRenderer : public Renderer
 
         GLuint shadowMap;
         GLuint shadowMapFBO;
+
+        std::shared_ptr<Shader> equirectangularShader;
+        std::shared_ptr<Shader> irradianceShader;
+        std::shared_ptr<Shader> prefilterShader;
 
         std::shared_ptr<Shader> shadowMapShader;
 

@@ -13,32 +13,36 @@ void Texture::Init()
 	normal_tex = std::make_shared<Texture>("res/obj/normal_texture.png");
 }
 
-Texture::Texture(const char* image)
-	: path(image)
+Texture::Texture(std::string path, GLenum type, GLenum wrap, bool mipmap) : path(path)
 {
 	name = GetFileNameFromPath(path);
 
 	stbi_set_flip_vertically_on_load(true);
-	bytes = stbi_load(image, &width, &height, &numColCh, 0);
+	if (type == GL_FLOAT)
+		data = stbi_loadf(path.c_str(), &width, &height, &numColCh, 0);
+	else
+		bytes = stbi_load(path.c_str(), &width, &height, &numColCh, 0);
 	//std::cout << "Load texture "<< name <<", channl count is " << numColCh << std::endl;
-
-	GLenum format = GL_RGB;
-	if (numColCh == 4)
-		format = GL_RGBA;
 
 	glGenTextures(1, &ID);
 	glBindTexture(GL_TEXTURE_2D, ID);
 
 	glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(path).c_str());
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	GLenum format = numColCh == 4 ? GL_RGBA : GL_RGB;
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, format, GL_UNSIGNED_BYTE, bytes);
-	glGenerateMipmap(GL_TEXTURE_2D);
+	if (type == GL_FLOAT)
+		glTexImage2D(GL_TEXTURE_2D, 0, numColCh == 4 ? GL_RGBA16F : GL_RGB16F, width, height, 0, format, type, data);
+	else
+		glTexImage2D(GL_TEXTURE_2D, 0, numColCh == 4 ? GL_RGBA8 : GL_RGB8, width, height, 0, format, type, bytes);
+
+	if (mipmap)
+		glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -68,6 +72,11 @@ void Texture::Bind(GLenum slot)
 
 Texture::~Texture()
 {
-	stbi_image_free(bytes);
+	if (bytes)
+		stbi_image_free(bytes);
+
+	if (data)
+		stbi_image_free(data);
+
 	glDeleteTextures(1, &ID);
 }

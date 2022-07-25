@@ -8,11 +8,12 @@
 #include "imgui/imgui.h"
 #include "glm/glm.hpp"
 
-#define __DEVELOPMENT__ // use local resource path in development mode
+#define __DEVELOPMENT__
+extern std::string RESOURCE_PATH; // use local resource path in development mode
 
-std::string GetFileNameFromPath(std::string s);
+std::string GetFileNameFromPath(const std::string& s);
 
-std::string GetFileContents(std::string filename);
+std::string GetFileContents(const std::string& filename);
 
 void ScreenPosToWorldRay(
 	int mouseX, int mouseY,             // Mouse position, in pixels, from bottom-left corner of the window

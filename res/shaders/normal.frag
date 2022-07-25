@@ -176,7 +176,7 @@ void main()
 
     color += ambient;
 
-    color = color / (color + vec3(1.0)); // Reinhard tonemapping
+    // color = color / (color + vec3(1.0)); // Reinhard tonemapping
     color = pow(color, vec3(1.0/2.2)); // gamma correction
 
 	FragColor = vec4(color, albedo.a);

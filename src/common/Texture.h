@@ -14,15 +14,15 @@ class Texture
         std::string name;
         std::string path;
 
-        unsigned char* bytes;
+        unsigned char* bytes = nullptr;
+        float* data = nullptr;
         int width, height, numColCh;
-        Texture(const char* image);
+        Texture(std::string path, GLenum type = GL_UNSIGNED_BYTE, GLenum wrap = GL_REPEAT, bool mipmap = true);
         ~Texture();
 
         glm::vec4 tex2D(glm::vec2& uv);
         void texUnit(Shader& shader, const char* uniform, GLuint unit);
         void Bind(GLenum slot);
-        void Unbind();
 
         static void Init();
         static std::shared_ptr<Texture> white_tex;
@@ -31,7 +31,6 @@ class Texture
     private:
         static glm::vec2 vec2_zero;
         static glm::vec2 vec2_one;
-        GLenum slot;
 };
 
 #endif //__TEXTURE_H__

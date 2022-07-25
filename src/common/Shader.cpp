@@ -1,12 +1,6 @@
 #include "Shader.h"
 #include <glm/gtc/type_ptr.hpp>
 
-#ifdef __DEVELOPMENT__
-std::string RESOURCE_PATH("D:/bunny-renderer/"); // local resource path
-#else
-std::string RESOURCE_PATH(""); // relative resource path
-#endif
-
 std::shared_ptr<Shader> Shader::unlitShader;
 std::shared_ptr<Shader> Shader::defaultShader;
 std::shared_ptr<Shader> Shader::normalShader;

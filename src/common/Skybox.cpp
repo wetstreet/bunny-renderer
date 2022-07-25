@@ -93,6 +93,7 @@ Skybox::~Skybox()
 {
 	for (unsigned int i = 0; i < 6; i++)
 		stbi_image_free(textures[i]);
+	delete[] textures;
 }
 
 void Skybox::Bind(GLuint slot)

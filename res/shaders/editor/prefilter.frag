@@ -63,8 +63,7 @@ void main()
         float NdotL = max(dot(N, L), 0.0);
         if(NdotL > 0.0)
         {
-            vec3 envColor = texture(environmentMap, L).rgb;
-            prefilteredColor += pow(envColor, vec3(2.2)) * NdotL;
+            prefilteredColor += texture(environmentMap, L).rgb * NdotL;
             totalWeight      += NdotL;
         }
     }

@@ -4,7 +4,13 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/matrix_decompose.hpp"
 
-std::string GetFileNameFromPath(std::string s)
+#ifdef __DEVELOPMENT__
+std::string RESOURCE_PATH("D:/bunny-renderer/"); // local resource path
+#else
+std::string RESOURCE_PATH(""); // relative resource path
+#endif
+
+std::string GetFileNameFromPath(const std::string& s)
 {
 	auto slash = s.find_last_of('/');
 	if (slash == -1)
@@ -13,7 +19,7 @@ std::string GetFileNameFromPath(std::string s)
 	return s.substr(slash + 1, dot - slash - 1);
 }
 
-std::string GetFileContents(std::string filename)
+std::string GetFileContents(const std::string& filename)
 {
 	std::ifstream in(filename, std::ios::binary);
 	if (in)

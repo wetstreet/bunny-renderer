@@ -81,7 +81,7 @@ void rasterize_triangle(float* varys[], unsigned int length, Material& material,
 
             float* o = new float[length];
             // 0~3 is position, so index starts from 4
-            for (int i = 4; i < length; i++)
+            for (unsigned int i = 4; i < length; i++)
             {
                 o[i] = (varys[0][i] * weight0 + varys[1][i] * weight1 + varys[2][i] * weight2) * denom;
             }

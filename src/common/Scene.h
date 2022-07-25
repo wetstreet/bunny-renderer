@@ -16,6 +16,10 @@ class Scene
 
         Skybox skybox;
 
+        GLuint shadowMap;
+
+        std::shared_ptr<Texture> equirectangular;
+
     public:
         Scene(Camera &camera);
         ~Scene();
@@ -27,8 +31,6 @@ class Scene
         glm::mat4 GetLightMatrix();
 
         void UpdateMatrices();
-
-        GLuint shadowMap;
 
         void Draw();
         int AddObject(std::shared_ptr<Object>);
