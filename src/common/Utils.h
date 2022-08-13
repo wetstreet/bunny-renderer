@@ -13,6 +13,8 @@ extern std::string RESOURCE_PATH; // use local resource path in development mode
 
 std::string GetFileNameFromPath(const std::string& s);
 
+std::string GetSuffix(const std::string& s);
+
 std::string GetFileContents(const std::string& filename);
 
 void ScreenPosToWorldRay(

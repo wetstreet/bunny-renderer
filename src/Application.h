@@ -449,6 +449,18 @@ public:
 
 		ImGui::ColorEdit3("Ambient", (float*)&scene.ambientColor);
 
+		if (ImGui::ImageButton((ImTextureID)(intptr_t)scene.equirectangular->ID, ImVec2(200, 100), ImVec2(0, 1), ImVec2(1, 0)))
+		{
+			std::string s = OpenFileDialog(4);
+			if (s.size() > 0)
+			{
+				std::cout << s << std::endl;
+				scene.equirectangular = std::make_shared<Texture>(s, GL_FLOAT, GL_CLAMP_TO_EDGE, false);
+				openglRenderer.GenerateCubemapFromEquirectangular(scene);
+				openglRenderer.GenerateIrradianceMap(scene);
+				openglRenderer.GeneratePrefilterMap(scene);
+			}
+		}
 
 		if (ImGui::CollapsingHeader("Scene Camera", ImGuiTreeNodeFlags_DefaultOpen))
 		{

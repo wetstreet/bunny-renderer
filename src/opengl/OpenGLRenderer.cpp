@@ -222,6 +222,9 @@ void OpenGLRenderer::GenerateCubemapFromEquirectangular(Scene& scene)
 		scene.skybox.DrawMesh();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 }
 
 void OpenGLRenderer::GenerateIrradianceMap(Scene& scene)
@@ -231,6 +234,7 @@ void OpenGLRenderer::GenerateIrradianceMap(Scene& scene)
 	irradianceShader->SetUniform("projection", captureProjection);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
@@ -258,6 +262,7 @@ void OpenGLRenderer::GeneratePrefilterMap(Scene& scene)
 	prefilterShader->SetUniform("projection", captureProjection);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 	unsigned int maxMipLevels = 5;
@@ -392,7 +397,7 @@ void OpenGLRenderer::Render(Scene &scene)
 	Shader::skyboxShader->SetUniform("view", scene.camera.view);
 	Shader::skyboxShader->SetUniform("projection", scene.camera.projection);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, scene.skybox.showIrradianceMap ? scene.skybox.irradianceMap : envCubemap);
 	scene.skybox.DrawMesh();
 
     //scene.skybox.Draw(scene.camera);

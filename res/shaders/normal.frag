@@ -161,10 +161,9 @@ void main()
 	vec3 color = LightingPhysicallyBased(normal, V, albedo.rgb, F0, metallic, roughness, _MainLightColor, _MainLightPosition, 1.0 - shadow);
 
     vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-    vec3 kD = 1.0 - F;
-    kD *= 1.0 - metallic;
+    vec3 kD = (1.0 - F) * (1.0 - F0);
     vec3 irradiance = texture(irradianceMap, N).rgb;
-    vec3 diffuse = irradiance * albedo.rgb;
+    vec3 diffuse = kD * irradiance * albedo.rgb;
     
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     const float MAX_REFLECTION_LOD = 4.0;
@@ -172,8 +171,8 @@ void main()
     vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
-    vec3 ambient = kD * diffuse + specular;
-
+    vec3 ambient = diffuse + specular ;
+	
     color += ambient;
 
     // color = color / (color + vec3(1.0)); // Reinhard tonemapping

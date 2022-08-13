@@ -49,6 +49,9 @@ message(STATUS "Found ASSIMP in ${ASSIMP_INCLUDE_DIR}")
 # STB_IMAGE
 add_library(STB_IMAGE "thirdparty/stb_image.cpp")
 
+# tinyexr
+add_library(TINYEXR "thirdparty/tinyexr.cpp" "thirdparty/miniz.c")
+
 # GLAD
 add_library(GLAD "thirdparty/glad.c")
 
@@ -64,7 +67,7 @@ find_library(PROPSYS Propsys.lib)
 find_library(SHLWAPI Shlwapi.lib)
 
 # Put all libraries into a variable
-set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE IMGUIZMO ${COMCTL32} ${PROPSYS} ${SHLWAPI})
+set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE TINYEXR IMGUIZMO ${COMCTL32} ${PROPSYS} ${SHLWAPI})
 
 # Define the include DIRs
 include_directories(

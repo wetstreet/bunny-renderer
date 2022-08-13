@@ -19,6 +19,12 @@ std::string GetFileNameFromPath(const std::string& s)
 	return s.substr(slash + 1, dot - slash - 1);
 }
 
+std::string GetSuffix(const std::string& s)
+{
+	auto dot = s.find_last_of('.');
+	return s.substr(dot + 1, s.length() - dot - 1);
+}
+
 std::string GetFileContents(const std::string& filename)
 {
 	std::ifstream in(filename, std::ios::binary);
