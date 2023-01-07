@@ -82,7 +82,7 @@ void Mesh::InitMesh(const aiMesh* model) {
 }
 
 Mesh::Mesh(const aiMesh* model)
-    : path("no path"), material(std::make_shared<DiffuseMaterial>())
+    : path("no path"), material(std::make_shared<PBRMaterial>())
 {
     SetName(model->mName.data);
     InitMesh(model);
@@ -91,7 +91,7 @@ Mesh::Mesh(const aiMesh* model)
 }
 
 Mesh::Mesh(const char *path)
-    : path(path), material(std::make_shared<DiffuseMaterial>())
+    : path(path), material(std::make_shared<PBRMaterial>())
 {
     SetName(GetFileNameFromPath(path).c_str());
     LoadMesh(path);

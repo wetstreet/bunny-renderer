@@ -265,7 +265,7 @@ public:
 				if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					int item_current_idx = mesh->material->MaterialIndex;
-					static char* items[] = { "Unlit", "Diffuse", "Normal" };
+					static char* items[] = { "Unlit", "PBR" };
 					ImGui::Combo("Shader", &item_current_idx, items, IM_ARRAYSIZE(items));
 					if (item_current_idx != mesh->material->MaterialIndex)
 					{
@@ -277,10 +277,7 @@ public:
 							mesh->material = std::make_shared<UnlitMaterial>();
 							break;
 						case 1:
-							mesh->material = std::make_shared<DiffuseMaterial>();
-							break;
-						case 2:
-							mesh->material = std::make_shared<NormalMaterial>();
+							mesh->material = std::make_shared<PBRMaterial>();
 							break;
 						}
 						mesh->material->color = oldMat->color;
@@ -538,8 +535,7 @@ public:
 		ImGui::SameLine();
 		if (ImGui::Button("Reload Shader"))
 		{
-			Shader::defaultShader->ReloadShader();
-			Shader::normalShader->ReloadShader();
+			Shader::pbrShader->ReloadShader();
 			Shader::skyboxShader->ReloadShader();
 			std::cout << "Reloaded Shaders." << std::endl;
 		}

@@ -161,60 +161,12 @@ public:
     }
 };
 
-class DiffuseMaterial : public Material
+class PBRMaterial : public Material
 {
 public:
-    DiffuseMaterial() : Material(1)
-	{
-		shader = Shader::defaultShader;
-	}
-
-	virtual void Setup()
-	{
-        shader->Activate();
-
-        std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
-        tex->texUnit(*shader, "tex0", 0);
-        tex->Bind(GL_TEXTURE0);
-
-        SetUniform("_Color", color);
-	}
-
-    virtual void vertex(Vertex i, float* o)
+    PBRMaterial() : Material(1)
     {
-        Varying* varying = (Varying*)o;
-        varying->uv = i.texcoord;
-        varying->normal = normalize(i.normal * (glm::mat3)worldToObject);
-        varying->position = MVP * glm::vec4(i.position, 1);
-    }
-
-    virtual glm::vec4 fragment(float* o)
-    {
-        Varying* varying = (Varying*)o;
-        std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
-        glm::vec4 albedo = tex->tex2D(varying->uv);
-
-        float nl = std::max(0.0f, glm::dot(varying->normal, lightDir));
-
-        glm::vec3 finalcolor = glm::vec3(albedo) * glm::vec3(color) * (lightColor * nl + ambientColor);
-
-        return glm::vec4(finalcolor, albedo.a);
-    }
-
-    virtual void OnGUI()
-    {
-        ImGui::ColorEdit4("Color", (float*)&color);
-
-        DrawTextureUI(texture, [this](const char* path) {texture = std::make_shared<Texture>(path); }, [this]() {texture = nullptr; });
-    }
-};
-
-class NormalMaterial : public Material
-{
-public:
-    NormalMaterial() : Material(2)
-    {
-        shader = Shader::normalShader;
+        shader = Shader::pbrShader;
     }
 
     virtual void Setup()

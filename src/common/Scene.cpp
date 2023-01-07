@@ -48,7 +48,7 @@ void Scene::LoadScene(const std::string& pFile)
     {
         aiMaterial* aimaterial = scene->mMaterials[i];
 
-        auto mat = std::make_shared<NormalMaterial>();
+        auto mat = std::make_shared<PBRMaterial>();
 
         aiString path;
         aiColor4D diffuse;

@@ -2,15 +2,13 @@
 #include <glm/gtc/type_ptr.hpp>
 
 std::shared_ptr<Shader> Shader::unlitShader;
-std::shared_ptr<Shader> Shader::defaultShader;
-std::shared_ptr<Shader> Shader::normalShader;
+std::shared_ptr<Shader> Shader::pbrShader;
 std::shared_ptr<Shader> Shader::skyboxShader;
 
 void Shader::Init()
 {
     unlitShader = std::make_shared<Shader>("unlit");
-    defaultShader = std::make_shared<Shader>("default");
-    normalShader = std::make_shared<Shader>("normal");
+    pbrShader = std::make_shared<Shader>("pbr");
     skyboxShader = std::make_shared<Shader>("skybox");
 }
 
