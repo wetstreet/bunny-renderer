@@ -225,6 +225,23 @@ void OpenGLRenderer::GenerateCubemapFromEquirectangular(Scene& scene)
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	scene.skybox.textures_f = new float* [6];
+
+
+	for (int i = 0; i < 6; i++)
+	{
+		scene.skybox.textures_f[i] = new float[512 * 512 * 3];
+		glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, GL_FLOAT, scene.skybox.textures_f[i]);
+
+		
+		std::stringstream ss;
+		ss << "pos_" << i << ".hdr";
+		std::string path;
+		ss >> path;
+		stbi_write_hdr(path.c_str(), 512, 512, 3, scene.skybox.textures_f[i]);
+	}
+
 }
 
 void OpenGLRenderer::GenerateIrradianceMap(Scene& scene)
@@ -252,6 +269,7 @@ void OpenGLRenderer::GenerateIrradianceMap(Scene& scene)
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	scene.skybox.envMap = envCubemap;
 	scene.skybox.irradianceMap = irradianceMap;
 }
 

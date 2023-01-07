@@ -320,7 +320,7 @@ public:
     {
         SkyboxVarying* varying = (SkyboxVarying*)o;
         glm::vec3 uv = glm::normalize(varying->uv);
-        return skybox->texCube(uv);
+        return skybox->texCube_f(uv);
     }
 
     virtual void OnGUI()

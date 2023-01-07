@@ -9,7 +9,7 @@ uniform vec4 _MainTex_TexelSize;
 // 8 tap search around the current pixel to
 // see if it borders with an object that has a
 // different object id
-const vec2 kOffsets[8] = {
+const vec2 kOffsets[8] = vec2[](
 	vec2(-1,-1),
 	vec2(0,-1),
 	vec2(1,-1),
@@ -18,7 +18,7 @@ const vec2 kOffsets[8] = {
 	vec2(-1,1),
 	vec2(0,1),
 	vec2(1,1)
-};
+);
 
 void main()
 {

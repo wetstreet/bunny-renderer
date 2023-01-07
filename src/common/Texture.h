@@ -4,6 +4,7 @@
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 #include "stb_image.h"
+#include "stb_image_write.h"
 #include "Shader.h"
 
 class Texture

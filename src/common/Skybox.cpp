@@ -195,3 +195,19 @@ glm::vec4 Skybox::texCube(glm::vec3 direction)
 	int index = intuv.x + intuv.y * width;
 	return glm::vec4(bytes[index * 3] / 255.0f, bytes[index * 3 + 1] / 255.0f, bytes[index * 3 + 2] / 255.0f, 1);
 }
+
+glm::vec4 Skybox::texCube_f(glm::vec3 direction)
+{
+	glm::vec2 uv;
+	int face_index = select_cubemap_face(glm::normalize(direction), &uv);
+
+	float* data = textures_f[face_index];
+
+	uv.x = glm::clamp(uv.x, 0.0f, 1.0f);
+	uv.y = glm::clamp(uv.y, 0.0f, 1.0f);
+
+	glm::ivec2 intuv(uv.x * 512, uv.y * 512);
+	int index = intuv.x + intuv.y * 512;
+	glm::vec4 ret(data[index * 3], data[index * 3 + 1], data[index * 3 + 2], 1);
+	return LinearToGamma(ret);
+}

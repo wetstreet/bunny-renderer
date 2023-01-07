@@ -145,7 +145,6 @@ float ai_strtof(const char *begin, const char *end) {
 
 // ---------------------------------------------------------------------------------
 ///	@fn		DecimalToHexa
-///	@brief	The portable to convert a decimal value into a hexadecimal string.
 ///	@param	toConvert   Value to convert
 ///	@return	The hexadecimal string, is empty in case of an error.
 // ---------------------------------------------------------------------------------

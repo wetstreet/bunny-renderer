@@ -84,7 +84,8 @@ void main()
 	float nl = max(dot(normal, _MainLightPosition), 0);
 	vec4 albedo = texture(tex0, texCoord);
 
-	float shadow = calcHardShadow();
+	// float shadow = calcHardShadow();
+	float shadow = 0;
 
 	vec3 color = albedo.rgb * _Color.rgb * (_MainLightColor * nl * (1.0f - shadow) + _AmbientColor.rgb);
 

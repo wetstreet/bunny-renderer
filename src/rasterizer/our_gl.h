@@ -41,6 +41,9 @@ void rasterize_triangle(float* varys[], unsigned int length, Material& material,
             bboxmax[j] = std::max(posAxis, bboxmax[j]);
         }
     }
+
+    int invalid_denom_count = 0;
+
     glm::ivec2 P;
     for (P.x = (int)bboxmin.x; P.x < bboxmax.x; P.x++)
     {
@@ -74,7 +77,7 @@ void rasterize_triangle(float* varys[], unsigned int length, Material& material,
             float weight2 = c.z / varys[2][3];
             if (weight0 + weight1 + weight2 == 0)
             {
-                std::cout << "invalid denom, skip" << std::endl;
+                invalid_denom_count++;
                 continue;
             }
             float denom = 1 / (weight0 + weight1 + weight2);
@@ -100,6 +103,7 @@ void rasterize_triangle(float* varys[], unsigned int length, Material& material,
                 zbuffer[index] = depth;
         }
     }
+    std::cout << "invalid denom cout=" << invalid_denom_count << std::endl;
 }
 
 

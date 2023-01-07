@@ -54,4 +54,8 @@ std::ostream& operator<<(std::ostream& out, ImVec2& v);
 
 std::ostream& operator<<(std::ostream& out, glm::mat4& m);
 
+float LinearToGamma(float value);
+
+glm::vec4 LinearToGamma(glm::vec4 v);
+
 #endif //__UTILS_H__

@@ -9,7 +9,7 @@ uniform vec2 _BlurDirection;
 
 // 9-tap Gaussian kernel, that blurs green & blue channels,
 // keeps red & alpha intact.
-const vec4 kCurveWeights[9] = {
+const vec4 kCurveWeights[9] = vec4[](
 	vec4(0,0.0204001988,0.0204001988,0),
 	vec4(0,0.0577929595,0.0577929595,0),
 	vec4(0,0.1215916882,0.1215916882,0),
@@ -19,7 +19,7 @@ const vec4 kCurveWeights[9] = {
 	vec4(0,0.1215916882,0.1215916882,0),
 	vec4(0,0.0577929595,0.0577929595,0),
 	vec4(0,0.0204001988,0.0204001988,0)
-};
+);
 
 void main()
 {

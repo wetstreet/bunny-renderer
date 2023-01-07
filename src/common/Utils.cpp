@@ -5,7 +5,7 @@
 #include "glm/gtx/matrix_decompose.hpp"
 
 #ifdef __DEVELOPMENT__
-std::string RESOURCE_PATH("D:/bunny-renderer/"); // local resource path
+std::string RESOURCE_PATH("../../../"); // local resource path
 #else
 std::string RESOURCE_PATH(""); // relative resource path
 #endif
@@ -357,4 +357,18 @@ std::ostream &operator<<(std::ostream &out, glm::mat4 &m)
         out << std::endl;
     }
     return out;
+}
+
+float LinearToGamma(float value)
+{
+	static float linear_to_gamma = 1 / 2.2;
+	return std::pow(value, linear_to_gamma);
+}
+
+glm::vec4 LinearToGamma(glm::vec4 v)
+{
+	v.r = LinearToGamma(v.r);
+	v.g = LinearToGamma(v.g);
+	v.b = LinearToGamma(v.b);
+	return v;
 }

@@ -216,6 +216,10 @@ void Scene::Draw()
                 glActiveTexture(GL_TEXTURE6);
                 glBindTexture(GL_TEXTURE_2D, skybox.brdfLUT);
 
+                mesh->material->SetUniform("environmentMap", 7);
+                glActiveTexture(GL_TEXTURE7);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.envMap);
+
                 mesh->Draw();
             }
         }

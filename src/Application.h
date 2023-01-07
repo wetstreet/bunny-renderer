@@ -538,6 +538,7 @@ public:
 		ImGui::SameLine();
 		if (ImGui::Button("Reload Shader"))
 		{
+			Shader::defaultShader->ReloadShader();
 			Shader::normalShader->ReloadShader();
 			Shader::skyboxShader->ReloadShader();
 			std::cout << "Reloaded Shaders." << std::endl;
