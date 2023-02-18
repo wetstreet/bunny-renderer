@@ -55,27 +55,35 @@ Texture::Texture(std::string path, GLenum type, GLenum wrap, bool mipmap) : path
 
 	//std::cout << "Load texture "<< name <<", channl count is " << numColCh << std::endl;
 
-	glGenTextures(1, &ID);
-	glBindTexture(GL_TEXTURE_2D, ID);
+	//glGenTextures(1, &ID);
+	//glBindTexture(GL_TEXTURE_2D, ID);
 
-	glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(path).c_str());
+	//glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(path).c_str());
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 
-	GLenum format = numColCh == 4 ? GL_RGBA : GL_RGB;
+	//GLenum format = numColCh == 4 ? GL_RGBA : GL_RGB;
 
-	if (data)
-		glTexImage2D(GL_TEXTURE_2D, 0, numColCh == 4 ? GL_RGBA16F : GL_RGB16F, width, height, 0, format, type, data);
-	else
-		glTexImage2D(GL_TEXTURE_2D, 0, numColCh == 4 ? GL_RGBA8 : GL_RGB8, width, height, 0, format, type, bytes);
+	//if (data)
+	//	glTexImage2D(GL_TEXTURE_2D, 0, numColCh == 4 ? GL_RGBA16F : GL_RGB16F, width, height, 0, format, type, data);
+	//else
+	//	glTexImage2D(GL_TEXTURE_2D, 0, numColCh == 4 ? GL_RGBA8 : GL_RGB8, width, height, 0, format, type, bytes);
 
-	if (mipmap)
-		glGenerateMipmap(GL_TEXTURE_2D);
+	//if (mipmap)
+	//	glGenerateMipmap(GL_TEXTURE_2D);
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	//glBindTexture(GL_TEXTURE_2D, 0);
+
+
+	//std::string name = GetFileNameFromPath(path);
+	//if (data)
+	//	Renderer::currentRenderer->RegisterTextureF(ID, name.c_str(), width, height, numColCh == 4 ? GL_RGBA16 : GL_RGB16, type, wrap, mipmap, data);
+	//else
+	//	Renderer::currentRenderer->RegisterTexture(ID, name.c_str(), width, height, numColCh == 4 ? GL_RGBA8 : GL_RGB8, type, wrap, mipmap, bytes);
+
 }
 
 void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
@@ -97,8 +105,8 @@ glm::vec4 Texture::tex2D(glm::vec2& uv)
 
 void Texture::Bind(GLenum slot)
 {
-	glActiveTexture(slot);
-    glBindTexture(GL_TEXTURE_2D, ID);
+	//glActiveTexture(slot);
+ //   glBindTexture(GL_TEXTURE_2D, ID);
 }
 
 Texture::~Texture()
@@ -109,5 +117,5 @@ Texture::~Texture()
 	if (data)
 		stbi_image_free(data);
 
-	glDeleteTextures(1, &ID);
+	//glDeleteTextures(1, &ID);
 }

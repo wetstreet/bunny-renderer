@@ -190,6 +190,59 @@ OpenGLRenderer::~OpenGLRenderer()
 {
 }
 
+void OpenGLRenderer::RegisterTexture(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, unsigned char *bytes)
+{
+	glGenTextures(1, &ID);
+	glBindTexture(GL_TEXTURE_2D, ID);
+
+	glObjectLabel(GL_TEXTURE, ID, -1, name);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+
+	GLenum internalFormat = GL_RGBA8;
+	if (format == GL_RGB)
+		internalFormat = GL_RGB8;
+
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, bytes);
+
+	if (mipmap)
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void OpenGLRenderer::RegisterTextureF(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, float* data)
+{
+	glGenTextures(1, &ID);
+	glBindTexture(GL_TEXTURE_2D, ID);
+
+	glObjectLabel(GL_TEXTURE, ID, -1, name);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+
+	GLenum internalFormat = GL_RGBA16F;
+	if (format == GL_RGB16F)
+		internalFormat = GL_RGB16F;
+
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data);
+
+	if (mipmap)
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void OpenGLRenderer::BindTexture(Texture& texture)
+{
+	glBindTexture(GL_TEXTURE_2D, texture.ID);
+}
+
 glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 glm::mat4 captureViews[] =
 {

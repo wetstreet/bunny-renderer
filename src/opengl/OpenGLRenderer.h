@@ -1,9 +1,9 @@
 #ifndef __OPENGL_RENDERER_H__
 #define __OPENGL_RENDERER_H__
 
-#include "common/Renderer.h"
+#include "common/RealtimeRenderer.h"
 
-class OpenGLRenderer : public Renderer
+class OpenGLRenderer : public RealtimeRenderer
 {
     public:
         OpenGLRenderer();
@@ -12,14 +12,18 @@ class OpenGLRenderer : public Renderer
         int GetObjectID(int x, int y);
         virtual void Render(Scene &scene);
 
-        void GenerateCubemapFromEquirectangular(Scene& scene);
-        void GenerateIrradianceMap(Scene& scene);
-        void GeneratePrefilterMap(Scene& scene);
-        void GenerateBrdfLUT(Scene& scene);
+        virtual void GenerateCubemapFromEquirectangular(Scene& scene);
+        virtual void GenerateIrradianceMap(Scene& scene);
+        virtual void GeneratePrefilterMap(Scene& scene);
+        virtual void GenerateBrdfLUT(Scene& scene);
 
+        virtual void RegisterTexture(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, unsigned char* bytes);
+        virtual void RegisterTextureF(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, float* data);
+
+        virtual void BindTexture(Texture& texture);
+
+        virtual void* GetRT() { return (void*)(intptr_t)renderTexture; };
     public:
-	    GLuint postprocessRT;
-        GLuint outlineRT;
 
     private:
         GLuint objectIdRT;

@@ -5,6 +5,8 @@
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx11.h"
 
 #include "ImGuizmo/ImGuizmo.h"
 
@@ -16,6 +18,7 @@
 #include "common/Dialog.h"
 
 #include "opengl/OpenGLRenderer.h"
+#include "d3d11/D3D11Renderer.h"
 #include "rasterizer/RasterizerRenderer.h"
 #include "raytracer/RayTracerRenderer.h"
 
@@ -55,8 +58,8 @@ void SetDarkThemeColors()
 class Application
 {
 public:
-	Application(Camera &camera, Scene &scene, OpenGLRenderer &openglRenderer, RasterizerRenderer &rasterizerRenderer, RayTracerRenderer& raytracer)
-		: camera(camera), scene(scene), openglRenderer(openglRenderer), rasterizerRenderer(rasterizerRenderer), raytracer(raytracer)
+	Application(Camera &camera, Scene &scene, RealtimeRenderer &realtimeRenderer, RasterizerRenderer &rasterizerRenderer, RayTracerRenderer& raytracer)
+		: camera(camera), scene(scene), realtimeRenderer(realtimeRenderer), rasterizerRenderer(rasterizerRenderer), raytracer(raytracer)
 	{
 	}
 
@@ -385,7 +388,7 @@ public:
 
 			if (mouseX >= 0 && mouseY >= 0 && mouseX <= viewport.x && mouseY <= viewport.y)
 			{
-				node_clicked = openglRenderer.GetObjectID(mouseX, mouseY);
+				node_clicked = realtimeRenderer.GetObjectID(mouseX, mouseY);
 				if (node_clicked != -1 && (node_clicked < 0 || node_clicked > scene.objects.size()))
 				{
 					std::cout << "mouse picking failed!, id=" << node_clicked << ",mousex=" << mouseX << ",mousey=" << mouseY << std::endl;
@@ -420,12 +423,13 @@ public:
 
 		scene.camera.windowPos = glm::ivec2(windowPos.x, windowPos.y);
 		scene.camera.viewport = glm::ivec2(viewport.x, viewport.y);
-		openglRenderer.viewport = glm::vec2(viewport.x, viewport.y);
+		realtimeRenderer.viewport = glm::vec2(viewport.x, viewport.y);
 
-		GLuint rtID = postprocess ? openglRenderer.postprocessRT : openglRenderer.renderTexture;
+		//GLuint rtID = postprocess ? realtimeRenderer.postprocessRT : realtimeRenderer.renderTexture;
 
-		// Because I use the texture from OpenGL, I need to invert the V from the UV.
-		ImGui::Image((ImTextureID)(intptr_t)rtID, viewport, ImVec2(0, 1), ImVec2(1, 0));
+		//// Because I use the texture from OpenGL, I need to invert the V from the UV.
+		//ImGui::Image((ImTextureID)(intptr_t)rtID, viewport, ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image(realtimeRenderer.GetRT(), viewport, ImVec2(0, 1), ImVec2(1, 0));
 
 		DrawGizmo();
 
@@ -446,18 +450,18 @@ public:
 
 		ImGui::ColorEdit3("Ambient", (float*)&scene.ambientColor);
 
-		if (ImGui::ImageButton((ImTextureID)(intptr_t)scene.equirectangular->ID, ImVec2(200, 100), ImVec2(0, 1), ImVec2(1, 0)))
-		{
-			std::string s = OpenFileDialog(4);
-			if (s.size() > 0)
-			{
-				std::cout << s << std::endl;
-				scene.equirectangular = std::make_shared<Texture>(s, GL_FLOAT, GL_CLAMP_TO_EDGE, false);
-				openglRenderer.GenerateCubemapFromEquirectangular(scene);
-				openglRenderer.GenerateIrradianceMap(scene);
-				openglRenderer.GeneratePrefilterMap(scene);
-			}
-		}
+		//if (ImGui::ImageButton((ImTextureID)(intptr_t)scene.equirectangular->ID, ImVec2(200, 100), ImVec2(0, 1), ImVec2(1, 0)))
+		//{
+		//	std::string s = OpenFileDialog(4);
+		//	if (s.size() > 0)
+		//	{
+		//		std::cout << s << std::endl;
+		//		scene.equirectangular = std::make_shared<Texture>(s, GL_FLOAT, GL_CLAMP_TO_EDGE, false);
+		//		realtimeRenderer.GenerateCubemapFromEquirectangular(scene);
+		//		realtimeRenderer.GenerateIrradianceMap(scene);
+		//		realtimeRenderer.GeneratePrefilterMap(scene);
+		//	}
+		//}
 
 		if (ImGui::CollapsingHeader("Scene Camera", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -581,7 +585,7 @@ public:
 private:
 	Camera &camera;
 	Scene &scene;
-	OpenGLRenderer &openglRenderer;
+	RealtimeRenderer &realtimeRenderer;
 	RasterizerRenderer &rasterizerRenderer;
 	RayTracerRenderer &raytracer;
 

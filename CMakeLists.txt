@@ -30,6 +30,16 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 # LOOK for the packages that we need! #
 #######################################
 
+# Define the include DIRs
+include_directories(
+	"${CMAKE_SOURCE_DIR}/src"
+	"${CMAKE_SOURCE_DIR}/include"
+	"${CMAKE_SOURCE_DIR}/include/imgui"
+	"${CMAKE_SOURCE_DIR}/include/glad"
+	"${CMAKE_SOURCE_DIR}/include/glm"
+	"${CMAKE_SOURCE_DIR}/include/ImGuizmo"
+)
+
 # OpenGL
 set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
@@ -68,18 +78,12 @@ add_library(IMGUIZMO "thirdparty/ImGuizmo.cpp")
 find_library(COMCTL32 Comctl32.lib)
 find_library(PROPSYS Propsys.lib)
 find_library(SHLWAPI Shlwapi.lib)
+find_library(D3D11 d3d11.lib)
+find_library(D3D11COMPILER d3dcompiler.lib)
+find_library(DXGI dxgi.lib)
 
 # Put all libraries into a variable
-set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE STB_IMAGE_WRITE TINYEXR IMGUIZMO ${COMCTL32} ${PROPSYS} ${SHLWAPI})
-
-# Define the include DIRs
-include_directories(
-	"${CMAKE_SOURCE_DIR}/src"
-	"${CMAKE_SOURCE_DIR}/include"
-	"${CMAKE_SOURCE_DIR}/include/glad"
-	"${CMAKE_SOURCE_DIR}/include/glm"
-	"${CMAKE_SOURCE_DIR}/include/ImGuizmo"
-)
+set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE STB_IMAGE_WRITE TINYEXR IMGUIZMO ${COMCTL32} ${PROPSYS} ${SHLWAPI} ${D3D11} ${D3D11COMPILER} ${DXGI})
 
 # Define the link libraries
 target_link_libraries(${PROJECT_NAME} ${LIBS})
