@@ -3,33 +3,24 @@
 
 #include "Camera.h"
 
-extern float skyboxVertices[];
-extern unsigned int skyboxIndices[];
+extern float skyboxVertices[24];
+extern unsigned int skyboxIndices[36];
 
 class Skybox
 {
     public:
         Skybox();
         ~Skybox();
-        void Bind(GLuint slot = 0);
-        void DrawMesh();
-        void Draw(Camera &camera);
         glm::vec4 texCube(glm::vec3 direction);
         glm::vec4 texCube_f(glm::vec3 direction);
-
-        bool showIrradianceMap = false;
-        unsigned int irradianceMap;
-        unsigned int envMap;
-        unsigned int prefilterMap;
-        unsigned int brdfLUT; // put it here temporarily
 
         unsigned char** textures;
         float** textures_f;
         int width, height, nrChannels;
-
-    private:
-        unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
-        unsigned int cubemapTexture;
 };
+
+typedef void(*SkyboxFunc)(Skybox*);
+extern SkyboxFunc SkyboxRegisterFunction;
+extern SkyboxFunc SkyboxUnregisterFunction;
 
 #endif // __SKYBOX_H__

@@ -1,7 +1,11 @@
 #ifndef __OPENGL_RENDERER_H__
 #define __OPENGL_RENDERER_H__
 
+#include <unordered_map>
+
 #include "common/RealtimeRenderer.h"
+#include "VBO.h"
+#include "EBO.h"
 
 class OpenGLRenderer : public RealtimeRenderer
 {
@@ -17,10 +21,20 @@ class OpenGLRenderer : public RealtimeRenderer
         virtual void GeneratePrefilterMap(Scene& scene);
         virtual void GenerateBrdfLUT(Scene& scene);
 
-        virtual void RegisterTexture(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, unsigned char* bytes);
-        virtual void RegisterTextureF(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, float* data);
+        virtual void RegisterTexture(Texture* texture);
+        virtual void RegisterMesh(Mesh* mesh);
+        virtual void RegisterSkybox(Skybox* skybox);
 
-        virtual void BindTexture(Texture& texture);
+        virtual void UnregisterTexture(Texture* texture);
+        virtual void UnregisterMesh(Mesh* mesh);
+        virtual void UnregisterSkybox(Skybox* skybox);
+
+        virtual void BindSkybox(Skybox* skybox, GLuint slot);
+        virtual void BindTexture(Texture& texture, GLuint slot);
+
+        virtual void DrawSkybox();
+        virtual void DrawScene(Scene& scene);
+        virtual void DrawMesh(Mesh& mesh);
 
         virtual void* GetRT() { return (void*)(intptr_t)renderTexture; };
     public:
@@ -40,6 +54,9 @@ class OpenGLRenderer : public RealtimeRenderer
         GLuint irradianceMap;
         GLuint prefilterMap;
         GLuint brdfLUTTexture;
+
+        unsigned int skyboxVAO;
+        unsigned int cubemapTexture;
 
         unsigned int shadowMapWidth = 2048, shadowMapHeight = 2048;
 

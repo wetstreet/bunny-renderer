@@ -3,7 +3,10 @@
 #include "stb_image.h"
 #include <string>
 
-float skyboxVertices[] =
+SkyboxFunc SkyboxRegisterFunction;
+SkyboxFunc SkyboxUnregisterFunction;
+
+float skyboxVertices[24] =
 {
 	//   Coordinates
 	-1.0f, -1.0f,  1.0f,//        7--------6
@@ -16,7 +19,7 @@ float skyboxVertices[] =
 	-1.0f,  1.0f, -1.0f
 };
 
-unsigned int skyboxIndices[] =
+unsigned int skyboxIndices[36] =
 {
 	// Right
 	1, 2, 6,
@@ -37,24 +40,9 @@ unsigned int skyboxIndices[] =
 	3, 7, 6,
 	6, 2, 3
 };
+
 Skybox::Skybox()
 {
-	//// Create VAO, VBO, and EBO for the skybox
-	//glGenVertexArrays(1, &skyboxVAO);
-	//glGenBuffers(1, &skyboxVBO);
-	//glGenBuffers(1, &skyboxEBO);
-	//glBindVertexArray(skyboxVAO);
-	//glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	//glEnableVertexAttribArray(0);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//glBindVertexArray(0);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-
 	// All the faces of the cubemap (make sure they are in this exact order)
 	std::string facesCubemap[6] =
 	{
@@ -66,27 +54,15 @@ Skybox::Skybox()
 		"res/obj/skybox/back.jpg"
 	};
 
-	//// Creates the cubemap texture object
-	//glGenTextures(1, &cubemapTexture);
-	//glObjectLabel(GL_TEXTURE, cubemapTexture, -1, "skybox");
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-	//glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//// These are very important to prevent seams
-	//glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	//// This might help with seams on some systems
-	////glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
 	// Cycles through all the textures and attaches them to the cubemap object
 	textures = new unsigned char* [6];
 	stbi_set_flip_vertically_on_load(false);
 	for (unsigned int i = 0; i < 6; i++)
 	{
 		textures[i] = stbi_load(facesCubemap[i].c_str(), &width, &height, &nrChannels, 0);
-		//glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, textures[i]);
 	}
+
+	SkyboxRegisterFunction(this);
 }
 
 Skybox::~Skybox()
@@ -94,35 +70,8 @@ Skybox::~Skybox()
 	for (unsigned int i = 0; i < 6; i++)
 		stbi_image_free(textures[i]);
 	delete[] textures;
-}
 
-void Skybox::Bind(GLuint slot)
-{
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, showIrradianceMap ? prefilterMap : cubemapTexture);
-}
-
-void Skybox::DrawMesh()
-{
-	glDisable(GL_CULL_FACE);
-	glDepthFunc(GL_LEQUAL);
-
-	glBindVertexArray(skyboxVAO);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	glDepthFunc(GL_LESS);
-}
-
-void Skybox::Draw(Camera &camera)
-{
-	Shader::skyboxShader->Activate();
-	Shader::skyboxShader->SetUniform("view", camera.view);
-	Shader::skyboxShader->SetUniform("projection", camera.projection);
-
-	Bind();
-
-	DrawMesh();
+	SkyboxUnregisterFunction(this);
 }
 
 /*

@@ -22,6 +22,9 @@
 #include "Vertex.h"
 #include "Skybox.h"
 
+typedef void(*TexBindFunc)(Texture&, unsigned int);
+extern TexBindFunc TextureBindFunction;
+
 class Material
 {
 public:
@@ -133,7 +136,7 @@ public:
 
         std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
         tex->texUnit(*shader, "tex0", 0);
-        tex->Bind(GL_TEXTURE0);
+        TextureBindFunction(*tex, 0);
 
         SetUniform("_Color", color);
     }
@@ -175,15 +178,15 @@ public:
 
         std::shared_ptr<Texture> tex = texture != nullptr ? texture : Texture::white_tex;
         tex->texUnit(*shader, "albedoMap", 0);
-        tex->Bind(GL_TEXTURE0);
+        TextureBindFunction(*tex, 0);
 
         std::shared_ptr<Texture> normal = normalMap != nullptr ? normalMap : Texture::normal_tex;
         normal->texUnit(*shader, "normalMap", 1);
-        normal->Bind(GL_TEXTURE1);
+        TextureBindFunction(*normal, 1);
 
         std::shared_ptr<Texture> metal = metallicMap != nullptr ? metallicMap : Texture::white_tex;
         metal->texUnit(*shader, "metalMap", 2);
-        metal->Bind(GL_TEXTURE2);
+        TextureBindFunction(*metal, 2);
 
         SetUniform("_Color", color);
         SetUniform("_Metallic", metallic);

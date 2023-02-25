@@ -13,8 +13,11 @@ public:
     virtual void GeneratePrefilterMap(Scene& scene) {};
     virtual void GenerateBrdfLUT(Scene& scene) {};
 
-    virtual void RegisterTexture(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, unsigned char* bytes) {};
-    virtual void RegisterTextureF(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, float* data) {};
+    virtual void RegisterTexture(Texture* texture) {};
+    virtual void UnregisterTexture(Texture* texture) {};
+
+    virtual void RegisterSkybox(Skybox* skybox) {};
+    virtual void DrawSkybox() {};
 
     virtual void BindTexture(Texture& texture) {};
 
@@ -25,6 +28,8 @@ public:
 public:
     GLuint postprocessRT;
     GLuint outlineRT;
+
+    bool showIrradianceMap = false;
 };
 
 #endif //__REALTIME_RENDERER_H__

@@ -3,6 +3,13 @@
 
 #include "common/RealtimeRenderer.h"
 
+#include <d3d11.h>
+#include <d3dcompiler.h>
+#ifdef _MSC_VER
+#pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
+#endif
+#include <tchar.h>
+
 class D3D11Renderer : public RealtimeRenderer
 {
 public:
@@ -12,24 +19,61 @@ public:
     virtual int GetObjectID(int x, int y);
     virtual void Render(Scene& scene);
 
+    bool Init(HWND hwnd);
+    bool InitRender();
+
+    bool CreateDeviceD3D(HWND hWnd);
+    void CleanupDeviceD3D();
+    void CreateRenderTarget();
+    void CleanupRenderTarget();
+
     //virtual void GenerateCubemapFromEquirectangular(Scene& scene);
     //virtual void GenerateIrradianceMap(Scene& scene);
     //virtual void GeneratePrefilterMap(Scene& scene);
     //virtual void GenerateBrdfLUT(Scene& scene);
 
-    virtual void D3D11Renderer::RegisterTexture(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, unsigned char* bytes);
-    virtual void D3D11Renderer::RegisterTextureF(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, float* data);
+    void SetRenderTarget(const float* clearColor)
+    {
+        pd3dDeviceContext->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
+        pd3dDeviceContext->ClearRenderTargetView(mainRenderTargetView, clearColor);
+    }
+
+    void Present()
+    {
+        pSwapChain->Present(0, 0); // Present without vsync
+    }
+
+    virtual void RegisterTexture(Texture* texture);
 
     virtual void BindTexture(Texture& texture);
 
-    virtual void* GetRT() { return rt; };
+    virtual void* GetRT() { return (void*)shaderResourceViewMap; };
 public:
     GLuint postprocessRT;
     GLuint outlineRT;
 
-    void* rt;
+    ID3D11Device* pd3dDevice = NULL;
+    ID3D11DeviceContext* pd3dDeviceContext = NULL;
+    IDXGISwapChain* pSwapChain = NULL;
+    ID3D11RenderTargetView* mainRenderTargetView = NULL;
+
+    ID3D11Texture2D* renderTargetTextureMap = NULL;
+    ID3D11RenderTargetView* renderTargetViewMap = NULL;
+    ID3D11ShaderResourceView* shaderResourceViewMap = NULL;
+
 
 private:
+    const unsigned int width = 1400;
+    const unsigned int height = 900;
+
+    ID3D11VertexShader* vertexShader;
+    ID3D11PixelShader* pixelShader;
+    ID3D11InputLayout* inputLayout;
+    ID3D11Buffer* vertexBuffer;
+    UINT numVerts;
+    UINT stride;
+    UINT offset;
+
     GLuint objectIdRT;
     GLuint rectVAO, rectVBO;
 

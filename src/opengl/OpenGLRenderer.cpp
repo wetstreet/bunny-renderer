@@ -190,57 +190,101 @@ OpenGLRenderer::~OpenGLRenderer()
 {
 }
 
-void OpenGLRenderer::RegisterTexture(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, unsigned char *bytes)
+void OpenGLRenderer::RegisterTexture(Texture* texture)
 {
-	glGenTextures(1, &ID);
-	glBindTexture(GL_TEXTURE_2D, ID);
+	glGenTextures(1, &texture->ID);
+	glBindTexture(GL_TEXTURE_2D, texture->ID);
 
-	glObjectLabel(GL_TEXTURE, ID, -1, name);
+	glObjectLabel(GL_TEXTURE, texture->ID, -1, texture->name.c_str());
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texture->mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texture->wrap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texture->wrap);
 
-	GLenum internalFormat = GL_RGBA8;
-	if (format == GL_RGB)
-		internalFormat = GL_RGB8;
+	GLenum format = texture->numColCh == 4 ? GL_RGBA : GL_RGB;
 
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, bytes);
+	if (texture->data)
+		glTexImage2D(GL_TEXTURE_2D, 0, texture->numColCh == 4 ? GL_RGBA16F : GL_RGB16F, texture->width, texture->height, 0, format, texture->type, texture->data);
+	else
+		glTexImage2D(GL_TEXTURE_2D, 0, texture->numColCh == 4 ? GL_RGBA8 : GL_RGB8, texture->width, texture->height, 0, format, texture->type, texture->bytes);
 
-	if (mipmap)
+	if (texture->mipmap)
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void OpenGLRenderer::RegisterTextureF(unsigned int ID, const char* name, int width, int height, GLenum format, GLenum type, GLenum wrap, bool mipmap, float* data)
+void OpenGLRenderer::UnregisterTexture(Texture* texture)
 {
-	glGenTextures(1, &ID);
-	glBindTexture(GL_TEXTURE_2D, ID);
-
-	glObjectLabel(GL_TEXTURE, ID, -1, name);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
-
-	GLenum internalFormat = GL_RGBA16F;
-	if (format == GL_RGB16F)
-		internalFormat = GL_RGB16F;
-
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data);
-
-	if (mipmap)
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glDeleteTextures(1, &texture->ID);
 }
 
-void OpenGLRenderer::BindTexture(Texture& texture)
+void OpenGLRenderer::BindTexture(Texture& texture, GLuint slot = 0)
 {
+	glActiveTexture(GL_TEXTURE0 + slot);
 	glBindTexture(GL_TEXTURE_2D, texture.ID);
+}
+
+void OpenGLRenderer::RegisterSkybox(Skybox* skybox)
+{
+	GLuint skyboxVBO, skyboxEBO;
+
+	// Create VAO, VBO, and EBO for the skybox
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glGenBuffers(1, &skyboxEBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &skyboxVBO);
+	glDeleteBuffers(1, &skyboxEBO);
+
+	// Creates the cubemap texture object
+	glGenTextures(1, &cubemapTexture);
+	glObjectLabel(GL_TEXTURE, cubemapTexture, -1, "skybox");
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// These are very important to prevent seams
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	// This might help with seams on some systems
+	//glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+	for (unsigned int i = 0; i < 6; i++)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, skybox->width, skybox->height, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox->textures[i]);
+}
+
+void OpenGLRenderer::UnregisterSkybox(Skybox* skybox)
+{
+	glDeleteVertexArrays(1, &skyboxVAO);
+}
+
+void OpenGLRenderer::BindSkybox(Skybox* skybox, GLuint slot)
+{
+	glActiveTexture(GL_TEXTURE0 + slot);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+}
+
+void OpenGLRenderer::DrawSkybox()
+{
+	glDisable(GL_CULL_FACE);
+	glDepthFunc(GL_LEQUAL);
+
+	glBindVertexArray(skyboxVAO);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	glDepthFunc(GL_LESS);
 }
 
 glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
@@ -259,7 +303,7 @@ void OpenGLRenderer::GenerateCubemapFromEquirectangular(Scene& scene)
 	equirectangularShader->Activate();
 	equirectangularShader->SetUniform("projection", captureProjection);
 	equirectangularShader->SetUniform("equirectangularMap", 0);
-	scene.equirectangular->Bind(0);
+	BindTexture(*scene.equirectangular);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
@@ -272,7 +316,7 @@ void OpenGLRenderer::GenerateCubemapFromEquirectangular(Scene& scene)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubemap, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		scene.skybox.DrawMesh();
+		DrawSkybox();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -318,12 +362,9 @@ void OpenGLRenderer::GenerateIrradianceMap(Scene& scene)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMap, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		scene.skybox.DrawMesh();
+		DrawSkybox();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	scene.skybox.envMap = envCubemap;
-	scene.skybox.irradianceMap = irradianceMap;
 }
 
 void OpenGLRenderer::GeneratePrefilterMap(Scene& scene)
@@ -354,12 +395,10 @@ void OpenGLRenderer::GeneratePrefilterMap(Scene& scene)
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMap, mip);
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			scene.skybox.DrawMesh();
+			DrawSkybox();
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	scene.skybox.prefilterMap = prefilterMap;
 }
 
 void OpenGLRenderer::GenerateBrdfLUT(Scene& scene)
@@ -380,8 +419,6 @@ void OpenGLRenderer::GenerateBrdfLUT(Scene& scene)
 	glBindVertexArray(0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	scene.skybox.brdfLUT = brdfLUTTexture;
 }
 
 int OpenGLRenderer::GetObjectID(int x, int y)
@@ -394,6 +431,106 @@ int OpenGLRenderer::GetObjectID(int x, int y)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return pixelData;
+}
+
+void LinkAttrib(VBO& vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizei stride, void* offset)
+{
+	vbo.Bind();
+	glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
+	glEnableVertexAttribArray(layout);
+	vbo.Unbind();
+}
+
+void OpenGLRenderer::RegisterMesh(Mesh* mesh)
+{
+	glGenVertexArrays(1, &mesh->ID);
+	glBindVertexArray(mesh->ID); // must bind before vbo and ebo creation
+
+	VBO vbo(mesh->vertices);
+	EBO ebo(mesh->indices);
+
+	LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), 0);
+	LinkAttrib(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(float)));
+	LinkAttrib(vbo, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    LinkAttrib(vbo, 3, 3, GL_FLOAT, sizeof(Vertex), (void*)(8 * sizeof(float)));
+	glBindVertexArray(0);
+	vbo.Unbind();
+	ebo.Unbind();
+}
+
+void OpenGLRenderer::UnregisterMesh(Mesh* mesh)
+{
+	glDeleteVertexArrays(1, &mesh->ID);
+}
+
+void OpenGLRenderer::DrawMesh(Mesh& mesh)
+{
+	glBindVertexArray(mesh.ID);
+	glDrawElements(GL_TRIANGLES, (GLsizei)mesh.indices.size(), GL_UNSIGNED_INT, 0);
+}
+
+void OpenGLRenderer::DrawScene(Scene& scene)
+{
+	glm::vec3 lightPos;
+	glm::vec3 lightColor;
+	scene.GetMainLightProperties(lightPos, lightColor);
+
+	glm::mat4 lightProjection = scene.GetLightMatrix();
+
+	for (int i = 0; i < scene.objects.size(); i++)
+	{
+		std::shared_ptr<Object> object = scene.objects[i];
+		if (object->GetType() == Type_Mesh)
+		{
+			std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
+			if (mesh->isEnabled)
+			{
+				if (mesh->material->doubleSided)
+					glDisable(GL_CULL_FACE);
+				else
+				{
+					glEnable(GL_CULL_FACE);
+					glCullFace(GL_BACK);
+				}
+
+				// per material setup
+				mesh->material->Setup();
+
+				// common setup
+				mesh->material->SetUniform("_ObjectID", i);
+				mesh->material->SetUniform("_MainLightPosition", lightPos);
+				mesh->material->SetUniform("_MainLightColor", lightColor);
+				mesh->material->SetUniform("_WorldSpaceCameraPos", scene.camera.Position);
+				mesh->material->SetUniform("_AmbientColor", scene.ambientColor);
+				mesh->material->SetUniform("br_ObjectToClip", scene.camera.cameraMatrix * mesh->objectToWorld);
+				mesh->material->SetUniform("br_ObjectToWorld", mesh->objectToWorld);
+				mesh->material->SetUniform("br_WorldToObject", mesh->worldToObject);
+				mesh->material->SetUniform("lightProjection", lightProjection);
+
+				mesh->material->SetUniform("shadowMap", 3);
+				glActiveTexture(GL_TEXTURE3);
+				glBindTexture(GL_TEXTURE_2D, shadowMap);
+
+				mesh->material->SetUniform("irradianceMap", 4);
+				glActiveTexture(GL_TEXTURE4);
+				glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
+
+				mesh->material->SetUniform("prefilterMap", 5);
+				glActiveTexture(GL_TEXTURE5);
+				glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
+
+				mesh->material->SetUniform("brdfLUT", 6);
+				glActiveTexture(GL_TEXTURE6);
+				glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+
+				mesh->material->SetUniform("environmentMap", 7);
+				glActiveTexture(GL_TEXTURE7);
+				glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+
+				DrawMesh(*mesh);
+			}
+		}
+	}
 }
 
 void OpenGLRenderer::Render(Scene &scene)
@@ -411,6 +548,7 @@ void OpenGLRenderer::Render(Scene &scene)
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
+	// render shadowmap
 	for (int i = 0; i < scene.objects.size(); i++)
 	{
 		std::shared_ptr<Object> object = scene.objects[i];
@@ -421,7 +559,7 @@ void OpenGLRenderer::Render(Scene &scene)
 			{
 				glUniformMatrix4fv(glGetUniformLocation(shadowMapShader->ID, "br_ObjectToWorld"), 1, GL_FALSE, glm::value_ptr(mesh->objectToWorld));
 
-				mesh->Draw();
+				DrawMesh(*mesh);
 			}
 		}
 	}
@@ -462,16 +600,15 @@ void OpenGLRenderer::Render(Scene &scene)
 
     scene.camera.updateMatrix(viewport.x, viewport.y);
 
-    scene.Draw();
+	DrawScene(scene);
 
 	Shader::skyboxShader->Activate();
 	Shader::skyboxShader->SetUniform("view", scene.camera.view);
 	Shader::skyboxShader->SetUniform("projection", scene.camera.projection);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, scene.skybox.showIrradianceMap ? scene.skybox.irradianceMap : envCubemap);
-	scene.skybox.DrawMesh();
-
-    //scene.skybox.Draw(scene.camera);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap); // equirectangular
+	//glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture); // 6 faces
+	DrawSkybox();
 
 	if (node_clicked != -1)
 	{
@@ -499,7 +636,7 @@ void OpenGLRenderer::Render(Scene &scene)
 			glUniform4fv(glGetUniformLocation(outlineShader->ID, "_DRAW_COLOR"), 1, (float*)&draw_color);
 			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "br_ObjectToClip"), 1, GL_FALSE, glm::value_ptr(scene.camera.cameraMatrix * mesh->objectToWorld));
 
-			mesh->Draw();
+			DrawMesh(*mesh);
 		}
 
 		glEnable(GL_BLEND);
@@ -516,7 +653,7 @@ void OpenGLRenderer::Render(Scene &scene)
 			glUniform4fv(glGetUniformLocation(outlineShader->ID, "_DRAW_COLOR"), 1, (float*)&draw_color);
 			glUniformMatrix4fv(glGetUniformLocation(outlineShader->ID, "br_ObjectToClip"), 1, GL_FALSE, glm::value_ptr(scene.camera.cameraMatrix * mesh->objectToWorld));
 
-			mesh->Draw();
+			DrawMesh(*mesh);
 		}
 
 		glDisable(GL_BLEND);

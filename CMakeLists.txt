@@ -1,27 +1,48 @@
 # Copyright (C) 2018 Tomasz Gałaj
 
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
-project(BunnyRenderer)
+project(bunny_renderer)
 
 # Add .lib files
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 # Add source files
-file(GLOB_RECURSE SOURCE_FILES 
-	${CMAKE_SOURCE_DIR}/src/*.c
-	${CMAKE_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE SOURCE_FILES_COMMON 
+	${CMAKE_SOURCE_DIR}/src/common/*.cpp
+	${CMAKE_SOURCE_DIR}/src/rasterizer/*.cpp
+	${CMAKE_SOURCE_DIR}/src/raytracer/*.cpp)
+
+file(GLOB_RECURSE SOURCE_FILES_D3D11 ${CMAKE_SOURCE_DIR}/src/d3d11/*.cpp)
+SET(SOURCE_FILES_D3D11 ${SOURCE_FILES_COMMON} ${SOURCE_FILES_D3D11} ${CMAKE_SOURCE_DIR}/src/main_d3d11.cpp)
+
+file(GLOB_RECURSE SOURCE_FILES_OPENGL ${CMAKE_SOURCE_DIR}/src/opengl/*.cpp)
+SET(SOURCE_FILES_OPENGL ${SOURCE_FILES_COMMON} ${SOURCE_FILES_OPENGL} ${CMAKE_SOURCE_DIR}/src/main_opengl.cpp)
 	
 # Add header files
 file(GLOB_RECURSE HEADER_FILES 
-	${CMAKE_SOURCE_DIR}/src/*.h
-	${CMAKE_SOURCE_DIR}/src/*.hpp)
+	${CMAKE_SOURCE_DIR}/src/*.h)
+
+file(GLOB_RECURSE HEADER_FILES_COMMON 
+	${CMAKE_SOURCE_DIR}/src/common/*.h
+	${CMAKE_SOURCE_DIR}/src/rasterizer/*.h
+	${CMAKE_SOURCE_DIR}/src/raytracer/*.h)
+
+file(GLOB_RECURSE HEADER_FILES_D3D11 ${CMAKE_SOURCE_DIR}/src/d3d11/*.h)
+SET(HEADER_FILES_D3D11 ${HEADER_FILES_COMMON} ${HEADER_FILES_D3D11})
+
+file(GLOB_RECURSE HEADER_FILES_OPENGL ${CMAKE_SOURCE_DIR}/src/opengl/*.h)
+SET(HEADER_FILES_OPENGL ${HEADER_FILES_COMMON} ${HEADER_FILES_OPENGL})
 
 # Configure assets header file
 configure_file(src/helpers/RootDir.h.in src/helpers/RootDir.h)
 include_directories(${CMAKE_BINARY_DIR}/src)
+
+SET(EXE_NAME_D3D11 ${PROJECT_NAME}_d3d11)
+SET(EXE_NAME_OPENGL ${PROJECT_NAME}_opengl)
 	
 # Define the executable
-add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
+add_executable(${EXE_NAME_D3D11} ${HEADER_FILES_D3D11} ${SOURCE_FILES_D3D11})
+add_executable(${EXE_NAME_OPENGL} ${HEADER_FILES_OPENGL} ${SOURCE_FILES_OPENGL})
 
 # We need a CMAKE_DIR with some code to find external dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -84,25 +105,41 @@ find_library(DXGI dxgi.lib)
 
 # Put all libraries into a variable
 set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} IMGUI GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE STB_IMAGE_WRITE TINYEXR IMGUIZMO ${COMCTL32} ${PROPSYS} ${SHLWAPI} ${D3D11} ${D3D11COMPILER} ${DXGI})
+set(LIBS_COMMON ${GLFW3_LIBRARY} IMGUI ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE STB_IMAGE_WRITE TINYEXR IMGUIZMO ${COMCTL32} ${PROPSYS} ${SHLWAPI})
+set(LIBS_D3D11 ${LIBS_COMMON} ${D3D11} ${D3D11COMPILER} ${DXGI})
+set(LIBS_OPENGL ${LIBS_COMMON} ${OPENGL_LIBRARY} GLAD)
 
 # Define the link libraries
-target_link_libraries(${PROJECT_NAME} ${LIBS})
+target_link_libraries(${EXE_NAME_D3D11} ${LIBS})
+target_link_libraries(${EXE_NAME_OPENGL} ${LIBS})
 
 if(WIN32)
 	# Copy dlls
-	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+	add_custom_command(TARGET ${EXE_NAME_D3D11} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		"${PROJECT_SOURCE_DIR}/dlls"
-		$<TARGET_FILE_DIR:${PROJECT_NAME}>)
+		$<TARGET_FILE_DIR:${EXE_NAME_D3D11}>)
+	add_custom_command(TARGET ${EXE_NAME_OPENGL} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${PROJECT_SOURCE_DIR}/dlls"
+		$<TARGET_FILE_DIR:${EXE_NAME_OPENGL}>)
 
 	# Copy resources
-	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+	add_custom_command(TARGET ${EXE_NAME_D3D11} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${PROJECT_SOURCE_DIR}/res"
+		"${CMAKE_BINARY_DIR}/res")
+	add_custom_command(TARGET ${EXE_NAME_OPENGL} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		"${PROJECT_SOURCE_DIR}/res"
 		"${CMAKE_BINARY_DIR}/res")
 		
 	# Copy imgui config
-	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+	add_custom_command(TARGET ${EXE_NAME_D3D11} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy
+		"${PROJECT_SOURCE_DIR}/imgui.ini"
+		"${CMAKE_BINARY_DIR}/imgui.ini")
+	add_custom_command(TARGET ${EXE_NAME_OPENGL} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy
 		"${PROJECT_SOURCE_DIR}/imgui.ini"
 		"${CMAKE_BINARY_DIR}/imgui.ini")

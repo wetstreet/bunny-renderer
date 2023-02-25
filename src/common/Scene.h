@@ -32,7 +32,6 @@ class Scene
 
         void UpdateMatrices();
 
-        void Draw();
         int AddObject(std::shared_ptr<Object>);
         void RemoveObject(int index);
         int AddPrimitive(std::string name);

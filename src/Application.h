@@ -17,8 +17,7 @@
 #include "common/Utils.h"
 #include "common/Dialog.h"
 
-#include "opengl/OpenGLRenderer.h"
-#include "d3d11/D3D11Renderer.h"
+#include "common/RealTimeRenderer.h"
 #include "rasterizer/RasterizerRenderer.h"
 #include "raytracer/RayTracerRenderer.h"
 
@@ -551,7 +550,7 @@ public:
 		//}
 
 		ImGui::SameLine();
-		ImGui::Checkbox("Show Irradiance", &scene.skybox.showIrradianceMap);
+		ImGui::Checkbox("Show Irradiance", &realtimeRenderer.showIrradianceMap);
 
 		ImGui::SameLine(ImGui::GetWindowWidth() - 200);
 		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

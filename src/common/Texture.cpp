@@ -3,6 +3,9 @@
 
 #include "tinyexr.h"
 
+TexFunc TextureRegisterFunction;
+TexFunc TextureUnregisterFunction;
+
 glm::vec2 Texture::vec2_zero = glm::vec2(0, 0); 
 glm::vec2 Texture::vec2_one = glm::vec2(1, 1);
 
@@ -13,6 +16,12 @@ void Texture::Init()
 {
 	white_tex = std::make_shared<Texture>("res/obj/white_texture.png");
 	normal_tex = std::make_shared<Texture>("res/obj/normal_texture.png");
+}
+
+void Texture::Uninit()
+{
+	white_tex = nullptr;
+	normal_tex = nullptr;
 }
 
 void FlipYTexture(const unsigned int width, const unsigned int height, float* data) {
@@ -31,6 +40,10 @@ void FlipYTexture(const unsigned int width, const unsigned int height, float* da
 Texture::Texture(std::string path, GLenum type, GLenum wrap, bool mipmap) : path(path)
 {
 	name = GetFileNameFromPath(path);
+	this->type = type;
+	this->wrap = wrap;
+	this->mipmap = mipmap;
+
 	std::string suffix = GetSuffix(path);
 	if (suffix == "exr")
 	{
@@ -53,37 +66,7 @@ Texture::Texture(std::string path, GLenum type, GLenum wrap, bool mipmap) : path
 			bytes = stbi_load(path.c_str(), &width, &height, &numColCh, 0);
 	}
 
-	//std::cout << "Load texture "<< name <<", channl count is " << numColCh << std::endl;
-
-	//glGenTextures(1, &ID);
-	//glBindTexture(GL_TEXTURE_2D, ID);
-
-	//glObjectLabel(GL_TEXTURE, ID, -1, GetFileNameFromPath(path).c_str());
-
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
-
-	//GLenum format = numColCh == 4 ? GL_RGBA : GL_RGB;
-
-	//if (data)
-	//	glTexImage2D(GL_TEXTURE_2D, 0, numColCh == 4 ? GL_RGBA16F : GL_RGB16F, width, height, 0, format, type, data);
-	//else
-	//	glTexImage2D(GL_TEXTURE_2D, 0, numColCh == 4 ? GL_RGBA8 : GL_RGB8, width, height, 0, format, type, bytes);
-
-	//if (mipmap)
-	//	glGenerateMipmap(GL_TEXTURE_2D);
-
-	//glBindTexture(GL_TEXTURE_2D, 0);
-
-
-	//std::string name = GetFileNameFromPath(path);
-	//if (data)
-	//	Renderer::currentRenderer->RegisterTextureF(ID, name.c_str(), width, height, numColCh == 4 ? GL_RGBA16 : GL_RGB16, type, wrap, mipmap, data);
-	//else
-	//	Renderer::currentRenderer->RegisterTexture(ID, name.c_str(), width, height, numColCh == 4 ? GL_RGBA8 : GL_RGB8, type, wrap, mipmap, bytes);
-
+	TextureRegisterFunction(this);
 }
 
 void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
@@ -103,12 +86,6 @@ glm::vec4 Texture::tex2D(glm::vec2& uv)
 		numColCh == 4 ? bytes[index * numColCh + 3] / 255.0f : 1);
 }
 
-void Texture::Bind(GLenum slot)
-{
-	//glActiveTexture(slot);
- //   glBindTexture(GL_TEXTURE_2D, ID);
-}
-
 Texture::~Texture()
 {
 	if (bytes)
@@ -117,5 +94,5 @@ Texture::~Texture()
 	if (data)
 		stbi_image_free(data);
 
-	//glDeleteTextures(1, &ID);
+	TextureUnregisterFunction(this);
 }

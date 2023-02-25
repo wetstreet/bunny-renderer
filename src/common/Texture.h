@@ -10,6 +10,16 @@
 class Texture
 {
     public:
+        Texture(std::string path, GLenum type = GL_UNSIGNED_BYTE, GLenum wrap = GL_REPEAT, bool mipmap = true);
+        ~Texture();
+
+        glm::vec4 tex2D(glm::vec2& uv);
+        void texUnit(Shader& shader, const char* uniform, GLuint unit);
+
+        static void Init();
+        static void Uninit();
+
+    public:
         GLuint ID;
         std::string name;
         std::string path;
@@ -17,14 +27,11 @@ class Texture
         unsigned char* bytes = nullptr;
         float* data = nullptr;
         int width, height, numColCh;
-        Texture(std::string path, GLenum type = GL_UNSIGNED_BYTE, GLenum wrap = GL_REPEAT, bool mipmap = true);
-        ~Texture();
 
-        glm::vec4 tex2D(glm::vec2& uv);
-        void texUnit(Shader& shader, const char* uniform, GLuint unit);
-        void Bind(GLenum slot);
+        bool mipmap = true;
+        GLenum wrap = GL_REPEAT;
+        GLenum type = GL_UNSIGNED_BYTE;
 
-        static void Init();
         static std::shared_ptr<Texture> white_tex;
         static std::shared_ptr<Texture> normal_tex;
 
@@ -32,5 +39,9 @@ class Texture
         static glm::vec2 vec2_zero;
         static glm::vec2 vec2_one;
 };
+
+typedef void(*TexFunc)(Texture*);
+extern TexFunc TextureRegisterFunction;
+extern TexFunc TextureUnregisterFunction;
 
 #endif //__TEXTURE_H__
