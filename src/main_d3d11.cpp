@@ -15,10 +15,14 @@ std::unique_ptr<Camera> camera;
 
 std::shared_ptr<D3D11Renderer> pD3D11Renderer;
 
-void TextureRegister(Texture* tex)
-{
-    pD3D11Renderer->RegisterTexture(tex);
-}
+void TextureRegister(Texture* tex) { pD3D11Renderer->RegisterTexture(tex); }
+void SkyboxRegister(Skybox* skybox) { pD3D11Renderer->RegisterSkybox(skybox); }
+void MeshRegister(Mesh* mesh) { pD3D11Renderer->RegisterMesh(mesh); }
+
+void TextureUnregister(Texture* tex) { pD3D11Renderer->UnregisterTexture(tex); }
+void MeshUnregister(Mesh* mesh) { pD3D11Renderer->UnregisterMesh(mesh); }
+void SkyboxUnregister(Skybox* skybox) { pD3D11Renderer->UnregisterSkybox(skybox); }
+void TextureBind(Texture& tex, GLuint slot) { pD3D11Renderer->BindTexture(tex, slot); }
 
 // Main code
 int main(int, char**)
@@ -36,8 +40,14 @@ int main(int, char**)
     auto hwnd = glfwGetWin32Window(window);
 
     TextureRegisterFunction = TextureRegister;
+    SkyboxRegisterFunction = SkyboxRegister;
+    MeshRegisterFunction = MeshRegister;
 
-    //D3D11Renderer d3d11Renderer;
+    TextureUnregisterFunction = TextureUnregister;
+    SkyboxUnregisterFunction = SkyboxUnregister;
+    MeshUnregisterFunction = MeshUnregister;
+    TextureBindFunction = TextureBind;
+
     pD3D11Renderer = std::make_shared< D3D11Renderer>();
 
     D3D11Renderer& d3d11Renderer = *pD3D11Renderer;
@@ -85,8 +95,15 @@ int main(int, char**)
 
     d3d11Renderer.InitRender();
 
+    double lastTime = glfwGetTime();
+
     while (!glfwWindowShouldClose(window))
     {
+        double nowTime = glfwGetTime();
+        double deltaTime = nowTime - lastTime;
+        lastTime = nowTime;
+
+        camera.SceneInputs(window, (float)deltaTime);
         d3d11Renderer.Render(scene);
 
         // Start the Dear ImGui frame

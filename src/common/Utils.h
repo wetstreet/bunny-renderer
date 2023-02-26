@@ -50,6 +50,8 @@ std::ostream& operator<<(std::ostream& out, glm::vec3& v);
 
 std::ostream& operator<<(std::ostream& out, glm::vec2& v);
 
+std::ostream& operator<<(std::ostream& out, glm::ivec2& v);
+
 std::ostream& operator<<(std::ostream& out, ImVec2& v);
 
 std::ostream& operator<<(std::ostream& out, glm::mat4& m);

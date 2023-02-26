@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+#include "Utils.h"
+
 Camera::Camera(int width, int height, glm::vec3 position)
     : width(width), height(height), Position(position)
 {

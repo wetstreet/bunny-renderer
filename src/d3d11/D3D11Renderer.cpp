@@ -1,6 +1,8 @@
 #include "D3D11Renderer.h"
 #include "common/Selection.h"
 
+#include "common/Utils.h"
+
 D3D11Renderer::D3D11Renderer()
 {
 }
@@ -46,26 +48,71 @@ bool D3D11Renderer::CreateDeviceD3D(HWND hWnd)
     if (res != S_OK)
         return false;
 
+    CreateBackBuffer();
     CreateRenderTarget();
     return true;
 }
 
-void D3D11Renderer::CleanupDeviceD3D()
+void D3D11Renderer::RegisterMesh(Mesh* mesh)
 {
-    CleanupRenderTarget();
-    if (pSwapChain) { pSwapChain->Release(); pSwapChain = NULL; }
-    if (pd3dDeviceContext) { pd3dDeviceContext->Release(); pd3dDeviceContext = NULL; }
-    if (pd3dDevice) { pd3dDevice->Release(); pd3dDevice = NULL; }
+    // Create Vertex and Index Buffer
+    ID3D11Buffer* vertexBuffer;
+    ID3D11Buffer* indexBuffer;
+    // UINT numVerts;
+    UINT numIndices;
+    UINT stride;
+    UINT offset;
+    {
+        stride = sizeof(Vertex);
+        // numVerts = obj.numVertices;
+        offset = 0;
+        numIndices = mesh->indices.size();
+
+        D3D11_BUFFER_DESC vertexBufferDesc = {};
+        vertexBufferDesc.ByteWidth = mesh->vertices.size() * sizeof(Vertex);
+        vertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+        vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+        D3D11_SUBRESOURCE_DATA vertexSubresourceData = { &mesh->vertices[0] };
+
+        HRESULT hResult = pd3dDevice->CreateBuffer(&vertexBufferDesc, &vertexSubresourceData, &vertexBuffer);
+        assert(SUCCEEDED(hResult));
+
+        D3D11_BUFFER_DESC indexBufferDesc = {};
+        indexBufferDesc.ByteWidth = mesh->indices.size() * sizeof(uint32_t);
+        indexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+        indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+        D3D11_SUBRESOURCE_DATA indexSubresourceData = { &mesh->indices[0] };
+
+        hResult = pd3dDevice->CreateBuffer(&indexBufferDesc, &indexSubresourceData, &indexBuffer);
+        assert(SUCCEEDED(hResult));
+    }
+
+    std::shared_ptr<D3D11Mesh> d3d11mesh = std::make_shared<D3D11Mesh>();
+    d3d11mesh->vertexBuffer = vertexBuffer;
+    d3d11mesh->indexBuffer = indexBuffer;
+    d3d11mesh->numIndices = numIndices;
+    d3d11mesh->stride = stride;
+    d3d11mesh->offset = offset;
+    meshDict[mesh] = d3d11mesh;
 }
 
-void D3D11Renderer::CreateRenderTarget()
+void D3D11Renderer::UnregisterMesh(Mesh* mesh)
+{
+    meshDict.erase(mesh);
+}
+
+void D3D11Renderer::CreateBackBuffer()
 {
     ID3D11Texture2D* pBackBuffer;
     pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
     pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &mainRenderTargetView);
     pBackBuffer->Release();
+}
 
-
+void D3D11Renderer::CreateRenderTarget()
+{
     D3D11_TEXTURE2D_DESC textureDesc;
     D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
     D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
@@ -77,8 +124,8 @@ void D3D11Renderer::CreateRenderTarget()
     // Setup the texture description.
     // We will have our map be a square
     // We will need to have this texture bound as a render target AND a shader resource
-    textureDesc.Width = width;
-    textureDesc.Height = height;
+    textureDesc.Width = viewport.x;
+    textureDesc.Height = viewport.y;
     textureDesc.MipLevels = 1;
     textureDesc.ArraySize = 1;
     textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -89,7 +136,9 @@ void D3D11Renderer::CreateRenderTarget()
     textureDesc.MiscFlags = 0;
 
     // Create the texture
+    ID3D11Texture2D* renderTargetTextureMap = NULL;
     pd3dDevice->CreateTexture2D(&textureDesc, NULL, &renderTargetTextureMap);
+    rtSize = viewport;
 
     /////////////////////// Map's Render Target
     // Setup the description of the render target view.
@@ -108,12 +157,35 @@ void D3D11Renderer::CreateRenderTarget()
     shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
     // Create the shader resource view.
-    pd3dDevice->CreateShaderResourceView(renderTargetTextureMap, &shaderResourceViewDesc, &shaderResourceViewMap);
+    pd3dDevice->CreateShaderResourceView(renderTargetTextureMap, &shaderResourceViewDesc, &renderTargetSRV);
+
+    D3D11_TEXTURE2D_DESC depthBufferDesc;
+    renderTargetTextureMap->GetDesc(&depthBufferDesc);
+
+    renderTargetTextureMap->Release();
+
+    depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+    ID3D11Texture2D* depthBuffer;
+    pd3dDevice->CreateTexture2D(&depthBufferDesc, nullptr, &depthBuffer);
+
+    pd3dDevice->CreateDepthStencilView(depthBuffer, nullptr, &depthBufferView);
+
+    depthBuffer->Release();
 }
 
 void D3D11Renderer::CleanupRenderTarget()
 {
     if (mainRenderTargetView) { mainRenderTargetView->Release(); mainRenderTargetView = NULL; }
+}
+
+void D3D11Renderer::CleanupDeviceD3D()
+{
+    CleanupRenderTarget();
+    if (pSwapChain) { pSwapChain->Release(); pSwapChain = NULL; }
+    if (pd3dDeviceContext) { pd3dDeviceContext->Release(); pd3dDeviceContext = NULL; }
+    if (pd3dDevice) { pd3dDevice->Release(); pd3dDevice = NULL; }
 }
 
 bool D3D11Renderer::InitRender()
@@ -167,8 +239,10 @@ bool D3D11Renderer::InitRender()
     {
         D3D11_INPUT_ELEMENT_DESC inputElementDesc[] =
         {
-            { "POS", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "COL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+            { "POS",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,                               D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT,    D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "TEX",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT,    D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "TANGENT",0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT,    D3D11_INPUT_PER_VERTEX_DATA, 0 }
         };
 
         HRESULT hResult = pd3dDevice->CreateInputLayout(inputElementDesc, ARRAYSIZE(inputElementDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
@@ -176,27 +250,39 @@ bool D3D11Renderer::InitRender()
         vsBlob->Release();
     }
 
-    // Create Vertex Buffer
+    // Create Constant Buffer
     {
-        float vertexData[] = { // x, y, r, g, b, a
-            0.0f,  0.5f, 0.f, 1.f, 0.f, 1.f,
-            0.5f, -0.5f, 1.f, 0.f, 0.f, 1.f,
-            -0.5f, -0.5f, 0.f, 0.f, 1.f, 1.f
-        };
-        stride = 6 * sizeof(float);
-        numVerts = sizeof(vertexData) / stride;
-        offset = 0;
+        D3D11_BUFFER_DESC constantBufferDesc = {};
+        // ByteWidth must be a multiple of 16, per the docs
+        constantBufferDesc.ByteWidth = sizeof(Constants) + 0xf & 0xfffffff0;
+        constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+        constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-        D3D11_BUFFER_DESC vertexBufferDesc = {};
-        vertexBufferDesc.ByteWidth = sizeof(vertexData);
-        vertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-        vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-        D3D11_SUBRESOURCE_DATA vertexSubresourceData = { vertexData };
-
-        HRESULT hResult = pd3dDevice->CreateBuffer(&vertexBufferDesc, &vertexSubresourceData, &vertexBuffer);
+        HRESULT hResult = pd3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &constantBuffer);
         assert(SUCCEEDED(hResult));
     }
+
+    {
+        D3D11_RASTERIZER_DESC rasterizerDesc = {};
+        rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+        rasterizerDesc.CullMode = D3D11_CULL_BACK;
+        //rasterizerDesc.CullMode = D3D11_CULL_NONE;
+        rasterizerDesc.FrontCounterClockwise = TRUE;
+
+        pd3dDevice->CreateRasterizerState(&rasterizerDesc, &rasterizerState);
+    }
+
+    {
+        D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+        depthStencilDesc.DepthEnable = TRUE;
+        depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+        depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+        //depthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+
+        pd3dDevice->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
+    }
+
 
     return true;
 }
@@ -209,7 +295,7 @@ void D3D11Renderer::RegisterTexture(Texture* texture)
 {
 }
 
-void D3D11Renderer::BindTexture(Texture& texture)
+void D3D11Renderer::BindTexture(Texture& texture, GLuint slot)
 {
     std::cout << "bind texture" << std::endl;
 }
@@ -219,26 +305,72 @@ int D3D11Renderer::GetObjectID(int x, int y)
 	return 0;
 }
 
-
-void D3D11Renderer::Render(Scene& scene)
+void D3D11Renderer::DrawMesh(Mesh& mesh)
 {
-	scene.UpdateMatrices();
-
-    pd3dDeviceContext->OMSetRenderTargets(1, &renderTargetViewMap, nullptr);
-
-    FLOAT backgroundColor[4] = { 0.1f, 0.2f, 0.6f, 1.0f };
-    pd3dDeviceContext->ClearRenderTargetView(renderTargetViewMap, backgroundColor);
-
-    D3D11_VIEWPORT viewport = { 0.0f, 0.0f, (FLOAT)width, (FLOAT)height, 0.0f, 1.0f };
-    pd3dDeviceContext->RSSetViewports(1, &viewport);
-
-    pd3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    pd3dDeviceContext->IASetInputLayout(inputLayout);
+    std::shared_ptr<D3D11Mesh> d3d11mesh = meshDict[&mesh];
 
     pd3dDeviceContext->VSSetShader(vertexShader, nullptr, 0);
     pd3dDeviceContext->PSSetShader(pixelShader, nullptr, 0);
 
-    pd3dDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+    pd3dDeviceContext->VSSetConstantBuffers(0, 1, &constantBuffer);
 
-    pd3dDeviceContext->Draw(numVerts, 0);
+    pd3dDeviceContext->IASetVertexBuffers(0, 1, &d3d11mesh->vertexBuffer, &d3d11mesh->stride, &d3d11mesh->offset);
+    pd3dDeviceContext->IASetIndexBuffer(d3d11mesh->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+    pd3dDeviceContext->DrawIndexed(d3d11mesh->numIndices, 0, 0);
+}
+
+void D3D11Renderer::Render(Scene& scene)
+{
+	scene.UpdateMatrices();
+    scene.camera.updateMatrix(viewport.x, viewport.y);
+
+    if (rtSize != viewport)
+    {
+        pd3dDeviceContext->OMSetRenderTargets(0, 0, 0);
+        renderTargetViewMap->Release();
+        renderTargetSRV->Release();
+        depthBufferView->Release();
+
+        CreateRenderTarget();
+    }
+
+
+    FLOAT backgroundColor[4] = { 0.1f, 0.2f, 0.6f, 1.0f };
+    pd3dDeviceContext->ClearRenderTargetView(renderTargetViewMap, backgroundColor);
+
+    pd3dDeviceContext->ClearDepthStencilView(depthBufferView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+    D3D11_VIEWPORT d3d11_viewport = { 0.0f, 0.0f, (FLOAT)viewport.x, (FLOAT)viewport.y, 0.0f, 1.0f };
+    pd3dDeviceContext->RSSetViewports(1, &d3d11_viewport);
+
+    pd3dDeviceContext->RSSetState(rasterizerState);
+    pd3dDeviceContext->OMSetDepthStencilState(depthStencilState, 0);
+
+    pd3dDeviceContext->OMSetRenderTargets(1, &renderTargetViewMap, depthBufferView);
+
+    pd3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    pd3dDeviceContext->IASetInputLayout(inputLayout);
+
+    // render shadowmap
+    for (int i = 0; i < scene.objects.size(); i++)
+    {
+        std::shared_ptr<Object> object = scene.objects[i];
+        if (object->GetType() == Type_Mesh)
+        {
+            std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
+            if (mesh->isEnabled)
+            {
+                // Update constant buffer
+                D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+                pd3dDeviceContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+                Constants* constants = (Constants*)(mappedSubresource.pData);
+                constants->modelViewProj = glm::transpose(scene.camera.cameraMatrix * mesh->objectToWorld);
+                pd3dDeviceContext->Unmap(constantBuffer, 0);
+
+                DrawMesh(*mesh);
+            }
+        }
+    }
+
 }

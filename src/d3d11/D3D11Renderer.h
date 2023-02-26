@@ -10,6 +10,23 @@
 #endif
 #include <tchar.h>
 
+
+struct Constants
+{
+    glm::mat4 modelViewProj;
+};
+
+class D3D11Mesh
+{
+public:
+    ID3D11Buffer* vertexBuffer;
+    ID3D11Buffer* indexBuffer;
+    // UINT numVerts;
+    UINT numIndices;
+    UINT stride;
+    UINT offset;
+};
+
 class D3D11Renderer : public RealtimeRenderer
 {
 public:
@@ -24,13 +41,31 @@ public:
 
     bool CreateDeviceD3D(HWND hWnd);
     void CleanupDeviceD3D();
+
+    void CreateBackBuffer();
+
     void CreateRenderTarget();
     void CleanupRenderTarget();
 
-    //virtual void GenerateCubemapFromEquirectangular(Scene& scene);
-    //virtual void GenerateIrradianceMap(Scene& scene);
-    //virtual void GeneratePrefilterMap(Scene& scene);
-    //virtual void GenerateBrdfLUT(Scene& scene);
+    virtual void GenerateCubemapFromEquirectangular(Scene& scene) {};
+    virtual void GenerateIrradianceMap(Scene& scene) {};
+    virtual void GeneratePrefilterMap(Scene& scene) {};
+    virtual void GenerateBrdfLUT(Scene& scene) {};
+
+    virtual void RegisterTexture(Texture* texture);
+    virtual void RegisterMesh(Mesh* mesh);
+    //virtual void RegisterSkybox(Skybox* skybox);
+
+    //virtual void UnregisterTexture(Texture* texture);
+    virtual void UnregisterMesh(Mesh* mesh);
+    //virtual void UnregisterSkybox(Skybox* skybox);
+
+    //virtual void BindSkybox(Skybox* skybox, GLuint slot);
+    virtual void BindTexture(Texture& texture, GLuint slot);
+
+    //virtual void DrawSkybox();
+    //virtual void DrawScene(Scene& scene);
+    virtual void DrawMesh(Mesh& mesh);
 
     void SetRenderTarget(const float* clearColor)
     {
@@ -43,11 +78,7 @@ public:
         pSwapChain->Present(0, 0); // Present without vsync
     }
 
-    virtual void RegisterTexture(Texture* texture);
-
-    virtual void BindTexture(Texture& texture);
-
-    virtual void* GetRT() { return (void*)shaderResourceViewMap; };
+    virtual void* GetRT() { return (void*)renderTargetSRV; };
 public:
     GLuint postprocessRT;
     GLuint outlineRT;
@@ -57,55 +88,26 @@ public:
     IDXGISwapChain* pSwapChain = NULL;
     ID3D11RenderTargetView* mainRenderTargetView = NULL;
 
-    ID3D11Texture2D* renderTargetTextureMap = NULL;
+    ID3D11DepthStencilView* depthBufferView = NULL;
     ID3D11RenderTargetView* renderTargetViewMap = NULL;
-    ID3D11ShaderResourceView* shaderResourceViewMap = NULL;
-
+    ID3D11ShaderResourceView* renderTargetSRV = NULL;
 
 private:
     const unsigned int width = 1400;
     const unsigned int height = 900;
 
+    glm::ivec2 rtSize;
+
     ID3D11VertexShader* vertexShader;
     ID3D11PixelShader* pixelShader;
+
+    std::unordered_map<Mesh*, std::shared_ptr<D3D11Mesh>> meshDict;
+
     ID3D11InputLayout* inputLayout;
-    ID3D11Buffer* vertexBuffer;
-    UINT numVerts;
-    UINT stride;
-    UINT offset;
+    ID3D11Buffer* constantBuffer;
 
-    GLuint objectIdRT;
-    GLuint rectVAO, rectVBO;
-
-    GLuint rbo;
-    GLuint FBO;
-
-    GLuint postprocessFBO;
-    GLuint outlineFBO;
-
-    GLuint captureFBO, captureRBO;
-    GLuint envCubemap;
-    GLuint irradianceMap;
-    GLuint prefilterMap;
-    GLuint brdfLUTTexture;
-
-    unsigned int shadowMapWidth = 2048, shadowMapHeight = 2048;
-
-    GLuint shadowMap;
-    GLuint shadowMapFBO;
-
-    std::shared_ptr<Shader> equirectangularShader;
-    std::shared_ptr<Shader> irradianceShader;
-    std::shared_ptr<Shader> prefilterShader;
-
-    std::shared_ptr<Shader> shadowMapShader;
-
-    std::shared_ptr<Shader> postprocessShader;
-
-    std::shared_ptr<Shader> outlineShader;
-    std::shared_ptr<Shader> outlineCompareShader;
-    std::shared_ptr<Shader> outlineBlurShader;
-    std::shared_ptr<Shader> outlineMergeShader;
+    ID3D11RasterizerState* rasterizerState;
+    ID3D11DepthStencilState* depthStencilState;
 };
 
 #endif //__D3D11_RENDERER_H__

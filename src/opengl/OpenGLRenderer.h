@@ -37,7 +37,9 @@ class OpenGLRenderer : public RealtimeRenderer
         virtual void DrawMesh(Mesh& mesh);
 
         virtual void* GetRT() { return (void*)(intptr_t)renderTexture; };
-    public:
+
+        virtual ImVec2& GetUV0() { return uv0_flip; }
+        virtual ImVec2& GetUV1() { return uv1_flip; }
 
     private:
         GLuint objectIdRT;

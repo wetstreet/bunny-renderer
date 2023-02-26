@@ -424,11 +424,7 @@ public:
 		scene.camera.viewport = glm::ivec2(viewport.x, viewport.y);
 		realtimeRenderer.viewport = glm::vec2(viewport.x, viewport.y);
 
-		//GLuint rtID = postprocess ? realtimeRenderer.postprocessRT : realtimeRenderer.renderTexture;
-
-		//// Because I use the texture from OpenGL, I need to invert the V from the UV.
-		//ImGui::Image((ImTextureID)(intptr_t)rtID, viewport, ImVec2(0, 1), ImVec2(1, 0));
-		ImGui::Image(realtimeRenderer.GetRT(), viewport, ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image(realtimeRenderer.GetRT(), viewport, realtimeRenderer.GetUV0(), realtimeRenderer.GetUV1());
 
 		DrawGizmo();
 

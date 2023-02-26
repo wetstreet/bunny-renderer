@@ -340,6 +340,12 @@ std::ostream &operator<<(std::ostream &out, glm::vec2 &v)
     return out;
 }
 
+std::ostream& operator<<(std::ostream& out, glm::ivec2& v)
+{
+	out << "(" << v.x << "," << v.y << ")";
+	return out;
+}
+
 std::ostream &operator<<(std::ostream &out, ImVec2 &v)
 {
     out << "(" << v.x << "," << v.y << ")";
