@@ -11,9 +11,17 @@
 #include <tchar.h>
 
 
-struct Constants
+struct VSConstants
 {
-    glm::mat4 modelViewProj;
+    glm::mat4 br_ObjectToClip;
+    glm::mat4 br_ObjectToWorld;
+    glm::mat4 br_WorldToObject;
+};
+
+struct PSConstants
+{
+    glm::vec4 _MainLightPosition;
+    glm::vec4 _MainLightColor;
 };
 
 class D3D11Mesh
@@ -104,7 +112,8 @@ private:
     std::unordered_map<Mesh*, std::shared_ptr<D3D11Mesh>> meshDict;
 
     ID3D11InputLayout* inputLayout;
-    ID3D11Buffer* constantBuffer;
+    ID3D11Buffer* VSConstantBuffer;
+    ID3D11Buffer* PSConstantBuffer;
 
     ID3D11RasterizerState* rasterizerState;
     ID3D11DepthStencilState* depthStencilState;

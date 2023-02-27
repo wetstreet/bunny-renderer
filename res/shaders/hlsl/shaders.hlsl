@@ -1,7 +1,15 @@
 
-cbuffer constants : register(b0)
+cbuffer vsConstants : register(b0)
 {
-    float4x4 modelViewProj;
+    float4x4 br_ObjectToClip;
+    float4x4 br_ObjectToWorld;
+    float4x4 br_WorldToObject;
+};
+
+cbuffer psConstants : register(b0)
+{
+    float4 _MainLightPosition;
+    float4 _MainLightColor;
 };
 
 struct VS_Input {
@@ -14,16 +22,17 @@ struct VS_Input {
 struct VS_Output {
     float4 pos : SV_POSITION;
     float2 uv : TEXCOORD;
+    float3 worldNormal : TEXCOORD1;
 };
-//
-//Texture2D    mytexture : register(t0);
-//SamplerState mysampler : register(s0);
+
+Texture2D    mytexture : register(t0);
+SamplerState mysampler : register(s0);
 
 VS_Output vs_main(VS_Input input)
 {
     VS_Output output;
-    output.pos = mul(float4(input.pos, 1.0f), modelViewProj);
-    // This is just a dumb bit of maths to color our unit cube nicely
+    output.pos = mul(float4(input.pos, 1.0f), br_ObjectToClip);
+    output.worldNormal = normalize(mul(br_ObjectToWorld, input.normal).xyz);
     output.uv = input.uv;
     return output;
 }
@@ -31,6 +40,9 @@ VS_Output vs_main(VS_Input input)
 float4 ps_main(VS_Output input) : SV_Target
 {
     //return mytexture.Sample(mysampler, input.uv);
-    return 1;
+    float NdotL = max(0, dot(input.worldNormal, _MainLightPosition));
 
+    float3 finalColor = NdotL;
+
+    return float4(finalColor, 1);
 }

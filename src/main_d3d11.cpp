@@ -30,7 +30,7 @@ int main(int, char**)
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    auto window = glfwCreateWindow(width, height, "glfw - DX12", nullptr, nullptr);
+    auto window = glfwCreateWindow(width, height, "Bunny Renderer - D3D11", nullptr, nullptr);
     if (!window) {
         std::cout << "Creat window error" << std::endl;
         return -1;

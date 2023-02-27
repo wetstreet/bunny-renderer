@@ -194,7 +194,7 @@ bool D3D11Renderer::InitRender()
     ID3DBlob* vsBlob;
     {
         ID3DBlob* shaderCompileErrorsBlob;
-        HRESULT hResult = D3DCompileFromFile(L"./res/shaders/hlsl/shaders.hlsl", nullptr, nullptr, "vs_main", "vs_5_0", 0, 0, &vsBlob, &shaderCompileErrorsBlob);
+        HRESULT hResult = D3DCompileFromFile(L"./res/shaders/hlsl/shaders.hlsl", nullptr, nullptr, "vs_main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &vsBlob, &shaderCompileErrorsBlob);
         if (FAILED(hResult))
         {
             const char* errorString = NULL;
@@ -216,7 +216,7 @@ bool D3D11Renderer::InitRender()
     {
         ID3DBlob* psBlob;
         ID3DBlob* shaderCompileErrorsBlob;
-        HRESULT hResult = D3DCompileFromFile(L"./res/shaders/hlsl/shaders.hlsl", nullptr, nullptr, "ps_main", "ps_5_0", 0, 0, &psBlob, &shaderCompileErrorsBlob);
+        HRESULT hResult = D3DCompileFromFile(L"./res/shaders/hlsl/shaders.hlsl", nullptr, nullptr, "ps_main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &psBlob, &shaderCompileErrorsBlob);
         if (FAILED(hResult))
         {
             const char* errorString = NULL;
@@ -254,12 +254,24 @@ bool D3D11Renderer::InitRender()
     {
         D3D11_BUFFER_DESC constantBufferDesc = {};
         // ByteWidth must be a multiple of 16, per the docs
-        constantBufferDesc.ByteWidth = sizeof(Constants) + 0xf & 0xfffffff0;
+        constantBufferDesc.ByteWidth = sizeof(VSConstants) + 0xf & 0xfffffff0;
         constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
         constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-        HRESULT hResult = pd3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &constantBuffer);
+        HRESULT hResult = pd3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &VSConstantBuffer);
+        assert(SUCCEEDED(hResult));
+    }
+
+    {
+        D3D11_BUFFER_DESC constantBufferDesc = {};
+        // ByteWidth must be a multiple of 16, per the docs
+        constantBufferDesc.ByteWidth = sizeof(PSConstants) + 0xf & 0xfffffff0;
+        constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+        constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+        HRESULT hResult = pd3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &PSConstantBuffer);
         assert(SUCCEEDED(hResult));
     }
 
@@ -267,7 +279,6 @@ bool D3D11Renderer::InitRender()
         D3D11_RASTERIZER_DESC rasterizerDesc = {};
         rasterizerDesc.FillMode = D3D11_FILL_SOLID;
         rasterizerDesc.CullMode = D3D11_CULL_BACK;
-        //rasterizerDesc.CullMode = D3D11_CULL_NONE;
         rasterizerDesc.FrontCounterClockwise = TRUE;
 
         pd3dDevice->CreateRasterizerState(&rasterizerDesc, &rasterizerState);
@@ -278,7 +289,6 @@ bool D3D11Renderer::InitRender()
         depthStencilDesc.DepthEnable = TRUE;
         depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-        //depthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
 
         pd3dDevice->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
     }
@@ -309,11 +319,6 @@ void D3D11Renderer::DrawMesh(Mesh& mesh)
 {
     std::shared_ptr<D3D11Mesh> d3d11mesh = meshDict[&mesh];
 
-    pd3dDeviceContext->VSSetShader(vertexShader, nullptr, 0);
-    pd3dDeviceContext->PSSetShader(pixelShader, nullptr, 0);
-
-    pd3dDeviceContext->VSSetConstantBuffers(0, 1, &constantBuffer);
-
     pd3dDeviceContext->IASetVertexBuffers(0, 1, &d3d11mesh->vertexBuffer, &d3d11mesh->stride, &d3d11mesh->offset);
     pd3dDeviceContext->IASetIndexBuffer(d3d11mesh->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
@@ -335,7 +340,6 @@ void D3D11Renderer::Render(Scene& scene)
         CreateRenderTarget();
     }
 
-
     FLOAT backgroundColor[4] = { 0.1f, 0.2f, 0.6f, 1.0f };
     pd3dDeviceContext->ClearRenderTargetView(renderTargetViewMap, backgroundColor);
 
@@ -352,7 +356,11 @@ void D3D11Renderer::Render(Scene& scene)
     pd3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     pd3dDeviceContext->IASetInputLayout(inputLayout);
 
-    // render shadowmap
+    glm::vec3 lightPos;
+    glm::vec3 lightColor;
+    scene.GetMainLightProperties(lightPos, lightColor);
+
+    // render scene
     for (int i = 0; i < scene.objects.size(); i++)
     {
         std::shared_ptr<Object> object = scene.objects[i];
@@ -361,12 +369,36 @@ void D3D11Renderer::Render(Scene& scene)
             std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(object);
             if (mesh->isEnabled)
             {
+
+                pd3dDeviceContext->VSSetShader(vertexShader, nullptr, 0);
+                pd3dDeviceContext->PSSetShader(pixelShader, nullptr, 0);
+
+                pd3dDeviceContext->VSSetConstantBuffers(0, 1, &VSConstantBuffer);
+                pd3dDeviceContext->PSSetConstantBuffers(0, 1, &PSConstantBuffer);
+
                 // Update constant buffer
-                D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-                pd3dDeviceContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
-                Constants* constants = (Constants*)(mappedSubresource.pData);
-                constants->modelViewProj = glm::transpose(scene.camera.cameraMatrix * mesh->objectToWorld);
-                pd3dDeviceContext->Unmap(constantBuffer, 0);
+                {
+                    D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+                    pd3dDeviceContext->Map(VSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+                    VSConstants* constants = (VSConstants*)(mappedSubresource.pData);
+                    constants->br_ObjectToClip = glm::transpose(scene.camera.cameraMatrix * mesh->objectToWorld);
+                    constants->br_ObjectToWorld = glm::transpose(mesh->objectToWorld);
+                    constants->br_WorldToObject = glm::transpose(mesh->worldToObject);
+                    pd3dDeviceContext->Unmap(VSConstantBuffer, 0);
+                }
+
+                {
+                    D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+                    pd3dDeviceContext->Map(PSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+                    PSConstants* constants = (PSConstants*)(mappedSubresource.pData);
+                    constants->_MainLightPosition = glm::vec4(lightPos, 0);
+                    constants->_MainLightColor = glm::vec4(lightColor, 1);
+                    pd3dDeviceContext->Unmap(PSConstantBuffer, 0);
+                }
+
+
+                //pd3dDeviceContext->PSSetShaderResources(0, 1, &textureView);
+                //pd3dDeviceContext->PSSetSamplers(0, 1, &samplerState);
 
                 DrawMesh(*mesh);
             }
