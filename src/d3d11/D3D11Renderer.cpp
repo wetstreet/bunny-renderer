@@ -100,7 +100,60 @@ void D3D11Renderer::RegisterMesh(Mesh* mesh)
 
 void D3D11Renderer::UnregisterMesh(Mesh* mesh)
 {
+    std::shared_ptr<D3D11Mesh> d3d11mesh = meshDict[mesh];
+    d3d11mesh->vertexBuffer->Release();
+    d3d11mesh->indexBuffer->Release();
     meshDict.erase(mesh);
+}
+
+void D3D11Renderer::RegisterTexture(Texture* tex)
+{
+    if (tex->bytes == nullptr)
+        return;
+    ID3D11ShaderResourceView* textureView;
+    {
+        D3D11_TEXTURE2D_DESC textureDesc = {};
+        textureDesc.Width = tex->width;
+        textureDesc.Height = tex->height;
+        textureDesc.MipLevels = 1;
+        textureDesc.ArraySize = 1;
+        textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        textureDesc.SampleDesc.Count = 1;
+        textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
+        textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+        D3D11_SUBRESOURCE_DATA textureSubresourceData = {};
+        textureSubresourceData.pSysMem = tex->bytes;
+        textureSubresourceData.SysMemPitch = 4 * tex->width;
+
+        ID3D11Texture2D* texture;
+        pd3dDevice->CreateTexture2D(&textureDesc, &textureSubresourceData, &texture);
+
+        pd3dDevice->CreateShaderResourceView(texture, nullptr, &textureView);
+        texture->Release();
+    }
+
+    std::shared_ptr<TextureData> texData = std::make_shared<TextureData>();
+    texData->srv = textureView;
+    texDict[tex] = texData;
+}
+
+void D3D11Renderer::UnregisterTexture(Texture* texture)
+{
+    if (texture->bytes == nullptr)
+        return;
+    std::shared_ptr<TextureData> texData = texDict[texture];
+    texData->srv->Release();
+    texDict.erase(texture);
+}
+
+void D3D11Renderer::BindTexture(Texture& texture, GLuint slot)
+{
+    if (texture.bytes == nullptr)
+        return;
+    std::shared_ptr<TextureData> texdata = texDict[&texture];
+    pd3dDeviceContext->PSSetShaderResources(0, 1, &texdata->srv);
+    pd3dDeviceContext->PSSetSamplers(0, 1, &samplerState);
 }
 
 void D3D11Renderer::CreateBackBuffer()
@@ -109,6 +162,23 @@ void D3D11Renderer::CreateBackBuffer()
     pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
     pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &mainRenderTargetView);
     pBackBuffer->Release();
+}
+
+void D3D11Renderer::UpdateBackBuffer(int width, int height)
+{
+    pd3dDeviceContext->OMSetRenderTargets(0, 0, 0);
+    mainRenderTargetView->Release();
+
+    HRESULT res = pSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
+    assert(SUCCEEDED(res));
+
+    ID3D11Texture2D* d3d11FrameBuffer;
+    res = pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&d3d11FrameBuffer);
+    assert(SUCCEEDED(res));
+
+    res = pd3dDevice->CreateRenderTargetView(d3d11FrameBuffer, NULL, &mainRenderTargetView);
+    assert(SUCCEEDED(res));
+    d3d11FrameBuffer->Release();
 }
 
 void D3D11Renderer::CreateRenderTarget()
@@ -293,21 +363,27 @@ bool D3D11Renderer::InitRender()
         pd3dDevice->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
     }
 
+    // Create Sampler State
+    {
+        D3D11_SAMPLER_DESC samplerDesc = {};
+        samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+        samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+        samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+        samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+        samplerDesc.BorderColor[0] = 1.0f;
+        samplerDesc.BorderColor[1] = 1.0f;
+        samplerDesc.BorderColor[2] = 1.0f;
+        samplerDesc.BorderColor[3] = 1.0f;
+        samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+        pd3dDevice->CreateSamplerState(&samplerDesc, &samplerState);
+    }
 
     return true;
 }
 
 D3D11Renderer::~D3D11Renderer()
 {
-}
-
-void D3D11Renderer::RegisterTexture(Texture* texture)
-{
-}
-
-void D3D11Renderer::BindTexture(Texture& texture, GLuint slot)
-{
-    std::cout << "bind texture" << std::endl;
 }
 
 int D3D11Renderer::GetObjectID(int x, int y)
@@ -396,9 +472,8 @@ void D3D11Renderer::Render(Scene& scene)
                     pd3dDeviceContext->Unmap(PSConstantBuffer, 0);
                 }
 
+                BindTexture(*Texture::brick_tex, 0);
 
-                //pd3dDeviceContext->PSSetShaderResources(0, 1, &textureView);
-                //pd3dDeviceContext->PSSetSamplers(0, 1, &samplerState);
 
                 DrawMesh(*mesh);
             }

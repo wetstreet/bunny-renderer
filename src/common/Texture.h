@@ -33,6 +33,7 @@ class Texture
         GLenum type = GL_UNSIGNED_BYTE;
 
         static std::shared_ptr<Texture> white_tex;
+        static std::shared_ptr<Texture> brick_tex;
         static std::shared_ptr<Texture> normal_tex;
 
     private:

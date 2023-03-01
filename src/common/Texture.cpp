@@ -10,18 +10,21 @@ glm::vec2 Texture::vec2_zero = glm::vec2(0, 0);
 glm::vec2 Texture::vec2_one = glm::vec2(1, 1);
 
 std::shared_ptr<Texture> Texture::white_tex;
+std::shared_ptr<Texture> Texture::brick_tex;
 std::shared_ptr<Texture> Texture::normal_tex;
 
 void Texture::Init()
 {
 	white_tex = std::make_shared<Texture>("res/obj/white_texture.png");
 	normal_tex = std::make_shared<Texture>("res/obj/normal_texture.png");
+	brick_tex = std::make_shared<Texture>("res/obj/brick.png");
 }
 
 void Texture::Uninit()
 {
 	white_tex = nullptr;
 	normal_tex = nullptr;
+	brick_tex = nullptr;
 }
 
 void FlipYTexture(const unsigned int width, const unsigned int height, float* data) {

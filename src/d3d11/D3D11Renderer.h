@@ -35,6 +35,12 @@ public:
     UINT offset;
 };
 
+class TextureData
+{
+public:
+    ID3D11ShaderResourceView* srv;
+};
+
 class D3D11Renderer : public RealtimeRenderer
 {
 public:
@@ -51,6 +57,7 @@ public:
     void CleanupDeviceD3D();
 
     void CreateBackBuffer();
+    void UpdateBackBuffer(int width, int height);
 
     void CreateRenderTarget();
     void CleanupRenderTarget();
@@ -64,7 +71,7 @@ public:
     virtual void RegisterMesh(Mesh* mesh);
     //virtual void RegisterSkybox(Skybox* skybox);
 
-    //virtual void UnregisterTexture(Texture* texture);
+    virtual void UnregisterTexture(Texture* texture);
     virtual void UnregisterMesh(Mesh* mesh);
     //virtual void UnregisterSkybox(Skybox* skybox);
 
@@ -110,6 +117,8 @@ private:
     ID3D11PixelShader* pixelShader;
 
     std::unordered_map<Mesh*, std::shared_ptr<D3D11Mesh>> meshDict;
+    std::unordered_map<Texture*, std::shared_ptr<TextureData>> texDict;
+    ID3D11SamplerState* samplerState;
 
     ID3D11InputLayout* inputLayout;
     ID3D11Buffer* VSConstantBuffer;

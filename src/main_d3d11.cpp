@@ -24,6 +24,10 @@ void MeshUnregister(Mesh* mesh) { pD3D11Renderer->UnregisterMesh(mesh); }
 void SkyboxUnregister(Skybox* skybox) { pD3D11Renderer->UnregisterSkybox(skybox); }
 void TextureBind(Texture& tex, GLuint slot) { pD3D11Renderer->BindTexture(tex, slot); }
 
+void OnResizeFrame(GLFWwindow* window, int width, int height) {
+    pD3D11Renderer->UpdateBackBuffer(width, height);
+}
+
 // Main code
 int main(int, char**)
 {
@@ -35,7 +39,7 @@ int main(int, char**)
         std::cout << "Creat window error" << std::endl;
         return -1;
     }
-    //glfwSetFramebufferSizeCallback(window, OnResizeFrame);
+    glfwSetFramebufferSizeCallback(window, OnResizeFrame);
 
     auto hwnd = glfwGetWin32Window(window);
 
@@ -48,7 +52,7 @@ int main(int, char**)
     MeshUnregisterFunction = MeshUnregister;
     TextureBindFunction = TextureBind;
 
-    pD3D11Renderer = std::make_shared< D3D11Renderer>();
+    pD3D11Renderer = std::make_shared<D3D11Renderer>();
 
     D3D11Renderer& d3d11Renderer = *pD3D11Renderer;
 
@@ -84,9 +88,9 @@ int main(int, char**)
 
     Camera camera(width, height, glm::vec3(0.0f, 0.0f, 5.0f));
     Scene scene(camera);
-    /*
-    Shader::Init();
-    Texture::Init();*/
+    
+    //Shader::Init();
+    Texture::Init();
 
     RasterizerRenderer rasterizerRenderer;
     RayTracerRenderer raytracer;
@@ -131,6 +135,8 @@ int main(int, char**)
 
         glfwPollEvents();
     }
+
+    Texture::Uninit();
 
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplGlfw_Shutdown();

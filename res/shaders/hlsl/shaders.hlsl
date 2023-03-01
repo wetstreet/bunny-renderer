@@ -39,10 +39,11 @@ VS_Output vs_main(VS_Input input)
 
 float4 ps_main(VS_Output input) : SV_Target
 {
-    //return mytexture.Sample(mysampler, input.uv);
-    float NdotL = max(0, dot(input.worldNormal, _MainLightPosition));
+    float3 albedo = mytexture.Sample(mysampler, input.uv).rgb;
 
-    float3 finalColor = NdotL;
+    float nl = max(0, dot(input.worldNormal, _MainLightPosition));
+
+    float3 finalColor = nl * albedo * _MainLightColor.rgb;
 
     return float4(finalColor, 1);
 }
